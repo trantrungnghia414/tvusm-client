@@ -13,8 +13,17 @@ export default function Header() {
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // Tạo mảng chứa các đường dẫn và tiêu đề cho thiết bị di động như trang chủ
+    const mobileMenuItems = [
+        { title: "Trang chủ", path: "/" },
+        { title: "Đặt sân", path: "/bookings" },
+        { title: "Sự kiện", path: "/events" },
+        { title: "Cơ sở vật chất", path: "/facilities" },
+        { title: "Tin tức", path: "/news" },
+    ];
+
     return (
-        <header className="bg-[#1e3a8a] text-white">
+        <header className=" text-white">
             <div className="fixed top-0 left-0 right-0 z-50 bg-[#1e3a8a] border-b border-blue-700">
                 <div className="container mx-auto px-4">
                     <div className="flex items-center justify-between py-2">
@@ -69,7 +78,19 @@ export default function Header() {
 
                     {/* Mobile Navigation */}
                     {isMenuOpen && (
-                        <div className="md:hidden py-4 border-t border-blue-700">
+                        <div className="md:hidden py-4 border-t border-white">
+                            <nav className="flex flex-col gap-2">
+                                {mobileMenuItems.map((item) => (
+                                    <Link
+                                        key={item.path}
+                                        href={item.path}
+                                        className="text-white hover:text-blue-900 transition-colors"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        {item.title}
+                                    </Link>
+                                ))}
+                            </nav>
                             <div className="flex flex-col gap-2">
                                 <Button
                                     variant="ghost"

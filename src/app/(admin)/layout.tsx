@@ -1,22 +1,15 @@
-import type { Metadata } from "next";
+import React from "react";
+import "../globals.css";
 import { Inter } from "next/font/google";
-import "./globals.css";
 
 const geistInter = Inter({
     variable: "--font-geist-inter",
     subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-    title: "Nhà Thi Đấu TVU",
-    description: "Nhà Thi Đấu TVU - Nơi dành cho những người yêu thể thao",
-};
-
-export default function RootLayout({
+export default function AdminLayout({
     children,
-}: Readonly<{
-    children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang="en">
             <body className={`${geistInter.variable} antialiased`}>

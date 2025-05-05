@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function RegisterForm({
     className,
@@ -14,9 +16,12 @@ export function RegisterForm({
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent default form submission
+        setLoading(true);
 
         try {
             const response = await fetch(
@@ -34,17 +39,33 @@ export function RegisterForm({
                 }
             );
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error("Đăng ký thất bại");
+                throw new Error(data.message || "Đăng ký thất bại");
             }
 
-            const data = await response.json();
-            console.log("Registration successful:", data);
-            window.location.href = "/login"; // Chuyển hướng đến trang đăng nhập sau khi đăng ký thành công
+            // Show success message
+            await toast.success(
+                "Đăng ký thành công! Vui lòng xác thực email.",
+                {
+                    duration: 2000,
+                }
+            );
+
+            // Wait for toast before redirecting
+            setTimeout(() => {
+                router.push(`/verify-code?email=${encodeURIComponent(email)}`);
+            }, 2000);
         } catch (error) {
-            console.error("Registration error:", error);
+            toast.error(
+                error instanceof Error ? error.message : "Đăng ký thất bại"
+            );
+        } finally {
+            setLoading(false);
         }
     };
+
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card>
@@ -94,10 +115,18 @@ export function RegisterForm({
                                 />
                             </div>
                             <div className="flex flex-col gap-3">
-                                <Button type="submit" className="w-full">
-                                    Register
+                                <Button
+                                    type="submit"
+                                    className="w-full cursor-pointer"
+                                    disabled={loading}
+                                >
+                                    {loading ? "Đang đăng ký..." : "Register"}
                                 </Button>
-                                <Button variant="outline" className="w-full">
+                                <Button
+                                    variant="outline"
+                                    className="w-full cursor-pointer"
+                                    disabled={loading}
+                                >
                                     Login with Google
                                 </Button>
                             </div>

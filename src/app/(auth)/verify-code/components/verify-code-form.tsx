@@ -37,12 +37,14 @@ export function VerifyCodeForm() {
                 throw new Error(data.message || "Xác thực thất bại");
             }
 
-            toast.success("Xác thực thành công!");
+            await toast.success("Xác thực thành công!", {
+                duration: 2000,
+            });
 
             // Đảm bảo đợi toast hiển thị xong mới chuyển trang
             setTimeout(() => {
                 router.push("/login"); // Sử dụng replace thay vì push
-            }, 1500);
+            }, 2000);
         } catch (error) {
             toast.error(
                 error instanceof Error ? error.message : "Xác thực thất bại"

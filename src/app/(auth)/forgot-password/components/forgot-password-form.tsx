@@ -5,73 +5,66 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-// Thêm interface cho lỗi
-interface ApiError {
-    message: string;
-    statusCode?: number;
-}
+import { toast } from "sonner";
+import { fetchApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export function ForgotPasswordForm() {
     const [email, setEmail] = useState("");
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMessage("");
-        setError("");
+
+        if (!email) {
+            toast.error("Vui lòng nhập địa chỉ email");
+            return;
+        }
+
+        setLoading(true);
 
         try {
-            const response = await fetch(
-                "http://localhost:3000/users/forgot-password",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ email }),
-                }
-            );
+            const response = await fetchApi("/users/forgot-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email }),
+            });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || "Something went wrong");
+                throw new Error(data.message || "Có lỗi xảy ra");
             }
 
-            setMessage(
-                "Please check your email for password reset instructions"
+            toast.success("Mã đặt lại mật khẩu đã được gửi đến email của bạn");
+
+            // Chuyển đến trang reset password với email
+            setTimeout(() => {
+                router.push(
+                    `/reset-password?email=${encodeURIComponent(email)}`
+                );
+            }, 1500);
+        } catch (error) {
+            console.error("Forgot password error:", error);
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Có lỗi xảy ra khi gửi yêu cầu"
             );
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else if (typeof err === "object" && err && "message" in err) {
-                const apiError = err as ApiError;
-                setError(apiError.message);
-            } else {
-                setError("An unexpected error occurred");
-            }
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Forgot Password</CardTitle>
+                <CardTitle>Quên mật khẩu</CardTitle>
             </CardHeader>
             <CardContent>
-                {message && (
-                    <Alert className="mb-4">
-                        <AlertDescription>{message}</AlertDescription>
-                    </Alert>
-                )}
-                {error && (
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4">
                         <div className="grid gap-2">
@@ -81,10 +74,31 @@ export function ForgotPasswordForm() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Nhập địa chỉ email của bạn"
                                 required
                             />
+                            <p className="text-xs text-gray-500">
+                                Vui lòng nhập địa chỉ email đã đăng ký để nhận
+                                mã đặt lại mật khẩu
+                            </p>
                         </div>
-                        <Button type="submit">Send Reset Instructions</Button>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full cursor-pointer"
+                        >
+                            {loading
+                                ? "Đang gửi..."
+                                : "Gửi mã đặt lại mật khẩu"}
+                        </Button>
+                    </div>
+                    <div className="mt-4 text-center text-sm">
+                        <a
+                            href="/login"
+                            className="underline underline-offset-4 hover:text-primary"
+                        >
+                            Quay lại đăng nhập
+                        </a>
                     </div>
                 </form>
             </CardContent>

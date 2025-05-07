@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { fetchApi } from "@/lib/api";
 
 export function VerifyCodeForm() {
     const [code, setCode] = useState("");
@@ -32,8 +33,8 @@ export function VerifyCodeForm() {
         setLoading(true);
 
         try {
-            const response = await fetch(
-                "http://localhost:3000/users/verify-code",
+            const response = await fetchApi(
+                "/users/verify-code",
                 {
                     method: "POST",
                     headers: {
@@ -70,8 +71,8 @@ export function VerifyCodeForm() {
         setResendLoading(true);
 
         try {
-            const response = await fetch(
-                "http://localhost:3000/users/resend-code",
+            const response = await fetchApi(
+                "/users/resend-code",
                 {
                     method: "POST",
                     headers: {

@@ -6,118 +6,208 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-interface ApiError {
-    message: string;
-    statusCode?: number;
-}
+import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
+import { fetchApi } from "@/lib/api";
 
 export function ResetPasswordForm() {
+    const [code, setCode] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const searchParams = useSearchParams();
     const router = useRouter();
-    const token = searchParams.get("token");
+    const email = searchParams.get("email");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMessage("");
-        setError("");
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match");
+        if (!code) {
+            toast.error("Vui lòng nhập mã xác thực");
             return;
         }
 
+        if (password !== confirmPassword) {
+            toast.error("Mật khẩu xác nhận không khớp");
+            return;
+        }
+
+        if (password.length < 8) {
+            toast.error("Mật khẩu phải có ít nhất 8 ký tự");
+            return;
+        }
+
+        setLoading(true);
+
         try {
-            const response = await fetch(
-                "http://localhost:3000/users/reset-password",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ token, password }),
-                }
-            );
+            const response = await fetchApi("/users/reset-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email,
+                    code,
+                    password,
+                }),
+            });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || "Something went wrong");
+                throw new Error(data.message || "Có lỗi xảy ra");
             }
 
-            setMessage("Password reset successfully");
+            toast.success("Đặt lại mật khẩu thành công");
+
             setTimeout(() => {
                 router.push("/login");
-            }, 2000);
+            }, 1500);
         } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else if (typeof err === "object" && err && "message" in err) {
-                const apiError = err as ApiError;
-                setError(apiError.message);
-            } else {
-                setError("An unexpected error occurred");
-            }
+            toast.error(
+                err instanceof Error
+                    ? err.message
+                    : "Có lỗi xảy ra khi đặt lại mật khẩu"
+            );
+        } finally {
+            setLoading(false);
         }
     };
 
-    if (!token) {
+    if (!email) {
         return (
-            <Alert variant="destructive">
-                <AlertDescription>Invalid reset token</AlertDescription>
-            </Alert>
+            <Card>
+                <CardContent className="pt-6">
+                    <p className="text-center text-red-500">
+                        Không tìm thấy email. Vui lòng thử lại từ trang quên mật
+                        khẩu.
+                    </p>
+                    <div className="mt-4 text-center">
+                        <a
+                            href="/forgot-password"
+                            className="text-sm underline underline-offset-4"
+                        >
+                            Quay lại trang quên mật khẩu
+                        </a>
+                    </div>
+                </CardContent>
+            </Card>
         );
     }
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Reset Password</CardTitle>
+                <CardTitle>Đặt lại mật khẩu</CardTitle>
             </CardHeader>
             <CardContent>
-                {message && (
-                    <Alert className="mb-4">
-                        <AlertDescription>{message}</AlertDescription>
-                    </Alert>
-                )}
-                {error && (
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">New Password</Label>
+                            <Label>Email</Label>
+                            <p className="text-sm text-gray-500">{email}</p>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="code">Mã xác thực</Label>
                             <Input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                id="code"
+                                type="text"
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                placeholder="Nhập mã đã gửi đến email của bạn"
                                 required
                             />
+                            <p className="text-xs text-gray-500">
+                                Mã xác thực có hiệu lực trong 15 phút
+                            </p>
                         </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">Mật khẩu mới</Label>
+                            <div className="relative">
+                                <Input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
+                                    placeholder="Nhập mật khẩu mới"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    onClick={() =>
+                                        setShowPassword(!showPassword)
+                                    }
+                                >
+                                    {showPassword ? (
+                                        <EyeOff size={18} />
+                                    ) : (
+                                        <Eye size={18} />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="confirm-password">
-                                Confirm Password
+                                Xác nhận mật khẩu
                             </Label>
-                            <Input
-                                id="confirm-password"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) =>
-                                    setConfirmPassword(e.target.value)
-                                }
-                                required
-                            />
+                            <div className="relative">
+                                <Input
+                                    id="confirm-password"
+                                    type={
+                                        showConfirmPassword
+                                            ? "text"
+                                            : "password"
+                                    }
+                                    value={confirmPassword}
+                                    onChange={(e) =>
+                                        setConfirmPassword(e.target.value)
+                                    }
+                                    placeholder="Nhập lại mật khẩu mới"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                    onClick={() =>
+                                        setShowConfirmPassword(
+                                            !showConfirmPassword
+                                        )
+                                    }
+                                >
+                                    {showConfirmPassword ? (
+                                        <EyeOff size={18} />
+                                    ) : (
+                                        <Eye size={18} />
+                                    )}
+                                </button>
+                            </div>
                         </div>
-                        <Button type="submit">Reset Password</Button>
+
+                        <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={loading}
+                        >
+                            {loading ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                        </Button>
+                    </div>
+
+                    <div className="mt-4 text-center text-sm">
+                        <a
+                            href="/login"
+                            className="underline underline-offset-4 hover:text-primary"
+                        >
+                            Quay lại đăng nhập
+                        </a>
                     </div>
                 </form>
             </CardContent>

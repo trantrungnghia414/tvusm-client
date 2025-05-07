@@ -54,7 +54,7 @@ export function ResetPasswordForm() {
             setMessage("Password reset successfully");
             setTimeout(() => {
                 router.push("/login");
-            }, 1500);
+            }, 2000);
         } catch (err) {
             if (err instanceof Error) {
                 setError(err.message);

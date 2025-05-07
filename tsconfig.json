@@ -19,8 +19,9 @@
             }
         ],
         "baseUrl": "src/",
+        // "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"],
+            "@/*": ["./*"],
             "@/styles/*": ["styles/*"],
             "@/components/*": ["components/*"]
         }

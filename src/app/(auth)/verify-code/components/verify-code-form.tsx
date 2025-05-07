@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +11,21 @@ import { toast } from "sonner";
 export function VerifyCodeForm() {
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [countdown, setCountdown] = useState(0);
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
+
+    // Đếm ngược thời gian gửi lại mã
+    useEffect(() => {
+        if (countdown > 0) {
+            const timer = setTimeout(() => {
+                setCountdown(countdown - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [countdown]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,13 +49,11 @@ export function VerifyCodeForm() {
                 throw new Error(data.message || "Xác thực thất bại");
             }
 
-            await toast.success("Xác thực thành công!", {
-                duration: 2000,
-            });
+            toast.success("Xác thực thành công!");
 
             // Đảm bảo đợi toast hiển thị xong mới chuyển trang
             setTimeout(() => {
-                router.push("/login"); // Sử dụng replace thay vì push
+                router.push("/login");
             }, 2000);
         } catch (error) {
             toast.error(
@@ -55,7 +65,9 @@ export function VerifyCodeForm() {
     };
 
     const handleResendCode = async () => {
-        if (!email) return;
+        if (!email || countdown > 0) return;
+
+        setResendLoading(true);
 
         try {
             const response = await fetch(
@@ -76,10 +88,13 @@ export function VerifyCodeForm() {
             }
 
             toast.success("Đã gửi lại mã xác thực mới!");
+            setCountdown(60); // Đặt thời gian chờ 60 giây trước khi có thể gửi lại
         } catch (error) {
             toast.error(
                 error instanceof Error ? error.message : "Gửi lại mã thất bại"
             );
+        } finally {
+            setResendLoading(false);
         }
     };
 
@@ -105,6 +120,10 @@ export function VerifyCodeForm() {
                                 placeholder="Nhập mã xác thực"
                                 required
                             />
+                            <p className="text-xs text-gray-500 italic">
+                                Mã xác thực đã được gửi đến email của bạn và có
+                                hiệu lực trong 15 phút
+                            </p>
                         </div>
                         <Button
                             type="submit"
@@ -117,10 +136,14 @@ export function VerifyCodeForm() {
                             type="button"
                             variant="outline"
                             onClick={handleResendCode}
-                            disabled={loading}
+                            disabled={resendLoading || countdown > 0}
                             className="w-full cursor-pointer"
                         >
-                            Gửi lại mã
+                            {resendLoading
+                                ? "Đang gửi..."
+                                : countdown > 0
+                                ? `Gửi lại mã (${countdown}s)`
+                                : "Gửi lại mã"}
                         </Button>
                     </div>
                 </form>

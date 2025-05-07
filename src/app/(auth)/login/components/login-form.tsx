@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export function LoginForm({
     className,
@@ -13,57 +16,161 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (!identifier || !password) {
+            toast.error("Vui lòng nhập đầy đủ thông tin");
+            return;
+        }
+
+        setLoading(true);
+
         try {
+            // Xác định xem identifier là email hay username
+            const isEmail = identifier.includes("@");
+
+            // Nếu là email thì chuyển thành chữ thường, nếu là username thì giữ nguyên
+            const loginValue = isEmail ? identifier.toLowerCase() : identifier;
+
             const response = await fetch("http://localhost:3000/users/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    login: identifier,
+                    login: loginValue,
                     password,
                 }),
             });
 
-            if (!response.ok) {
-                throw new Error("Đăng nhập thất bại");
-            }
+            const responseText = await response.text();
+            let data;
 
-            const token = await response.text();
-            console.log("Login successful, token:", token);
-            localStorage.setItem("token", token); // Lưu token vào localStorage
-
-            const profileResponse = await fetch(
-                "http://localhost:3000/users/profile",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // Gửi token trong header
-                    },
+            try {
+                // Thử parse text thành JSON
+                data = JSON.parse(responseText);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (e) {
+                // Nếu không phải JSON, và response OK, có thể là token
+                if (response.ok) {
+                    data = { access_token: responseText };
+                } else {
+                    toast.error("Định dạng dữ liệu không hợp lệ");
+                    setLoading(false);
+                    return;
                 }
-            );
-
-            if (!profileResponse.ok) {
-                throw new Error("Lấy thông tin người dùng thất bại");
             }
 
-            const userProfile = await profileResponse.json();
-            // console.log("User profile:", userProfile);
+            if (!response.ok) {
+                // Xử lý các trường hợp lỗi cụ thể
+                if (response.status === 404) {
+                    toast.error("Sai tên đăng nhập hoặc mật khẩu!");
+                    setLoading(false);
+                    return;
+                }
 
-            if (userProfile.role === "admin") {
-                window.location.href = "/dashboard"; // Chuyển hướng đến trang admin nếu là admin
+                if (response.status === 401) {
+                    // Kiểm tra nếu mật khẩu không đúng
+                    if (
+                        data.message?.includes("Invalid password") ||
+                        data.message?.includes("Mật khẩu không đúng")
+                    ) {
+                        toast.error("Mật khẩu không đúng");
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Kiểm tra nếu tài khoản chưa xác thực
+                    if (
+                        data.message?.includes("verify your email") ||
+                        data.message?.includes("chưa được xác thực")
+                    ) {
+                        toast.error("Tài khoản chưa được xác thực", {
+                            duration: 3000,
+                        });
+
+                        // Lấy email từ response hoặc từ input nếu là email
+                        const emailToVerify =
+                            data.email || (isEmail ? loginValue : "");
+
+                        if (!emailToVerify) {
+                            toast.error("Không thể xác định email để xác thực");
+                            setLoading(false);
+                            return;
+                        }
+
+                        // Chuyển hướng đến trang xác thực
+                        setTimeout(() => {
+                            router.push(
+                                `/verify-code?email=${encodeURIComponent(
+                                    emailToVerify
+                                )}`
+                            );
+                        }, 2000);
+                        return;
+                    }
+                }
+
+                // Xử lý các lỗi khác
+                toast.error(data.message || "Đăng nhập thất bại");
+                setLoading(false);
+                return;
             }
-            if (userProfile.role === "customer") {
-                window.location.href = "/"; // Chuyển hướng đến trang user nếu là user
-            }
-            if (userProfile.role === "manager") {
-                window.location.href = "/"; // Chuyển hướng đến trang user nếu là user
+
+            // Đăng nhập thành công
+            if (data.access_token) {
+                localStorage.setItem("token", data.access_token);
+                toast.success("Đăng nhập thành công!");
+
+                // Lấy thông tin người dùng
+                try {
+                    const profileResponse = await fetch(
+                        "http://localhost:3000/users/profile",
+                        {
+                            headers: {
+                                Authorization: `Bearer ${data.access_token}`,
+                            },
+                        }
+                    );
+
+                    if (!profileResponse.ok) {
+                        throw new Error("Không thể lấy thông tin người dùng");
+                    }
+
+                    const profileData = await profileResponse.json();
+
+                    // Chuyển hướng dựa theo role
+                    setTimeout(() => {
+                        if (profileData.role === "admin") {
+                            window.location.href = "/dashboard";
+                        } else if (profileData.role === "manager") {
+                            window.location.href = "/dashboard/manager";
+                        } else {
+                            window.location.href = "/";
+                        }
+                    }, 1000);
+                } catch (profileError) {
+                    console.error("Profile fetch error:", profileError);
+                    // Mặc dù không lấy được thông tin profile, vẫn chuyển hướng về trang chủ
+                    setTimeout(() => {
+                        window.location.href = "/";
+                    }, 1000);
+                }
+            } else {
+                toast.error("Token không hợp lệ");
+                setLoading(false);
             }
         } catch (error) {
             console.error("Login error:", error);
+            toast.error(
+                error instanceof Error ? error.message : "Đăng nhập thất bại"
+            );
+            setLoading(false);
         }
     };
 
@@ -71,13 +178,15 @@ export function LoginForm({
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card>
                 <CardHeader>
-                    <CardTitle>Login</CardTitle>
+                    <CardTitle>Đăng nhập</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-6">
                             <div className="grid gap-3">
-                                <Label htmlFor="identifier">Username</Label>
+                                <Label htmlFor="identifier">
+                                    Tên đăng nhập
+                                </Label>
                                 <Input
                                     id="identifier"
                                     type="text"
@@ -85,47 +194,74 @@ export function LoginForm({
                                     onChange={(e) =>
                                         setIdentifier(e.target.value)
                                     }
-                                    placeholder="username or email"
                                     required
+                                    placeholder="Nhập tên đăng nhập hoặc email"
                                 />
                             </div>
                             <div className="grid gap-3">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">Mật khẩu</Label>
                                     <a
-                                        href="#"
+                                        href="/forgot-password"
                                         className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                                     >
-                                        Forgot your password?
+                                        Quên mật khẩu?
                                     </a>
                                 </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    placeholder="password"
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={
+                                            showPassword ? "text" : "password"
+                                        }
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        required
+                                        placeholder="Nhập mật khẩu"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                        onClick={() =>
+                                            setShowPassword(!showPassword)
+                                        }
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff size={18} />
+                                        ) : (
+                                            <Eye size={18} />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex flex-col gap-3">
-                                <Button type="submit" className="w-full cursor-pointer">
-                                    Login
+                                <Button
+                                    type="submit"
+                                    className="w-full cursor-pointer"
+                                    disabled={loading}
+                                >
+                                    {loading
+                                        ? "Đang đăng nhập..."
+                                        : "Đăng nhập"}
                                 </Button>
-                                <Button variant="outline" className="w-full cursor-pointer">
-                                    Login with Google
+                                <Button
+                                    variant="outline"
+                                    className="w-full cursor-pointer"
+                                    disabled={loading}
+                                >
+                                    Đăng nhập với Google
                                 </Button>
                             </div>
                         </div>
                         <div className="mt-4 text-center text-sm">
-                            Don&apos;t have an account?{" "}
+                            Chưa có tài khoản?{" "}
                             <a
                                 href="register"
                                 className="underline underline-offset-4"
                             >
-                                Sign up
+                                Đăng ký
                             </a>
                         </div>
                     </form>

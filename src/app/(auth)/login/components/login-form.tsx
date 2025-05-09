@@ -179,7 +179,7 @@ export function LoginForm({
             setGoogleLoading(true);
 
             const result = await signIn("google", {
-                callbackUrl: "/",
+                callbackUrl: `${window.location.origin}?googleLogin=true`,
                 redirect: false,
             });
 

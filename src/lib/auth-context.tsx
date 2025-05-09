@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Kiểm tra token từ session (đăng nhập Google)
         if (session?.accessToken) {
+            // Lưu token từ session vào localStorage
             setToken(session.accessToken);
             setRole(session.user.role || null);
             setUser({

@@ -170,14 +170,14 @@ export function RegisterForm({
             setGoogleLoading(true);
 
             const result = await signIn("google", {
-                callbackUrl: "/",
+                callbackUrl: `${window.location.origin}?googleLogin=true`,
                 redirect: false,
             });
 
             if (result?.error) {
                 toast.error("Đăng ký với Google thất bại");
             } else {
-                toast.success("Đăng ký thành công!");
+                toast.success("Đăng nhập thành công!");
                 // Không cần redirect vì đã xử lý trong callback của NextAuth
             }
         } catch (error) {
@@ -360,7 +360,7 @@ export function RegisterForm({
                                     </svg>
                                     {googleLoading
                                         ? "Đang xử lý..."
-                                        : "Đăng ký với Google"}
+                                        : "Đăng nhập với Google"}
                                 </Button>
                             </div>
                         </div>

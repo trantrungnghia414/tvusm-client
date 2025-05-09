@@ -13,13 +13,27 @@ export const authOptions = {
         }),
     ],
     callbacks: {
-        async signIn({ account, profile }: { account: Account | null; profile?: Profile }) {
+        async signIn({
+            account,
+            profile,
+        }: {
+            account: Account | null;
+            profile?: Profile;
+        }) {
             if (account?.provider === "google" && profile?.email) {
                 return true;
             }
             return false;
         },
-        async jwt({ token, account, profile }: { token: JWT; account: Account | null; profile?: Profile | undefined }) {
+        async jwt({
+            token,
+            account,
+            profile,
+        }: {
+            token: JWT;
+            account: Account | null;
+            profile?: Profile | undefined;
+        }) {
             // Khi người dùng đăng nhập thành công với Google
             if (account && profile) {
                 try {
@@ -45,10 +59,10 @@ export const authOptions = {
                         token.role = data.role;
                         token.userId = data.id;
 
-                        // Lưu token vào localStorage cho API calls khác
-                        if (typeof window !== "undefined") {
-                            localStorage.setItem("token", data.access_token);
-                        }
+                        console.log(
+                            "Token từ API Google Auth:",
+                            data.access_token
+                        );
                     }
                 } catch (error) {
                     console.error("Google auth error:", error);

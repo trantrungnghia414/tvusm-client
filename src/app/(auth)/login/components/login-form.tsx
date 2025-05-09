@@ -99,7 +99,8 @@ export function LoginForm({
 
                         // Lấy email từ response hoặc từ input nếu là email
                         const emailToVerify =
-                            data.email || (isEmail ? loginValue : "");
+                            // data.email || (isEmail ? loginValue : "");
+                            data.email;
 
                         if (!emailToVerify) {
                             toast.error("Không thể xác định email để xác thực");

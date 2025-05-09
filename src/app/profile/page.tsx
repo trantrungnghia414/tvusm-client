@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import {
     Eye,
     EyeOff,
     X,
+    Camera,
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UserProfile {
     user_id: number;
@@ -46,6 +54,12 @@ export default function ProfilePage() {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Avatar state
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
 
     // Form fields
     const [fullname, setFullname] = useState("");
@@ -166,6 +180,54 @@ export default function ProfilePage() {
         return true;
     };
 
+    // Xử lý khi người dùng chọn tệp ảnh
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Kiểm tra kích thước file (tối đa 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("Kích thước ảnh không được vượt quá 2MB");
+            return;
+        }
+
+        // Kiểm tra định dạng file
+        const validTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/gif",
+        ];
+        if (!validTypes.includes(file.type)) {
+            toast.error("Chỉ chấp nhận file ảnh định dạng JPG, PNG hoặc GIF");
+            return;
+        }
+
+        // Lưu file và tạo URL xem trước
+        setAvatarFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setAvatarPreview(previewUrl);
+    };
+
+    // Mở dialog chọn ảnh khi click vào avatar
+    const handleAvatarClick = () => {
+        setAvatarDialogOpen(true);
+    };
+
+    // Xử lý khi click vào nút "Chọn ảnh"
+    const handleSelectImage = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Xử lý khi click vào nút "Xóa"
+    const handleClearImage = () => {
+        if (avatarPreview) {
+            URL.revokeObjectURL(avatarPreview);
+        }
+        setAvatarFile(null);
+        setAvatarPreview(null);
+    };
+
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -187,19 +249,38 @@ export default function ProfilePage() {
                 return;
             }
 
-            const updateData = {
-                fullname,
-                phone,
-            };
+            let response;
 
-            const response = await fetchApi(`/users/${userProfile?.user_id}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(updateData),
-            });
+            if (avatarFile) {
+                // Nếu có ảnh mới, sử dụng FormData để gửi cả ảnh và dữ liệu
+                const formData = new FormData();
+                formData.append("fullname", fullname);
+                formData.append("phone", phone || "");
+                formData.append("avatar", avatarFile);
+
+                response = await fetchApi(`/users/${userProfile?.user_id}`, {
+                    method: "PATCH",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: formData,
+                });
+            } else {
+                // Nếu không có ảnh mới, chỉ gửi dữ liệu JSON
+                const updateData = {
+                    fullname,
+                    phone,
+                };
+
+                response = await fetchApi(`/users/${userProfile?.user_id}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(updateData),
+                });
+            }
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -213,6 +294,13 @@ export default function ProfilePage() {
                 ...userProfile!,
                 ...updatedProfile,
             });
+
+            // Xóa ảnh preview và file sau khi cập nhật thành công
+            if (avatarPreview) {
+                URL.revokeObjectURL(avatarPreview);
+                setAvatarPreview(null);
+            }
+            setAvatarFile(null);
 
             toast.success("Cập nhật thông tin thành công");
         } catch (error) {
@@ -347,6 +435,19 @@ export default function ProfilePage() {
         }
     };
 
+    // Thêm hàm helper để xử lý đường dẫn ảnh
+    const getImageUrl = (path: string | undefined) => {
+        if (!path) return null;
+
+        // Nếu đường dẫn đã là URL đầy đủ, giữ nguyên
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+
+        // Nếu đường dẫn bắt đầu bằng /uploads, thêm domain của server
+        return `http://localhost:3000${path}`;
+    };
+
     // Lấy màu và phần trăm cho hiển thị độ mạnh password
     const getPasswordStrengthTextColor = () => {
         if (passwordStrength <= 25) return "text-red-500";
@@ -391,22 +492,39 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col items-center">
-                            <Avatar className="h-24 w-24 mb-4">
-                                {userProfile?.avatar ? (
-                                    <AvatarImage
-                                        src={userProfile.avatar}
-                                        alt={userProfile.username}
-                                    />
-                                ) : null}
-                                <AvatarFallback className="text-2xl">
-                                    {userProfile
-                                        ? getInitials(
-                                              userProfile.fullname ||
-                                                  userProfile.username
-                                          )
-                                        : "U"}
-                                </AvatarFallback>
-                            </Avatar>
+                            <div
+                                className="relative cursor-pointer group"
+                                onClick={handleAvatarClick}
+                            >
+                                <Avatar className="h-24 w-24 mb-4 ring-2 ring-offset-2 ring-primary shadow-md">
+                                    {avatarPreview ? (
+                                        <AvatarImage
+                                            src={avatarPreview}
+                                            alt="Preview"
+                                        />
+                                    ) : userProfile?.avatar ? (
+                                        <AvatarImage
+                                            src={
+                                                getImageUrl(
+                                                    userProfile?.avatar
+                                                ) ?? undefined
+                                            }
+                                            alt={userProfile.username}
+                                        />
+                                    ) : null}
+                                    <AvatarFallback className="text-2xl">
+                                        {userProfile
+                                            ? getInitials(
+                                                  userProfile.fullname ||
+                                                      userProfile.username
+                                              )
+                                            : "U"}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="absolute inset-0 flex items-center justify-center rounded-full h-24 w-24 top-0 left-1/2 -translate-x-1/2 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <Camera className="h-8 w-8 text-white" />
+                                </div>
+                            </div>
 
                             <h2 className="text-xl font-semibold mb-1">
                                 {userProfile?.fullname || userProfile?.username}
@@ -488,6 +606,42 @@ export default function ProfilePage() {
                             <TabsContent value="profile">
                                 <form onSubmit={handleUpdateProfile}>
                                     <div className="space-y-4">
+                                        {avatarPreview && (
+                                            <div className="grid gap-2">
+                                                <Label>Ảnh đại diện mới</Label>
+                                                <div className="flex items-center space-x-4">
+                                                    <Avatar className="h-16 w-16">
+                                                        <AvatarImage
+                                                            src={avatarPreview}
+                                                            alt="Preview"
+                                                        />
+                                                        <AvatarFallback>
+                                                            {userProfile
+                                                                ? getInitials(
+                                                                      userProfile.fullname ||
+                                                                          userProfile.username
+                                                                  )
+                                                                : "U"}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <Button
+                                                        type="button"
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={
+                                                            handleClearImage
+                                                        }
+                                                    >
+                                                        Hủy
+                                                    </Button>
+                                                </div>
+                                                <p className="text-xs text-gray-500">
+                                                    Ảnh mới sẽ được cập nhật khi
+                                                    bạn lưu thay đổi
+                                                </p>
+                                            </div>
+                                        )}
+
                                         <div className="grid gap-2">
                                             <Label htmlFor="fullname">
                                                 Họ và tên
@@ -744,6 +898,85 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Dialog chọn ảnh đại diện */}
+            <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cập nhật ảnh đại diện</DialogTitle>
+                        <DialogDescription>
+                            Chọn ảnh đại diện mới của bạn. Chỉ chấp nhận file
+                            ảnh JPG, PNG hoặc GIF dưới 2MB.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="flex justify-center">
+                            <Avatar className="h-32 w-32">
+                                {avatarPreview ? (
+                                    <AvatarImage
+                                        src={avatarPreview}
+                                        alt="Preview"
+                                    />
+                                ) : userProfile?.avatar ? (
+                                    <AvatarImage
+                                        src={
+                                            getImageUrl(userProfile?.avatar) ??
+                                            undefined
+                                        }
+                                        alt={userProfile.username}
+                                    />
+                                ) : null}
+                                <AvatarFallback className="text-4xl">
+                                    {userProfile
+                                        ? getInitials(
+                                              userProfile.fullname ||
+                                                  userProfile.username
+                                          )
+                                        : "U"}
+                                </AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <div className="flex gap-4 justify-center">
+                            <Button
+                                type="button"
+                                onClick={handleSelectImage}
+                                className="min-w-[120px]"
+                            >
+                                Chọn ảnh
+                            </Button>
+                            {avatarPreview && (
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    onClick={handleClearImage}
+                                    className="min-w-[120px]"
+                                >
+                                    Xóa
+                                </Button>
+                            )}
+                        </div>
+                        <p className="text-center text-sm text-gray-500">
+                            Ảnh đại diện sẽ được cập nhật khi bạn lưu thay đổi ở
+                            trang thông tin cá nhân
+                        </p>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/jpeg,image/png,image/gif"
+                            onChange={handleFileChange}
+                        />
+                        <div className="flex justify-end">
+                            <Button
+                                variant="outline"
+                                onClick={() => setAvatarDialogOpen(false)}
+                            >
+                                Đóng
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

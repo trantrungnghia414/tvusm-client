@@ -186,7 +186,7 @@ export default function ProfilePage() {
         if (!file) return;
 
         // Kiểm tra kích thước file (tối đa 2MB)
-        if (file.size > 2 * 1024 * 1024) {
+        if (file.size > 5 * 1024 * 1024) {
             toast.error("Kích thước ảnh không được vượt quá 2MB");
             return;
         }

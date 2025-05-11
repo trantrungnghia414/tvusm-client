@@ -2,15 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import "../globals.css";
-import { Inter } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api";
-
-const geistInter = Inter({
-    variable: "--font-geist-inter",
-    subsets: ["latin"],
-});
 
 export default function AdminLayout({
     children,
@@ -60,26 +54,16 @@ export default function AdminLayout({
 
     if (loading) {
         return (
-            <html lang="en">
-                <body className={`${geistInter.variable} antialiased`}>
-                    <div className="flex items-center justify-center h-screen">
-                        <div className="text-center">
-                            <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
-                            <p className="text-gray-500">
-                                Đang xác thực quyền admin...
-                            </p>
-                        </div>
-                    </div>
-                </body>
-            </html>
+            <div className="flex items-center justify-center h-screen">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">
+                        Đang xác thực quyền admin...
+                    </p>
+                </div>
+            </div>
         );
     }
 
-    return authorized ? (
-        <html lang="en">
-            <body className={`${geistInter.variable} antialiased`}>
-                {children}
-            </body>
-        </html>
-    ) : null;
+    return authorized ? children : null;
 }

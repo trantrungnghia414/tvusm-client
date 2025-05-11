@@ -72,12 +72,12 @@ export default function UserTable({
     // Thêm hàm để xử lý đường dẫn avatar
     const getImageUrl = (path: string | undefined) => {
         if (!path) return null;
-        
+
         // Nếu đường dẫn đã là URL đầy đủ, giữ nguyên
         if (path.startsWith("http://") || path.startsWith("https://")) {
             return path;
         }
-        
+
         // Nếu đường dẫn bắt đầu bằng /uploads, thêm domain của server
         return `http://localhost:3000${path}`;
     };
@@ -194,12 +194,22 @@ export default function UserTable({
                                         <Avatar>
                                             {user.avatar ? (
                                                 <AvatarImage
-                                                    src={getImageUrl(user.avatar) || ''}
-                                                    alt={user.fullname || user.username}
+                                                    src={
+                                                        getImageUrl(
+                                                            user.avatar
+                                                        ) || ""
+                                                    }
+                                                    alt={
+                                                        user.fullname ||
+                                                        user.username
+                                                    }
                                                 />
                                             ) : null}
                                             <AvatarFallback>
-                                                {getInitials(user.fullname || user.username)}
+                                                {getInitials(
+                                                    user.fullname ||
+                                                        user.username
+                                                )}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
@@ -231,59 +241,76 @@ export default function UserTable({
                                     {formatDate(user.created_at)}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() => onEdit(user.user_id)}
-                                            >
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                <span>Chỉnh sửa</span>
-                                            </DropdownMenuItem>
-
-                                            {user.status === "active" ? (
+                                    {user.role === "admin" ? (
+                                        // Nếu là admin, không hiển thị menu thao tác
+                                        <span className="text-xs text-gray-500 italic">
+                                            Admin
+                                        </span>
+                                    ) : (
+                                        // Nếu không phải admin, hiển thị menu thao tác như bình thường
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                >
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
                                                 <DropdownMenuItem
                                                     onClick={() =>
-                                                        onToggleStatus(
-                                                            user.user_id,
-                                                            "inactive"
+                                                        onEdit(user.user_id)
+                                                    }
+                                                >
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    <span>Chỉnh sửa</span>
+                                                </DropdownMenuItem>
+
+                                                {user.status === "active" ? (
+                                                    <DropdownMenuItem
+                                                        onClick={() =>
+                                                            onToggleStatus(
+                                                                user.user_id,
+                                                                "inactive"
+                                                            )
+                                                        }
+                                                    >
+                                                        <UserX className="mr-2 h-4 w-4" />
+                                                        <span>
+                                                            Khóa tài khoản
+                                                        </span>
+                                                    </DropdownMenuItem>
+                                                ) : (
+                                                    <DropdownMenuItem
+                                                        onClick={() =>
+                                                            onToggleStatus(
+                                                                user.user_id,
+                                                                "active"
+                                                            )
+                                                        }
+                                                    >
+                                                        <UserCheck className="mr-2 h-4 w-4" />
+                                                        <span>
+                                                            Kích hoạt tài khoản
+                                                        </span>
+                                                    </DropdownMenuItem>
+                                                )}
+
+                                                <DropdownMenuItem
+                                                    className="text-red-600"
+                                                    onClick={() =>
+                                                        handleDeleteClick(
+                                                            user.user_id
                                                         )
                                                     }
                                                 >
-                                                    <UserX className="mr-2 h-4 w-4" />
-                                                    <span>Khóa tài khoản</span>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    <span>Xóa người dùng</span>
                                                 </DropdownMenuItem>
-                                            ) : (
-                                                <DropdownMenuItem
-                                                    onClick={() =>
-                                                        onToggleStatus(
-                                                            user.user_id,
-                                                            "active"
-                                                        )
-                                                    }
-                                                >
-                                                    <UserCheck className="mr-2 h-4 w-4" />
-                                                    <span>
-                                                        Kích hoạt tài khoản
-                                                    </span>
-                                                </DropdownMenuItem>
-                                            )}
-
-                                            <DropdownMenuItem
-                                                className="text-red-600"
-                                                onClick={() =>
-                                                    handleDeleteClick(user.user_id)
-                                                }
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                <span>Xóa người dùng</span>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -291,6 +318,7 @@ export default function UserTable({
                 </Table>
             </div>
 
+            {/* Dialog xác nhận xóa người dùng */}
             <AlertDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}

@@ -59,7 +59,7 @@ export default function Header({
                 if (response.ok) {
                     const data = await response.json();
                     setUserProfile(data);
-                    console.log("Full user profile data:", data);
+                    // console.log("Full user profile data:", data);
                 } else {
                     console.error(
                         "Failed to fetch user profile:",

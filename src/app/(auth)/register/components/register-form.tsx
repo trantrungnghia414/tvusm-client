@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "lib/utils";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { signIn } from "next-auth/react";
 
@@ -24,12 +24,10 @@ export function RegisterForm({
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [errors, setErrors] = useState({
-        email: "",
-        username: "",
-        password: "",
-        confirmPassword: "",
-    });
+
+    const [emailError, setEmailError] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+
     const [googleLoading, setGoogleLoading] = useState(false);
     const router = useRouter();
 
@@ -104,19 +102,15 @@ export function RegisterForm({
             isValid = false;
         }
 
-        if (passwordStrength < 75) {
-            newErrors.password =
-                "Mật khẩu chưa đủ mạnh (cần chữ hoa, chữ thường, số hoặc ký tự đặc biệt)";
-            isValid = false;
-        }
-
         // Kiểm tra xác nhận mật khẩu
         if (password !== confirmPassword) {
             newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
             isValid = false;
         }
 
-        setErrors(newErrors);
+        // setErrors(newErrors);
+        setEmailError(newErrors.email);
+        setUsernameError(newErrors.username);
         return isValid;
     };
 
@@ -203,13 +197,16 @@ export function RegisterForm({
                                     id="email"
                                     type="email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setEmailError("");
+                                    }}
                                     placeholder="example@gmail.com"
                                     required
                                 />
-                                {errors.email && (
+                                {emailError && (
                                     <p className="text-sm text-red-500">
-                                        {errors.email}
+                                        {emailError}
                                     </p>
                                 )}
                             </div>
@@ -220,15 +217,16 @@ export function RegisterForm({
                                     id="username"
                                     type="text"
                                     value={username}
-                                    onChange={(e) =>
-                                        setUsername(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setUsername(e.target.value);
+                                        setUsernameError("");
+                                    }}
                                     placeholder="Tên đăng nhập"
                                     required
                                 />
-                                {errors.username && (
+                                {usernameError && (
                                     <p className="text-sm text-red-500">
-                                        {errors.username}
+                                        {usernameError}
                                     </p>
                                 )}
                             </div>
@@ -242,10 +240,11 @@ export function RegisterForm({
                                             showPassword ? "text" : "password"
                                         }
                                         value={password}
-                                        onChange={(e) =>
-                                            setPassword(e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                        }}
                                         required
+                                        minLength={8}
                                     />
                                     <button
                                         type="button"
@@ -270,9 +269,10 @@ export function RegisterForm({
                                         </p>
                                     </div>
                                 )}
-                                {errors.password && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.password}
+                                {passwordStrength < 75 && password && (
+                                    <p className="text-xs text-gray-500">
+                                        Mật khẩu cần có chữ hoa, chữ thường, và
+                                        số hoặc ký tự đặc biệt
                                     </p>
                                 )}
                             </div>
@@ -290,9 +290,9 @@ export function RegisterForm({
                                                 : "password"
                                         }
                                         value={confirmPassword}
-                                        onChange={(e) =>
-                                            setConfirmPassword(e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                            setConfirmPassword(e.target.value);
+                                        }}
                                         required
                                     />
                                     <button
@@ -311,11 +311,14 @@ export function RegisterForm({
                                         )}
                                     </button>
                                 </div>
-                                {errors.confirmPassword && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.confirmPassword}
-                                    </p>
-                                )}
+                                {confirmPassword &&
+                                    password &&
+                                    confirmPassword !== password && (
+                                        <div className="flex items-center gap-1 text-red-500 text-sm">
+                                            <X className="h-4 w-4" /> Mật khẩu
+                                            xác nhận không khớp
+                                        </div>
+                                    )}
                             </div>
 
                             <div className="flex flex-col gap-3">

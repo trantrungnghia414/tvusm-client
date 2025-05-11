@@ -93,7 +93,27 @@ export default function ProfilePage() {
                 });
 
                 if (!response.ok) {
-                    throw new Error("Không thể lấy thông tin người dùng");
+                    // throw new Error("Không thể lấy thông tin người dùng");
+                    // / Kiểm tra mã lỗi cụ thể
+                    if (response.status === 404) {
+                        // Tài khoản không tồn tại
+                        localStorage.removeItem("token"); // Xóa token
+                        toast.error(
+                            "Tài khoản của bạn không còn tồn tại hoặc đã bị xóa"
+                        );
+                        router.push("/login");
+                        return;
+                    } else if (response.status === 401) {
+                        // Token không hợp lệ
+                        localStorage.removeItem("token"); // Xóa token
+                        toast.error(
+                            "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại"
+                        );
+                        router.push("/login");
+                        return;
+                    } else {
+                        throw new Error("Không thể tải thông tin người dùng");
+                    }
                 }
 
                 const data = await response.json();
@@ -106,6 +126,12 @@ export default function ProfilePage() {
             } catch (error) {
                 console.error("Error fetching user profile:", error);
                 toast.error("Không thể tải thông tin cá nhân");
+
+                // Nếu lỗi nghiêm trọng, đăng xuất người dùng
+                localStorage.removeItem("token");
+                setTimeout(() => {
+                    router.push("/login");
+                }, 2000);
             } finally {
                 setLoading(false);
             }
@@ -610,7 +636,7 @@ export default function ProfilePage() {
                                             <div className="grid gap-2">
                                                 <Label>Ảnh đại diện mới</Label>
                                                 <div className="flex items-center space-x-4">
-                                                    <Avatar className="h-16 w-16">
+                                                    <Avatar className="h-16 w-16 mb-4 ring-2 ring-offset-2 ring-primary shadow-md">
                                                         <AvatarImage
                                                             src={avatarPreview}
                                                             alt="Preview"
@@ -911,7 +937,7 @@ export default function ProfilePage() {
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="flex justify-center">
-                            <Avatar className="h-32 w-32">
+                            <Avatar className="h-32 w-32 mb-4 ring-2 ring-offset-2 ring-primary shadow-md">
                                 {avatarPreview ? (
                                     <AvatarImage
                                         src={avatarPreview}

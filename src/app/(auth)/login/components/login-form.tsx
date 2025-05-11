@@ -214,9 +214,9 @@ export function LoginForm({
                                     id="identifier"
                                     type="text"
                                     value={identifier}
-                                    onChange={(e) =>
-                                        setIdentifier(e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        setIdentifier(e.target.value);
+                                    }}
                                     required
                                     placeholder="Nhập tên đăng nhập hoặc email"
                                 />

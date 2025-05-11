@@ -28,34 +28,44 @@ export default function EditUserPage() {
                     return;
                 }
 
-                // Trong thực tế, gọi API để lấy thông tin người dùng
-                // const response = await fetchApi(`/admin/users/${userId}`, {
-                //     headers: { Authorization: `Bearer ${token}` }
-                // });
-                // const data = await response.json();
-                // setUser(data);
+                // Gọi API để lấy thông tin người dùng thực tế
+                const response = await fetchApi(`/users/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
 
-                // Dữ liệu mẫu
-                setTimeout(() => {
-                    const mockUser: User = {
-                        id: Number(userId),
-                        username: "nguyenvanan",
-                        email: "nguyenvan.a@gmail.com",
-                        fullname: "Nguyễn Văn An",
-                        role: "customer",
-                        status: "active",
-                        phone: "0987654321",
-                        created_at: "2023-10-15T08:30:00Z",
-                        is_verified: true,
-                        avatar: null,
-                    };
-                    setUser(mockUser);
-                    setLoading(false);
-                }, 1000);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        toast.error("Không tìm thấy người dùng");
+                        router.push("/dashboard/users");
+                        return;
+                    }
+                    throw new Error("Không thể tải thông tin người dùng");
+                }
+
+                const userData = await response.json();
+
+                // Định dạng dữ liệu từ API phù hợp với interface User
+                const formattedUser: User = {
+                    user_id: userData.user_id,
+                    username: userData.username,
+                    email: userData.email,
+                    fullname:
+                        userData.fullname || userData.name || userData.username,
+                    role: userData.role,
+                    status: userData.is_verified ? "active" : "inactive",
+                    phone: userData.phone || null,
+                    created_at: userData.created_at,
+                    is_verified: userData.is_verified,
+                    avatar: userData.avatar || null,
+                };
+
+                setUser(formattedUser);
             } catch (error) {
                 console.error("Error fetching user:", error);
                 toast.error("Không thể tải thông tin người dùng");
                 router.push("/dashboard/users");
+            } finally {
+                setLoading(false);
             }
         };
 

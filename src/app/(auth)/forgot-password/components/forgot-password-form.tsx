@@ -14,8 +14,33 @@ export function ForgotPasswordForm() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
+    const [emailError, setEmailError] = useState("");
+
+    const emailLower = email.toLowerCase();
+
+    // // Kiểm tra đầu vào
+    const validateForm = () => {
+        let isValid = true;
+        const emailError = { email: "" };
+
+        // Kiểm tra email
+        if (!emailLower.endsWith("@gmail.com")) {
+            emailError.email = "Email phải có đuôi @gmail.com";
+            isValid = false;
+        }
+
+        // setErrors(newErrors);
+        setEmailError(emailError.email);
+        return isValid;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Kiểm tra đầu vào trước khi gửi request
+        if (!validateForm()) {
+            return;
+        }
 
         if (!email) {
             toast.error("Vui lòng nhập địa chỉ email");
@@ -73,10 +98,18 @@ export function ForgotPasswordForm() {
                                 id="email"
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    setEmailError("");
+                                }}
                                 placeholder="Nhập địa chỉ email của bạn"
                                 required
                             />
+                            {emailError && (
+                                <p className="text-sm text-red-500">
+                                    {emailError}
+                                </p>
+                            )}
                             <p className="text-xs text-gray-500">
                                 Vui lòng nhập địa chỉ email đã đăng ký để nhận
                                 mã đặt lại mật khẩu

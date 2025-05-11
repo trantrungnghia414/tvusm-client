@@ -16,7 +16,7 @@ interface UserApiResponse {
     user_id: number;
     username: string;
     email: string;
-    fullname?: string ;
+    fullname?: string;
     name?: string;
     role: string;
     is_verified: boolean;
@@ -58,18 +58,20 @@ export default function UsersManagementPage() {
                 const data = await response.json();
 
                 // Chuyển đổi dữ liệu từ API sang định dạng User[]
-                const formattedUsers: User[] = data.map((user: UserApiResponse) => ({
-                    user_id: user.user_id,
-                    username: user.username,
-                    email: user.email,
-                    fullname: user.fullname || user.name || user.username,
-                    role: user.role,
-                    status: user.is_verified ? "active" : "inactive",
-                    phone: user.phone,
-                    created_at: user.created_at,
-                    is_verified: user.is_verified,
-                    avatar: user.avatar,
-                }));
+                const formattedUsers: User[] = data.map(
+                    (user: UserApiResponse) => ({
+                        user_id: user.user_id,
+                        username: user.username,
+                        email: user.email,
+                        fullname: user.fullname || user.name || user.username,
+                        role: user.role,
+                        status: user.is_verified ? "active" : "inactive",
+                        phone: user.phone,
+                        created_at: user.created_at,
+                        is_verified: user.is_verified,
+                        avatar: user.avatar,
+                    })
+                );
 
                 setUsers(formattedUsers);
                 setFilteredUsers(formattedUsers);
@@ -101,7 +103,9 @@ export default function UsersManagementPage() {
                 (user) =>
                     user.username.toLowerCase().includes(searchLower) ||
                     user.email.toLowerCase().includes(searchLower) ||
-                    (user.fullname?.toLowerCase() || '').includes(searchLower) ||
+                    (user.fullname?.toLowerCase() || "").includes(
+                        searchLower
+                    ) ||
                     (user.phone && user.phone.includes(searchTerm))
             );
         }

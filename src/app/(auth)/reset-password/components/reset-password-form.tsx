@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 
 export function ResetPasswordForm() {
@@ -17,10 +17,45 @@ export function ResetPasswordForm() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState(0);
 
     const searchParams = useSearchParams();
     const router = useRouter();
     const email = searchParams.get("email");
+
+    // Kiểm tra độ mạnh của mật khẩu
+    useEffect(() => {
+        if (!password) {
+            setPasswordStrength(0);
+            return;
+        }
+
+        let strength = 0;
+        // Độ dài ít nhất 8 ký tự
+        if (password.length >= 8) strength += 25;
+        // Có chữ thường
+        if (/[a-z]/.test(password)) strength += 25;
+        // Có chữ hoa
+        if (/[A-Z]/.test(password)) strength += 25;
+        // Có số hoặc ký tự đặc biệt
+        if (/[0-9!@#$%^&*]/.test(password)) strength += 25;
+
+        setPasswordStrength(strength);
+    }, [password]);
+
+    const getPasswordStrengthTextColor = () => {
+        if (passwordStrength <= 25) return "text-red-500";
+        if (passwordStrength <= 50) return "text-orange-500";
+        if (passwordStrength <= 75) return "text-yellow-500";
+        return "text-green-500";
+    };
+
+    const getPasswordStrengthText = () => {
+        if (passwordStrength <= 25) return "Yếu";
+        if (passwordStrength <= 50) return "Trung bình";
+        if (passwordStrength <= 75) return "Khá";
+        return "Mạnh";
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -138,6 +173,7 @@ export function ResetPasswordForm() {
                                     }
                                     placeholder="Nhập mật khẩu mới"
                                     required
+                                    minLength={8}
                                 />
                                 <button
                                     type="button"
@@ -153,6 +189,21 @@ export function ResetPasswordForm() {
                                     )}
                                 </button>
                             </div>
+                            {password && (
+                                <div>
+                                    <p
+                                        className={`text-xs ${getPasswordStrengthTextColor()}`}
+                                    >
+                                        Độ mạnh: {getPasswordStrengthText()}
+                                    </p>
+                                </div>
+                            )}
+                            {passwordStrength < 75 && password && (
+                                <p className="text-xs text-gray-500">
+                                    Mật khẩu cần có chữ hoa, chữ thường, và số
+                                    hoặc ký tự đặc biệt
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid gap-2">
@@ -190,6 +241,14 @@ export function ResetPasswordForm() {
                                     )}
                                 </button>
                             </div>
+                            {confirmPassword &&
+                                password &&
+                                confirmPassword !== password && (
+                                    <div className="flex items-center gap-1 text-red-500 text-sm">
+                                        <X className="h-4 w-4" /> Mật khẩu xác
+                                        nhận không khớp
+                                    </div>
+                                )}
                         </div>
 
                         <Button

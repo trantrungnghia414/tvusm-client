@@ -75,6 +75,13 @@ export function ResetPasswordForm() {
             return;
         }
 
+        if (passwordStrength < 75) {
+            toast.error(
+                "Mật khẩu quá yếu. Cần có chữ hoa, chữ thường, số hoặc ký tự đặc biệt!"
+            );
+            return;
+        }
+
         setLoading(true);
 
         try {

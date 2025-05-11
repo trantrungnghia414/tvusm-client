@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
@@ -37,6 +37,35 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Thêm showConfirmPassword
     const [passwordStrength, setPasswordStrength] = useState(0);
+
+    const [fullnameError, setFullnameError] = useState("");
+
+    // Xác thực họ tên
+    const validateFullname = () => {
+        if (!fullname.trim()) {
+            setFullnameError("Họ và tên không được để trống");
+            return false;
+        }
+
+        if (fullname.trim().length < 3) {
+            setFullnameError("Họ và tên phải có ít nhất 3 ký tự");
+            return false;
+        }
+
+        if (fullname.trim().length > 50) {
+            setFullnameError("Họ và tên không được vượt quá 50 ký tự");
+            return false;
+        }
+
+        // Kiểm tra có chứa chỉ có chữ cái, khoảng trắng và dấu
+        if (!/^[A-Za-zÀ-ỹ\s]+$/.test(fullname)) {
+            setFullnameError("Họ và tên chỉ được chứa chữ cái và khoảng trắng");
+            return false;
+        }
+
+        setFullnameError("");
+        return true;
+    };
 
     // Đổi sang dạng errors như form đăng ký
     const [errors, setErrors] = useState({
@@ -175,9 +204,13 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                 newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
                 isValid = false;
             } else if (passwordStrength < 75) {
-                newErrors.password =
-                    "Mật khẩu chưa đủ mạnh (cần chữ hoa, chữ thường, số hoặc ký tự đặc biệt)";
-                isValid = false;
+                // newErrors.password =
+                //     "Mật khẩu chưa đủ mạnh (cần chữ hoa, chữ thường, số hoặc ký tự đặc biệt)";
+                // isValid = false;
+                toast.error(
+                    "Mật khẩu quá yếu. Cần có chữ hoa, chữ thường, số hoặc ký tự đặc biệt!"
+                );
+                return;
             }
 
             // Kiểm tra xác nhận mật khẩu - giống với đăng ký
@@ -231,15 +264,6 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
         fileInputRef.current?.click();
     };
 
-    // Xử lý khi click vào nút "Xóa"
-    // const handleClearImage = () => {
-    //     if (avatarPreview) {
-    //         URL.revokeObjectURL(avatarPreview);
-    //     }
-    //     setAvatarFile(null);
-    //     setAvatarPreview(null);
-    // };
-
     // Hàm lấy chữ cái đầu tiên của tên để hiển thị avatar
     const getInitials = (name: string) => {
         if (!name) return "?";
@@ -253,6 +277,13 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
     // Xử lý khi submit form
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Xác thực thông tin trước khi gửi
+        const isFullnameValid = validateFullname();
+
+        if (!isFullnameValid) {
+            return;
+        }
 
         if (!validateForm()) {
             return;
@@ -391,16 +422,6 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                 >
                                     Chọn ảnh
                                 </Button>
-                                {/* {avatarPreview && (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        onClick={handleClearImage}
-                                    >
-                                        Xóa
-                                    </Button>
-                                )} */}
                             </div>
                             <input
                                 type="file"
@@ -422,16 +443,20 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                             <Input
                                 id="fullname"
                                 value={fullname}
-                                onChange={(e) => setFullname(e.target.value)}
+                                onChange={(e) => {
+                                    setFullname(e.target.value);
+                                    setFullnameError("");
+                                }}
                                 placeholder="Nhập họ và tên đầy đủ"
                                 className={
                                     errors.fullname ? "border-red-500" : ""
                                 }
+                                required
                             />
-                            {errors.fullname && (
-                                <p className="text-sm text-red-500">
-                                    {errors.fullname}
-                                </p>
+                            {fullnameError && (
+                                <div className="flex items-center gap-1 text-red-500 text-sm">
+                                    <X className="h-4 w-4" /> {fullnameError}
+                                </div>
                             )}
                         </div>
 
@@ -448,6 +473,7 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                 placeholder="example@gmail.com"
                                 className={errors.email ? "border-red-500" : ""}
                                 disabled={isEditMode} // Không cho phép sửa email khi đang sửa
+                                required
                             />
                             {errors.email && (
                                 <p className="text-sm text-red-500">
@@ -476,6 +502,7 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                     errors.username ? "border-red-500" : ""
                                 }
                                 disabled={isEditMode} // Không cho phép sửa username khi đang sửa
+                                required
                             />
                             {errors.username && (
                                 <p className="text-sm text-red-500">
@@ -533,6 +560,8 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                                     ? "border-red-500"
                                                     : ""
                                             }
+                                            required
+                                            minLength={8}
                                         />
                                         <button
                                             type="button"
@@ -548,11 +577,11 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                             )}
                                         </button>
                                     </div>
-                                    {errors.password && (
+                                    {/* {errors.password && (
                                         <p className="text-sm text-red-500">
                                             {errors.password}
                                         </p>
-                                    )}
+                                    )} */}
                                     {password && (
                                         <div>
                                             <div className="flex items-center justify-between">
@@ -600,6 +629,7 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                                     ? "border-red-500"
                                                     : ""
                                             }
+                                            required
                                         />
                                         <button
                                             type="button"
@@ -617,11 +647,14 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                             )}
                                         </button>
                                     </div>
-                                    {errors.confirmPassword && (
-                                        <p className="text-sm text-red-500">
-                                            {errors.confirmPassword}
-                                        </p>
-                                    )}
+                                    {confirmPassword &&
+                                        password &&
+                                        confirmPassword !== password && (
+                                            <div className="flex items-center gap-1 text-red-500 text-sm">
+                                                <X className="h-4 w-4" /> Mật
+                                                khẩu xác nhận không khớp
+                                            </div>
+                                        )}
                                 </div>
                             </>
                         )}

@@ -12,14 +12,17 @@ import {
     Users,
     FileText,
     Home,
-    Layers,
+    MapPin,
     CalendarClock,
     BookOpen,
+    ShoppingBag,
+    AlertTriangle,
+    Dumbbell,
+    BadgePercent,
 } from "lucide-react";
 import SidebarCategory from "@/app/(admin)/dashboard/components/sidebar/SidebarCategory";
 import SidebarItem from "@/app/(admin)/dashboard/components/sidebar/SidebarItem";
 import Image from "next/image";
-
 
 interface SidebarProps {
     activeTab: string;
@@ -61,7 +64,33 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         onClick={() => router.push("/")}
                     />
 
-                    <SidebarCategory label="QUẢN LÝ" />
+                    <SidebarCategory label="QUẢN LÝ CƠ SỞ" />
+                    <SidebarItem
+                        icon={<MapPin className="h-4 w-4" />}
+                        title="Nhà thi đấu"
+                        active={activeTab === "venues"}
+                        onClick={() => router.push("/dashboard/venues")}
+                    />
+                    <SidebarItem
+                        icon={<Calendar className="h-4 w-4" />}
+                        title="Sân thể thao"
+                        active={activeTab === "courts"}
+                        onClick={() => router.push("/dashboard/courts")}
+                    />
+                    <SidebarItem
+                        icon={<Dumbbell className="h-4 w-4" />}
+                        title="Thiết bị"
+                        active={activeTab === "equipment"}
+                        onClick={() => router.push("/dashboard/equipment")}
+                    />
+                    <SidebarItem
+                        icon={<BadgePercent className="h-4 w-4" />}
+                        title="Bảng giá"
+                        active={activeTab === "pricing"}
+                        onClick={() => router.push("/dashboard/pricing")}
+                    />
+
+                    <SidebarCategory label="QUẢN LÝ DỊCH VỤ" />
                     <SidebarItem
                         icon={<Calendar className="h-4 w-4" />}
                         title="Đặt sân"
@@ -70,22 +99,10 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         count={8}
                     />
                     <SidebarItem
-                        icon={<Users className="h-4 w-4" />}
-                        title="Người dùng"
-                        active={activeTab === "users"}
-                        onClick={() => router.push("/dashboard/users")}
-                    />
-                    <SidebarItem
-                        icon={<Layers className="h-4 w-4" />}
-                        title="Sân thể thao"
-                        active={activeTab === "arenas"}
-                        onClick={() => router.push("/dashboard/arenas")}
-                    />
-                    <SidebarItem
-                        icon={<FileText className="h-4 w-4" />}
-                        title="Sân con & Thiết bị"
-                        active={activeTab === "equipment"}
-                        onClick={() => router.push("/dashboard/equipment")}
+                        icon={<ShoppingBag className="h-4 w-4" />}
+                        title="Thuê thiết bị"
+                        active={activeTab === "rentals"}
+                        onClick={() => router.push("/dashboard/rentals")}
                     />
                     <SidebarItem
                         icon={<CreditCard className="h-4 w-4" />}
@@ -93,8 +110,14 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         active={activeTab === "payments"}
                         onClick={() => router.push("/dashboard/payments")}
                     />
+                    <SidebarItem
+                        icon={<AlertTriangle className="h-4 w-4" />}
+                        title="Bảo trì"
+                        active={activeTab === "maintenance"}
+                        onClick={() => router.push("/dashboard/maintenance")}
+                    />
 
-                    <SidebarCategory label="HOẠT ĐỘNG" />
+                    <SidebarCategory label="QUẢN LÝ NỘI DUNG" />
                     <SidebarItem
                         icon={<CalendarClock className="h-4 w-4" />}
                         title="Sự kiện"
@@ -115,7 +138,13 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         count={5}
                     />
 
-                    <SidebarCategory label="HỆ THỐNG" />
+                    <SidebarCategory label="QUẢN LÝ HỆ THỐNG" />
+                    <SidebarItem
+                        icon={<Users className="h-4 w-4" />}
+                        title="Người dùng"
+                        active={activeTab === "users"}
+                        onClick={() => router.push("/dashboard/users")}
+                    />
                     <SidebarItem
                         icon={<BarChart className="h-4 w-4" />}
                         title="Báo cáo & Thống kê"
@@ -123,8 +152,14 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         onClick={() => router.push("/dashboard/reports")}
                     />
                     <SidebarItem
+                        icon={<FileText className="h-4 w-4" />}
+                        title="Nhật ký hoạt động"
+                        active={activeTab === "logs"}
+                        onClick={() => router.push("/dashboard/logs")}
+                    />
+                    <SidebarItem
                         icon={<Settings className="h-4 w-4" />}
-                        title="Cài đặt"
+                        title="Cài đặt hệ thống"
                         active={activeTab === "settings"}
                         onClick={() => router.push("/dashboard/settings")}
                     />

@@ -11,7 +11,6 @@ import {
     User,
     Settings,
     LogOut,
-    Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,10 +111,6 @@ export default function Header({
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
-                <Button variant="outline" size="sm" className="hidden md:flex">
-                    <Clock className="mr-2 h-4 w-4" />
-                    <span className="hidden lg:inline">Nhật ký hoạt động</span>
-                </Button>
                 <Button variant="outline" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">

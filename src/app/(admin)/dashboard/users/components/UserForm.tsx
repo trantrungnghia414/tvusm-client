@@ -103,6 +103,7 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
             setPhone(user.phone || "");
             setRole(user.role);
             setIsActive(user.status === "active");
+
             if (user.avatar) {
                 setAvatarPreview(getImageUrl(user.avatar) || null);
             }

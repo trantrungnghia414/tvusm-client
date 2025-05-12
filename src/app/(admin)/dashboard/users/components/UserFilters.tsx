@@ -26,9 +26,9 @@ export default function UserFilters({
     setRoleFilter,
     statusFilter,
     setStatusFilter,
-}: UserFiltersProps) {
+}:
+UserFiltersProps) {
     return (
-        // <div className="grid gap-4 md:grid-cols-3 bg-white p-4 rounded-lg border">
         <div className="flex justify-between bg-white p-4 rounded-lg border">
             <div className="relative flex-1 max-w-[400px]">
                 <Search className="absolute left-2.5 top-3 h-4 w-4 text-gray-500" />
@@ -79,6 +79,8 @@ export default function UserFilters({
                         </SelectContent>
                     </Select>
                 </div>
+
+                {/* Bỏ bộ lọc user_type */}
             </div>
         </div>
     );

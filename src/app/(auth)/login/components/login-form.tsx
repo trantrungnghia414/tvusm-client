@@ -23,6 +23,7 @@ export function LoginForm({
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
 
+    // Thay đổi phần xử lý response
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -51,13 +52,14 @@ export function LoginForm({
                 }),
             });
 
+            // Đọc response body một lần duy nhất và lưu vào biến
             const responseText = await response.text();
             let data;
 
             try {
                 // Thử parse text thành JSON
                 data = JSON.parse(responseText);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {
                 // Nếu không phải JSON, và response OK, có thể là token
                 if (response.ok) {
@@ -69,7 +71,21 @@ export function LoginForm({
                 }
             }
 
+            // Xử lý khi response không OK
             if (!response.ok) {
+                // Đã có data từ responseText, không cần đọc response.json() nữa
+
+                // Kiểm tra nếu tài khoản bị khóa
+                if (
+                    (response.status === 401 &&
+                        data.message?.includes("bị tạm khóa")) ||
+                    data.message?.includes("bị cấm")
+                ) {
+                    toast.error(data.message, { duration: 5000 });
+                    setLoading(false);
+                    return;
+                }
+
                 // Xử lý các trường hợp lỗi cụ thể
                 if (response.status === 404) {
                     toast.error("Sai tên đăng nhập hoặc mật khẩu!");
@@ -97,10 +113,8 @@ export function LoginForm({
                             duration: 3000,
                         });
 
-                        // Lấy email từ response hoặc từ input nếu là email
-                        const emailToVerify =
-                            // data.email || (isEmail ? loginValue : "");
-                            data.email;
+                        // Lấy email từ response
+                        const emailToVerify = data.email;
 
                         if (!emailToVerify) {
                             toast.error("Không thể xác định email để xác thực");

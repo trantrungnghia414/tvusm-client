@@ -190,41 +190,30 @@ export default function UserTable({
                                     {index + 1}
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
                                         <Avatar>
                                             {user.avatar ? (
                                                 <AvatarImage
                                                     src={
                                                         getImageUrl(
                                                             user.avatar
-                                                        ) || ""
+                                                        ) || undefined
                                                     }
-                                                    alt={
-                                                        user.fullname ||
-                                                        user.username
-                                                    }
+                                                    alt={user.username}
                                                 />
-                                            ) : null}
-                                            <AvatarFallback>
-                                                {getInitials(
-                                                    user.fullname ||
-                                                        user.username
-                                                )}
-                                            </AvatarFallback>
+                                            ) : (
+                                                <AvatarFallback>
+                                                    {getInitials(
+                                                        user.fullname ||
+                                                            user.username
+                                                    )}
+                                                </AvatarFallback>
+                                            )}
                                         </Avatar>
                                         <div>
-                                            <div className="font-medium">
+                                            <p className="font-medium">
                                                 {user.fullname || user.username}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {user.username}
-                                            </div>
-                                            <div className="text-xs text-gray-500 md:hidden">
-                                                {user.email}
-                                            </div>
-                                            <div className="text-xs mt-1 md:hidden">
-                                                {getRoleBadge(user.role)}
-                                            </div>
+                                            </p>
                                         </div>
                                     </div>
                                 </TableCell>

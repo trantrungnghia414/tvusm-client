@@ -3,11 +3,10 @@ export interface User {
     username: string;
     email: string;
     fullname?: string;
-    name?: string;
     role: string;
-    status: "active" | "inactive";
-    phone?: string;
+    status: "active" | "inactive" | "banned";
+    phone?: string | null;
     created_at: string;
     is_verified: boolean;
-    avatar?: string;
+    avatar?: string | null;
 }

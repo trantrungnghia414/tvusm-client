@@ -407,12 +407,17 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                     <AvatarImage
                                         src={avatarPreview}
                                         alt="Preview"
+                                        onError={(e) => {
+                                            // Khi load ảnh thất bại, xóa src để hiển thị fallback
+                                            e.currentTarget.src = "";
+                                            // Tùy chọn: có thể set avatarPreview về null
+                                            // setAvatarPreview(null);
+                                        }}
                                     />
-                                ) : (
-                                    <AvatarFallback className="text-2xl">
-                                        {fullname ? getInitials(fullname) : "?"}
-                                    </AvatarFallback>
-                                )}
+                                ) : null}
+                                <AvatarFallback className="text-2xl">
+                                    {fullname ? getInitials(fullname) : "?"}
+                                </AvatarFallback>
                             </Avatar>
                             <div className="flex gap-2 justify-center">
                                 <Button

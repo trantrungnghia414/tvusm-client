@@ -84,8 +84,8 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                     <SidebarItem
                         icon={<FileText className="h-4 w-4" />}
                         title="Sân con & Thiết bị"
-                        active={activeTab === "sub-arenas"}
-                        onClick={() => router.push("/dashboard/sub-arenas")}
+                        active={activeTab === "equipment"}
+                        onClick={() => router.push("/dashboard/equipment")}
                     />
                     <SidebarItem
                         icon={<CreditCard className="h-4 w-4" />}

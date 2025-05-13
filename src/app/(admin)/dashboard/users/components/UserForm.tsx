@@ -408,6 +408,7 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
                                     <AvatarImage
                                         src={avatarPreview}
                                         alt="Preview"
+                                        className="object-cover"
                                         onError={(e) => {
                                             // Khi load ảnh thất bại, xóa src để hiển thị fallback
                                             e.currentTarget.src = "";

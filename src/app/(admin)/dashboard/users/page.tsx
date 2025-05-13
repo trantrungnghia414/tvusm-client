@@ -236,7 +236,7 @@ export default function UsersManagementPage() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
-                    <UserActions onAddUser={handleAddUser} />
+                    <UserActions onAddUser={handleAddUser} users={filteredUsers} />
                 </div>
 
                 <UserFilters

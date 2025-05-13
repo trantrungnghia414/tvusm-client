@@ -527,6 +527,7 @@ export default function ProfilePage() {
                                         <AvatarImage
                                             src={avatarPreview}
                                             alt="Preview"
+                                            className="object-cover"
                                         />
                                     ) : userProfile?.avatar ? (
                                         <AvatarImage
@@ -640,6 +641,7 @@ export default function ProfilePage() {
                                                         <AvatarImage
                                                             src={avatarPreview}
                                                             alt="Preview"
+                                                            className="object-cover"
                                                         />
                                                         <AvatarFallback>
                                                             {userProfile
@@ -942,6 +944,7 @@ export default function ProfilePage() {
                                     <AvatarImage
                                         src={avatarPreview}
                                         alt="Preview"
+                                        className="object-cover"
                                     />
                                 ) : userProfile?.avatar ? (
                                     <AvatarImage

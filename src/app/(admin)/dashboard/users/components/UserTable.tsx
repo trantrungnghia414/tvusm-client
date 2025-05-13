@@ -200,6 +200,7 @@ export default function UserTable({
                                                         ) || undefined
                                                     }
                                                     alt={user.username}
+                                                    className="object-cover"
                                                 />
                                             ) : (
                                                 <AvatarFallback>

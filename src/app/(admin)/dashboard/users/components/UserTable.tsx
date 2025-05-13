@@ -78,8 +78,11 @@ export default function UserTable({
             return path;
         }
 
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+
         // Nếu đường dẫn bắt đầu bằng /uploads, thêm domain của server
-        return `http://localhost:3000${path}`;
+        return `http://localhost:3000${path}?t=${timestamp}`;
     };
 
     const formatDate = (dateString: string) => {

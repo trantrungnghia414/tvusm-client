@@ -79,7 +79,10 @@ export default function VenueTable({
             return path;
         }
 
-        return `http://localhost:3000${path}`;
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+
+        return `http://localhost:3000${path}?timestamp=${timestamp}`;
     };
 
     const formatDate = (dateString: string) => {
@@ -144,6 +147,7 @@ export default function VenueTable({
                                                         ) || undefined
                                                     }
                                                     alt={venue.name}
+                                                    className="object-cover"
                                                 />
                                             ) : (
                                                 <AvatarFallback>

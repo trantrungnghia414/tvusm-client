@@ -57,7 +57,10 @@ export default function VenueForm({ venue, onSubmit }: VenueFormProps) {
             return path;
         }
 
-        return `http://localhost:3000${path}`;
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+
+        return `http://localhost:3000${path}?t=${timestamp}`;
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

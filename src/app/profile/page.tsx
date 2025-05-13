@@ -470,8 +470,11 @@ export default function ProfilePage() {
             return path;
         }
 
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+
         // Nếu đường dẫn bắt đầu bằng /uploads, thêm domain của server
-        return `http://localhost:3000${path}`;
+        return `http://localhost:3000${path}?t=${timestamp}`;
     };
 
     // Lấy màu và phần trăm cho hiển thị độ mạnh password

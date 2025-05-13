@@ -90,8 +90,10 @@ export default function UserForm({ user, isEditMode = false }: UserFormProps) {
             return path;
         }
 
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
         // Nếu đường dẫn bắt đầu bằng /uploads, thêm domain của server
-        return `http://localhost:3000${path}`;
+        return `http://localhost:3000${path}?t=${timestamp}`;
     };
 
     // Nếu là sửa, điền thông tin người dùng vào form

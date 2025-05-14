@@ -19,6 +19,7 @@ import {
     AlertTriangle,
     Dumbbell,
     BadgePercent,
+    Layers,
 } from "lucide-react";
 import SidebarCategory from "@/app/(admin)/dashboard/components/sidebar/SidebarCategory";
 import SidebarItem from "@/app/(admin)/dashboard/components/sidebar/SidebarItem";
@@ -70,6 +71,13 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         title="Nhà thi đấu"
                         active={activeTab === "venues"}
                         onClick={() => router.push("/dashboard/venues")}
+                    />
+                    {/* Thêm mục Loại Sân mới */}
+                    <SidebarItem
+                        icon={<Layers className="h-4 w-4" />}
+                        title="Loại sân"
+                        active={activeTab === "court-types"}
+                        onClick={() => router.push("/dashboard/court-types")}
                     />
                     <SidebarItem
                         icon={<Calendar className="h-4 w-4" />}

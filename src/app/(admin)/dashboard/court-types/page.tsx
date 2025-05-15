@@ -60,7 +60,7 @@ export default function CourtTypesPage() {
     useEffect(() => {
         let result = [...courtTypes];
 
-        // Lọc theo từ khóa tìm kiếm
+        // Lọc theo từ khóa tìm kiếmm
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase();
             result = result.filter(

@@ -138,7 +138,7 @@ export default function VenueTable({
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <Avatar>
+                                        <Avatar className="h-9 w-9">
                                             {venue.image ? (
                                                 <AvatarImage
                                                     src={

@@ -12,7 +12,7 @@ export default function CourtTypeFilters({
     setSearchTerm,
 }: CourtTypeFiltersProps) {
     return (
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex justify-between bg-white p-4 rounded-lg border">
             <div className="w-full">
                 <Label htmlFor="search" className="sr-only">
                     Tìm kiếm

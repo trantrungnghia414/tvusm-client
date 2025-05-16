@@ -152,8 +152,11 @@ export default function CourtTable({
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-9 w-9">
                                             <AvatarImage
-                                                src={getImageUrl(court.image ?? undefined)}
+                                                src={getImageUrl(
+                                                    court.image ?? undefined
+                                                )}
                                                 alt={court.name}
+                                                className="object-cover"    
                                             />
                                             <AvatarFallback>
                                                 {getInitials(court.name)}

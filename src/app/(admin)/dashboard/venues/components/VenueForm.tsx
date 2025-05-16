@@ -14,6 +14,7 @@ import {
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Venue } from "../types/venueTypes";
+import Image from "next/image";
 
 interface VenueFormProps {
     venue?: Venue;
@@ -257,10 +258,13 @@ export default function VenueForm({ venue, onSubmit }: VenueFormProps) {
                     />
                     {imagePreview && (
                         <div className="relative">
-                            <img
+                            <Image
                                 src={imagePreview}
                                 alt="Preview"
+                                width={64}
+                                height={64}
                                 className="h-16 w-16 rounded object-cover border"
+                                unoptimized={true}
                             />
                             <button
                                 type="button"

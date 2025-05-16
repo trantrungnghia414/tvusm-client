@@ -15,8 +15,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Court, CourtType, Venue } from "../types/courtTypes";
+import Image from "next/image";
+
+// Định nghĩa mảng các vị trí sân
+const COURT_LOCATIONS = [
+    { value: "indoor", label: "Sân trong nhà" },
+    { value: "outdoor", label: "Sân ngoài trời" },
+];
 
 interface CourtFormProps {
     court?: Court;
@@ -33,7 +39,10 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
     const [status, setStatus] = useState<
         "available" | "booked" | "maintenance"
     >("available");
-    const [isIndoor, setIsIndoor] = useState(true);
+
+    // Thay đổi state từ boolean sang string
+    const [location, setLocation] = useState<"indoor" | "outdoor">("indoor");
+
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -51,24 +60,49 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
                 const token = localStorage.getItem("token");
                 if (!token) return;
 
-                // Lấy danh sách nhà thi đấu
-                const venuesResponse = await fetchApi("/venues", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                // Lấy dữ liệu đồng thời để tăng hiệu suất
+                const [venuesResponse, typesResponse] = await Promise.all([
+                    fetchApi("/venues", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    fetchApi("/court-types", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
+
+                let venuesData = [];
+                let typesData = [];
 
                 if (venuesResponse.ok) {
-                    const venuesData = await venuesResponse.json();
+                    venuesData = await venuesResponse.json();
                     setVenues(venuesData);
                 }
 
-                // Lấy danh sách loại sân
-                const typesResponse = await fetchApi("/court-types", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
                 if (typesResponse.ok) {
-                    const typesData = await typesResponse.json();
+                    typesData = await typesResponse.json();
                     setCourtTypes(typesData);
+                }
+
+                // Điền thông tin court sau khi đã tải xong dữ liệu
+                if (court) {
+                    setName(court.name);
+                    setCode(court.code);
+                    setDescription(court.description || "");
+                    setHourlyRate(court.hourly_rate.toString());
+
+                    // Tạo một small delay để đảm bảo state venues và courtTypes đã được cập nhật
+                    setTimeout(() => {
+                        setVenueId(court.venue_id.toString());
+
+                        setTypeId(court.type_id.toString());
+                    }, 100);
+
+                    setStatus(court.status);
+                    setLocation(court.is_indoor ? "indoor" : "outdoor");
+
+                    if (court.image) {
+                        setImagePreview(getImageUrl(court.image));
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching venues and types:", error);
@@ -77,24 +111,6 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
         };
 
         fetchVenuesAndTypes();
-    }, []);
-
-    // Điền sẵn thông tin khi ở chế độ edit
-    useEffect(() => {
-        if (court) {
-            setName(court.name);
-            setCode(court.code);
-            setDescription(court.description || "");
-            setHourlyRate(court.hourly_rate.toString());
-            setVenueId(court.venue_id.toString());
-            setTypeId(court.type_id.toString());
-            setStatus(court.status);
-            setIsIndoor(court.is_indoor);
-
-            if (court.image) {
-                setImagePreview(getImageUrl(court.image));
-            }
-        }
     }, [court]);
 
     const getImageUrl = (path: string | undefined | null) => {
@@ -200,13 +216,16 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
             formData.append("type_id", typeId);
             formData.append("hourly_rate", hourlyRate);
             formData.append("status", status);
-            formData.append("is_indoor", isIndoor ? "true" : "false");
+
+            // Chuyển đổi location thành giá trị is_indoor
+            const isIndoor = location === "indoor";
+            formData.append("is_indoor", isIndoor ? "1" : "0");
 
             if (imageFile) formData.append("image", imageFile);
 
             await onSubmit(formData);
         } catch (error) {
-            console.error("Error submitting form:", error);
+            console.error("Error saving court:", error);
             toast.error("Có lỗi xảy ra khi lưu dữ liệu");
         } finally {
             setSaving(false);
@@ -349,13 +368,26 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
                 </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-                <Switch
-                    id="isIndoor"
-                    checked={isIndoor}
-                    onCheckedChange={setIsIndoor}
-                />
-                <Label htmlFor="isIndoor">Sân trong nhà</Label>
+            {/* Thay thế Switch bằng Select */}
+            <div className="space-y-2">
+                <Label htmlFor="location">Vị trí sân</Label>
+                <Select
+                    value={location}
+                    onValueChange={(value) => {
+                        setLocation(value as "indoor" | "outdoor");
+                    }}
+                >
+                    <SelectTrigger id="location">
+                        <SelectValue placeholder="Chọn vị trí sân" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {COURT_LOCATIONS.map((loc) => (
+                            <SelectItem key={loc.value} value={loc.value}>
+                                {loc.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             <div className="space-y-2">
@@ -370,10 +402,13 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
                     />
                     {imagePreview && (
                         <div className="relative">
-                            <img
+                            <Image
                                 src={imagePreview}
                                 alt="Preview"
+                                width={64}
+                                height={64}
                                 className="h-16 w-16 rounded object-cover border"
+                                unoptimized={true}
                             />
                             <button
                                 type="button"

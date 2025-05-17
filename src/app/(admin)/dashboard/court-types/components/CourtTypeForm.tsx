@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +12,7 @@ import { CourtType } from "../types";
 
 interface CourtTypeFormProps {
     courtType?: CourtType;
-    onSubmit: (formData: {
-        name: string;
-        description?: string;
-        standard_size?: string;
-    }) => Promise<void>;
+    onSubmit: (formData: FormData) => Promise<void>;
 }
 
 export default function CourtTypeForm({
@@ -27,6 +24,11 @@ export default function CourtTypeForm({
     const [standardSize, setStandardSize] = useState("");
     const [saving, setSaving] = useState(false);
 
+    // Thêm state cho ảnh
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const router = useRouter();
 
     // Điền sẵn thông tin khi ở chế độ edit
@@ -35,8 +37,73 @@ export default function CourtTypeForm({
             setName(courtType.name);
             setDescription(courtType.description || "");
             setStandardSize(courtType.standard_size || "");
+
+            // Hiển thị ảnh nếu có
+            if (courtType.image) {
+                setImagePreview(getImageUrl(courtType.image));
+            }
         }
     }, [courtType]);
+
+    // Hàm lấy URL ảnh
+    const getImageUrl = (path: string | undefined | null) => {
+        if (!path) return null;
+
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+        return `http://localhost:3000${path}?t=${timestamp}`;
+    };
+
+    // Xử lý khi chọn ảnh
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Kiểm tra kích thước file (tối đa 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Kích thước ảnh không được vượt quá 5MB");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
+
+        // Kiểm tra định dạng file
+        const validTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/gif",
+        ];
+        if (!validTypes.includes(file.type)) {
+            toast.error("Chỉ chấp nhận file ảnh định dạng JPG, PNG hoặc GIF");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
+
+        // Lưu file và tạo URL xem trước
+        setImageFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
+    };
+
+    // Xóa ảnh đã chọn
+    const clearImage = () => {
+        if (imagePreview && imagePreview.startsWith("blob:")) {
+            URL.revokeObjectURL(imagePreview);
+        }
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,11 +117,18 @@ export default function CourtTypeForm({
         setSaving(true);
 
         try {
-            await onSubmit({
-                name,
-                description: description.trim() || undefined,
-                standard_size: standardSize.trim() || undefined,
-            });
+            // Thay đổi cách gửi dữ liệu để hỗ trợ upload file
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("description", description.trim() || "");
+            formData.append("standard_size", standardSize.trim() || "");
+
+            // Thêm file ảnh nếu có
+            if (imageFile) {
+                formData.append("image", imageFile);
+            }
+
+            await onSubmit(formData);
         } catch (error) {
             console.error("Error submitting form:", error);
             toast.error("Có lỗi xảy ra khi lưu dữ liệu");
@@ -99,6 +173,42 @@ export default function CourtTypeForm({
                     placeholder="Nhập mô tả về loại sân này"
                     rows={4}
                 />
+            </div>
+
+            {/* Thêm phần upload ảnh */}
+            <div className="space-y-2">
+                <Label htmlFor="image">Hình ảnh minh họa</Label>
+                <div className="flex items-center gap-4">
+                    <Input
+                        ref={fileInputRef}
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                    />
+                    {imagePreview && (
+                        <div className="relative">
+                            <Image
+                                src={imagePreview}
+                                alt="Preview"
+                                width={64}
+                                height={64}
+                                className="h-16 w-16 rounded object-cover border"
+                                unoptimized={true}
+                            />
+                            <button
+                                type="button"
+                                onClick={clearImage}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 h-6 w-6 flex items-center justify-center"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <p className="text-xs text-gray-500">
+                    Hình ảnh minh họa cho loại sân (tối đa 5MB)
+                </p>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

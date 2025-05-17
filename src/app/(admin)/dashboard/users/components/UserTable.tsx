@@ -194,7 +194,7 @@ export default function UserTable({
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
-                                        <Avatar>
+                                        <Avatar className="h-9 w-9">
                                             {user.avatar ? (
                                                 <AvatarImage
                                                     src={

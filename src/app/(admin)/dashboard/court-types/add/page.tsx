@@ -10,11 +10,7 @@ import CourtTypeForm from "../components/CourtTypeForm";
 export default function AddCourtTypePage() {
     const router = useRouter();
 
-    const handleSubmit = async (formData: {
-        name: string;
-        description?: string;
-        standard_size?: string;
-    }) => {
+    const handleSubmit = async (formData: FormData) => {
         try {
             const token = localStorage.getItem("token");
             if (!token) {
@@ -26,10 +22,9 @@ export default function AddCourtTypePage() {
             const response = await fetchApi("/court-types", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(formData),
+                body: formData,
             });
 
             if (!response.ok) {

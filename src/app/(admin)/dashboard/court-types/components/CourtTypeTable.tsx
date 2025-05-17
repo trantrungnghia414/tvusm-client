@@ -29,6 +29,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CourtType } from "../types";
 
 interface CourtTypeTableProps {
@@ -60,6 +61,29 @@ export default function CourtTypeTable({
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return format(date, "dd/MM/yyyy HH:mm", { locale: vi });
+    };
+
+    // Hàm lấy URL ảnh
+    const getImageUrl = (path: string | undefined | null) => {
+        if (!path) return undefined;
+
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+        return `http://localhost:3000${path}?t=${timestamp}`;
+    };
+
+    // Hàm lấy chữ cái đầu để hiển thị khi không có ảnh
+    const getInitials = (name: string) => {
+        if (!name) return "?";
+        const parts = name.split(" ");
+        if (parts.length > 1) {
+            return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+        }
+        return name.slice(0, 2).toUpperCase();
     };
 
     if (courtTypes.length === 0) {
@@ -99,8 +123,21 @@ export default function CourtTypeTable({
                                     {index + 1}
                                 </TableCell>
                                 <TableCell>
-                                    <div className="font-medium">
-                                        {type.name}
+                                    <div className="flex items-center gap-3">
+                                        {/* Thêm Avatar cho loại sân */}
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarImage
+                                                src={getImageUrl(type.image)}
+                                                alt={type.name}
+                                                className="object-cover"
+                                            />
+                                            <AvatarFallback>
+                                                {getInitials(type.name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="font-medium">
+                                            {type.name}
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">

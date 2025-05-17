@@ -50,11 +50,7 @@ export default function EditCourtTypePage() {
         fetchCourtType();
     }, [typeId, router]);
 
-    const handleSubmit = async (formData: {
-        name: string;
-        description?: string;
-        standard_size?: string;
-    }) => {
+    const handleSubmit = async (formData: FormData) => {
         try {
             const token = localStorage.getItem("token");
             if (!token) {
@@ -66,10 +62,9 @@ export default function EditCourtTypePage() {
             const response = await fetchApi(`/court-types/${typeId}`, {
                 method: "PATCH",
                 headers: {
-                    "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(formData),
+                body: formData,
             });
 
             if (!response.ok) {

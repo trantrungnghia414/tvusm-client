@@ -20,6 +20,7 @@ import {
     Dumbbell,
     BadgePercent,
     Layers,
+    GridIcon,
 } from "lucide-react";
 import SidebarCategory from "@/app/(admin)/dashboard/components/sidebar/SidebarCategory";
 import SidebarItem from "@/app/(admin)/dashboard/components/sidebar/SidebarItem";
@@ -84,6 +85,12 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         title="Sân thể thao"
                         active={activeTab === "courts"}
                         onClick={() => router.push("/dashboard/courts")}
+                    />
+                    <SidebarItem
+                        icon={<GridIcon className="h-4 w-4" />}
+                        title="Quản lý ghép sân"
+                        active={activeTab === "court-mappings"}
+                        onClick={() => router.push("/dashboard/court-mappings")}
                     />
                     <SidebarItem
                         icon={<Dumbbell className="h-4 w-4" />}

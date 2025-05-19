@@ -26,7 +26,7 @@ export default function VenueFilters({
     return (
         <div className="flex justify-between bg-white p-4 rounded-lg border">
             <div className="relative flex-1 max-w-[400px]">
-                <Search className="absolute left-2.5 top-3 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.75 h-4 w-4 text-gray-500" />
                 <Input
                     type="text"
                     placeholder="Tìm theo tên, địa điểm..."

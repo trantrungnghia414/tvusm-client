@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Court } from "../../courts/types/courtTypes";
 import { fetchApi } from "@/lib/api";
+import { Label } from "@/components/ui/label";
 
 interface CourtMappingFiltersProps {
     searchTerm: string;
@@ -53,9 +54,9 @@ export default function CourtMappingFilters({
     }, []);
 
     return (
-        <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg border">
-            <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg border justify-between">
+            <div className="relative flex-1 max-w-[400px]">
+                <Search className="absolute left-2.5 top-2.75 h-4 w-4 text-gray-500" />
                 <Input
                     placeholder="Tìm kiếm ghép sân..."
                     className="pl-8"
@@ -64,17 +65,18 @@ export default function CourtMappingFilters({
                 />
             </div>
 
-            <div className="w-full md:w-[200px]">
+            <div className="flex items-center gap-2">
+                <Label htmlFor="status-filter">Trạng thái</Label>
                 <Select
                     value={parentCourtFilter}
                     onValueChange={setParentCourtFilter}
                     disabled={loading}
                 >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Sân cha" />
+                    <SelectTrigger className="w-[200px]" id="status-filter">
+                        <SelectValue placeholder="Tất cả sân cha" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">Tất cả</SelectItem>
+                        <SelectItem value="all">Tất cả sân</SelectItem>
                         {courts.map((court) => (
                             <SelectItem
                                 key={court.court_id}

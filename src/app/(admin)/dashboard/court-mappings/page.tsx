@@ -43,7 +43,7 @@ export default function CourtMappingsPage() {
     );
     const [mappingToDelete, setMappingToDelete] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>("");
-    const [parentCourtFilter, setParentCourtFilter] = useState<string>("");
+    const [parentCourtFilter, setParentCourtFilter] = useState<string>("all");
 
     const router = useRouter();
 
@@ -104,8 +104,8 @@ export default function CourtMappingsPage() {
             );
         }
 
-        // Lọc theo sân cha
-        if (parentCourtFilter) {
+        // Lọc theo sân cha - Chỉ lọc khi giá trị khác "all"
+        if (parentCourtFilter && parentCourtFilter !== "all") {
             result = result.filter(
                 (mapping) =>
                     mapping.parent_court_id.toString() === parentCourtFilter
@@ -289,6 +289,7 @@ export default function CourtMappingsPage() {
                     <CourtMappingForm
                         onSubmit={handleSubmitMapping}
                         existingMapping={selectedMapping}
+                        onCancel={() => setFormOpen(false)}
                     />
                 </DialogContent>
             </Dialog>

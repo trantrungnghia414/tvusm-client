@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { fetchApi } from "@/lib/api";
 import { CourtType, Venue } from "../types/courtTypes";
+import { Search } from "lucide-react";
 
 interface CourtFiltersProps {
     searchTerm: string;
@@ -71,73 +71,83 @@ export default function CourtFilters({
 
     return (
         <div className="flex justify-between bg-white p-4 rounded-lg border">
-            <div className="w-full flex-1">
-                <Label htmlFor="search" className="sr-only">
-                    Tìm kiếm
-                </Label>
+            <div className="relative w-full flex-1 max-w-[400px]">
+                <Search className="absolute left-2.5 top-2.75 h-4 w-4 text-gray-500" />
                 <Input
                     id="search"
                     placeholder="Tìm kiếm theo tên, mã sân..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-9"
+                    className="h-9 pl-8"
                 />
             </div>
 
-            <div className="w-full sm:w-[180px]">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger id="status" className="h-9">
-                        <SelectValue placeholder="Trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                        <SelectItem value="available">
-                            Sẵn sàng sử dụng
-                        </SelectItem>
-                        <SelectItem value="booked">Đã đặt</SelectItem>
-                        <SelectItem value="maintenance">
-                            Đang bảo trì
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-
-            <div className="w-full sm:w-[200px]">
-                <Select value={venueFilter} onValueChange={setVenueFilter}>
-                    <SelectTrigger id="venue" className="h-9">
-                        <SelectValue placeholder="Nhà thi đấu" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả nhà thi đấu</SelectItem>
-                        {venues.map((venue) => (
-                            <SelectItem
-                                key={venue.venue_id}
-                                value={venue.venue_id.toString()}
-                            >
-                                {venue.name}
+            <div className="flex items-center gap-8">
+                {/* <div className="w-full sm:w-[180px]"> */}
+                <div className="flex items-center gap-2">
+                    <Select
+                        value={statusFilter}
+                        onValueChange={setStatusFilter}
+                    >
+                        <SelectTrigger id="status" className="h-9">
+                            <SelectValue placeholder="Trạng thái" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                Tất cả trạng thái
                             </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-
-            <div className="w-full sm:w-[180px]">
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger id="type" className="h-9">
-                        <SelectValue placeholder="Loại sân" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Tất cả loại sân</SelectItem>
-                        {courtTypes.map((type) => (
-                            <SelectItem
-                                key={type.type_id}
-                                value={type.type_id.toString()}
-                            >
-                                {type.name}
+                            <SelectItem value="available">
+                                Sẵn sàng sử dụng
                             </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                            <SelectItem value="booked">Đã đặt</SelectItem>
+                            <SelectItem value="maintenance">
+                                Đang bảo trì
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* <div className="w-full sm:w-[200px]"> */}
+                <div className="flex items-center gap-2">
+                    <Select value={venueFilter} onValueChange={setVenueFilter}>
+                        <SelectTrigger id="venue" className="h-9">
+                            <SelectValue placeholder="Nhà thi đấu" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                Tất cả nhà thi đấu
+                            </SelectItem>
+                            {venues.map((venue) => (
+                                <SelectItem
+                                    key={venue.venue_id}
+                                    value={venue.venue_id.toString()}
+                                >
+                                    {venue.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* <div className="w-full sm:w-[180px]"> */}
+                <div className="flex items-center gap-2">
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger id="type" className="h-9">
+                            <SelectValue placeholder="Loại sân" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả loại sân</SelectItem>
+                            {courtTypes.map((type) => (
+                                <SelectItem
+                                    key={type.type_id}
+                                    value={type.type_id.toString()}
+                                >
+                                    {type.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         </div>
     );

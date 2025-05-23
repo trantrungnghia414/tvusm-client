@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Hero() {
     return (
-        <section className="relative bg-gradient-to-r from-blue-600 to-indigo-700 overflow-hidden">
+        <section className="relative bg-gradient-to-r from-blue-700 to-indigo-800 pt-32 pb-20 md:pb-32 overflow-hidden">
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-10">
                 <div
@@ -18,9 +18,12 @@ export default function Hero() {
                 />
             </div>
 
-            <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
+            <div className="container mx-auto px-4 relative z-10">
                 <div className="flex flex-col lg:flex-row items-center">
                     <div className="lg:w-1/2 text-center lg:text-left mb-12 lg:mb-0">
+                        <span className="inline-block px-4 py-2 bg-blue-900/50 text-blue-100 rounded-full mb-6 backdrop-blur-sm">
+                            Nhà thi đấu TVU - Trường Đại học Trà Vinh
+                        </span>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
                             Khu phức hợp thể thao hiện đại tại{" "}
                             <span className="text-yellow-300">TVU</span>
@@ -43,8 +46,8 @@ export default function Hero() {
                             <Link href="/venues">
                                 <Button
                                     size="lg"
-                                    variant="outline"
-                                    className="text-white border-white hover:bg-white/10"
+                                    // variant="outline"
+                                    className="text-white border-white hover:bg-white/10 bg-transparent border-1"
                                 >
                                     Khám phá các sân
                                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -56,11 +59,11 @@ export default function Hero() {
                     <div className="lg:w-1/2 relative">
                         <div className="relative rounded-lg overflow-hidden shadow-2xl">
                             {/* Decorative elements */}
-                            <div className="absolute -top-4 -left-4 w-24 h-24 bg-yellow-400 rounded-full opacity-50"></div>
-                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-400 rounded-full opacity-50"></div>
+                            <div className="absolute -top-4 -left-4 w-24 h-24 bg-yellow-400 rounded-full opacity-50 blur-lg"></div>
+                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-400 rounded-full opacity-50 blur-lg"></div>
 
                             <img
-                                src="https://images.unsplash.com/photo-1577412647305-991150c7d163?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=900&q=80"
+                                src="/images/sportshall.jpg"
                                 alt="TVU Sports Complex"
                                 className="w-full h-auto rounded-lg relative z-10"
                             />

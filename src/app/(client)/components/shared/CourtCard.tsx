@@ -50,17 +50,21 @@ export default function CourtCard({
         }).format(amount);
     };
 
+    // Hàm xử lý URL ảnh
+    const getImageUrl = (path: string) => {
+        if (path.startsWith("/uploads")) {
+            return `http://localhost:3000${path}`;
+        }
+        return path;
+    };
+
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
             <div className="relative h-48 overflow-hidden">
                 <img
-                    src={
-                        image.startsWith("/")
-                            ? `http://localhost:3000${image}`
-                            : image
-                    }
+                    src={getImageUrl(image)}
                     alt={name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-3 left-3">
                     <Badge

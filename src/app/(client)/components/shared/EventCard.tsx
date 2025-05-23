@@ -71,15 +71,12 @@ export default function EventCard({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
             <div className="relative h-48 overflow-hidden">
                 <img
-                    src={
-                        image ||
-                        "https://via.placeholder.com/300x200?text=No+Image"
-                    }
+                    src={image}
                     alt={title}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
                     <Badge

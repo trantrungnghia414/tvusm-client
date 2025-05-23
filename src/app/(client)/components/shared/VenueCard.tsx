@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { MapPin, Clock, CheckCircle } from "lucide-react";
+import { MapPin, Users, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface VenueCardProps {
@@ -34,17 +34,21 @@ export default function VenueCard({
         inactive: "Ngừng hoạt động",
     };
 
+    // Hàm xử lý URL ảnh
+    const getImageUrl = (path: string) => {
+        if (path.startsWith("/uploads")) {
+            return `http://localhost:3000${path}`;
+        }
+        return path;
+    };
+
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
             <div className="relative h-48 overflow-hidden">
                 <img
-                    src={
-                        image.startsWith("/")
-                            ? `http://localhost:3000${image}`
-                            : image
-                    }
+                    src={getImageUrl(image)}
                     alt={name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <Badge
                     className={`absolute top-3 right-3 ${statusColors[status]}`}
@@ -63,7 +67,7 @@ export default function VenueCard({
 
                 {capacity && (
                     <div className="flex items-center text-gray-600 mb-3">
-                        <CheckCircle className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <Users className="h-4 w-4 mr-1 flex-shrink-0" />
                         <span className="text-sm">
                             Sức chứa: {capacity} người
                         </span>

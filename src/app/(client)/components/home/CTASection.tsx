@@ -1,11 +1,11 @@
 import React from "react";
 import Link from "next/link";
-import { CalendarDays, Phone, Mail } from "lucide-react";
+import { CalendarDays, Phone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
     return (
-        <section className="py-16 bg-blue-600 relative overflow-hidden">
+        <section className="relative bg-gradient-to-r from-blue-700 to-indigo-800 py-16 overflow-hidden">
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-10">
                 <div
@@ -59,7 +59,13 @@ export default function CTASection() {
                         <div className="flex items-center justify-center space-x-2">
                             <Mail className="h-5 w-5 text-blue-200" />
                             <span className="text-blue-100">
-                                support@tvuhub.com
+                                tvusportshub@tvu.edu.vn
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-center space-x-2 md:col-span-2">
+                            <MapPin className="h-5 w-5 text-blue-200" />
+                            <span className="text-blue-100">
+                                126 Nguyễn Thiện Thành, Phường 5, TP. Trà Vinh
                             </span>
                         </div>
                     </div>

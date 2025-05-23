@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
-import VenueCard from "../shared/VenueCard";
+import { ArrowRight } from "lucide-react";
 import { fetchApi } from "@/lib/api";
+import VenueCard from "../shared/VenueCard";
 
 interface Venue {
     venue_id: number;
@@ -19,20 +19,17 @@ interface Venue {
 export default function FeaturedVenues() {
     const [venues, setVenues] = useState<Venue[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchVenues = async () => {
             try {
                 const response = await fetchApi("/venues?limit=4");
-                if (!response.ok) {
-                    throw new Error("Không thể tải thông tin nhà thi đấu");
+                if (response.ok) {
+                    const data = await response.json();
+                    setVenues(data);
                 }
-                const data = await response.json();
-                setVenues(data);
             } catch (error) {
                 console.error("Error fetching venues:", error);
-                setError("Đã xảy ra lỗi khi tải dữ liệu");
             } finally {
                 setLoading(false);
             }
@@ -41,21 +38,30 @@ export default function FeaturedVenues() {
         fetchVenues();
     }, []);
 
-    if (loading) {
-        return (
-            <div className="container mx-auto px-4 py-16 flex justify-center items-center">
-                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-            </div>
-        );
-    }
+    // Nếu không có dữ liệu, dùng dữ liệu mẫu
+    const placeholderVenues: Venue[] = [
+        {
+            venue_id: 1,
+            name: "Nhà Thi Đấu TVU",
+            location: "Kí túc xá Trường Đại học Trà Vinh",
+            description: "Nhà Thi Đấu TVU - Kí túc xá Trường Đại học Trà Vinh",
+            capacity: 500,
+            status: "active",
+            image: "/images/venue-1.jpg",
+        },
+        {
+            venue_id: 2,
+            name: "Sân bóng đá TVU",
+            location: "Sân bóng đá Trường Đại học Trà Vinh",
+            description:
+                "Sân bóng đá TVU - Sân bóng đá Trường Đại học Trà Vinh",
+            capacity: 500,
+            status: "active",
+            image: "/images/venue-2.jpg",
+        },
+    ];
 
-    if (error) {
-        return (
-            <div className="container mx-auto px-4 py-16 text-center">
-                <p className="text-red-500">{error}</p>
-            </div>
-        );
-    }
+    const displayVenues = venues.length > 0 ? venues : placeholderVenues;
 
     return (
         <section className="container mx-auto px-4 py-16">
@@ -78,17 +84,14 @@ export default function FeaturedVenues() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {venues.map((venue) => (
+                {displayVenues.map((venue) => (
                     <VenueCard
                         key={venue.venue_id}
                         id={venue.venue_id}
                         name={venue.name}
                         location={venue.location}
                         description={venue.description || ""}
-                        image={
-                            venue.image ||
-                            "https://via.placeholder.com/300x200?text=No+Image"
-                        }
+                        image={venue.image || "/images/venue-placeholder.jpg"}
                         status={venue.status}
                         capacity={venue.capacity || undefined}
                     />

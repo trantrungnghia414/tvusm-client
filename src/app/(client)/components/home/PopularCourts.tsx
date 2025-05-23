@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
-import CourtCard from "../shared/CourtCard";
+import { ArrowRight } from "lucide-react";
 import { fetchApi } from "@/lib/api";
+import CourtCard from "@/app/(client)/components/shared/CourtCard";
+// import CourtCard from "../shared/CourtCard";
 
 interface Court {
     court_id: number;
@@ -23,21 +24,17 @@ interface Court {
 export default function PopularCourts() {
     const [courts, setCourts] = useState<Court[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCourts = async () => {
             try {
                 const response = await fetchApi("/courts?limit=4");
-                if (!response.ok) {
-                    throw new Error("Không thể tải thông tin sân thi đấu");
+                if (response.ok) {
+                    const data = await response.json();
+                    setCourts(data);
                 }
-
-                const data = await response.json();
-                setCourts(data);
             } catch (error) {
                 console.error("Error fetching courts:", error);
-                setError("Đã xảy ra lỗi khi tải dữ liệu");
             } finally {
                 setLoading(false);
             }
@@ -46,21 +43,63 @@ export default function PopularCourts() {
         fetchCourts();
     }, []);
 
-    if (loading) {
-        return (
-            <div className="container mx-auto px-4 py-16 flex justify-center items-center">
-                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-            </div>
-        );
-    }
+    // Dữ liệu mẫu
+    const placeholderCourts: Court[] = [
+        {
+            court_id: 1,
+            name: "Sân cầu lông 1",
+            code: "CL01",
+            type_id: 1,
+            type_name: "Cầu lông",
+            hourly_rate: 150000,
+            status: "available",
+            image: "/images/court-1.jpg",
+            venue_id: 1,
+            venue_name: "Nhà Thi Đấu TVU",
+            is_indoor: true,
+        },
+        {
+            court_id: 2,
+            name: "Sân cầu lông 2",
+            code: "CL02",
+            type_id: 1,
+            type_name: "Cầu lông",
+            hourly_rate: 150000,
+            status: "available",
+            image: "/images/court-2.jpg",
+            venue_id: 1,
+            venue_name: "Nhà Thi Đấu TVU",
+            is_indoor: true,
+        },
+        {
+            court_id: 3,
+            name: "Sân bóng rổ",
+            code: "BR01",
+            type_id: 2,
+            type_name: "Bóng rổ",
+            hourly_rate: 250000,
+            status: "available",
+            image: "/images/court-3.jpg",
+            venue_id: 1,
+            venue_name: "Nhà Thi Đấu TVU",
+            is_indoor: true,
+        },
+        {
+            court_id: 4,
+            name: "Sân bóng chuyền",
+            code: "BC01",
+            type_id: 3,
+            type_name: "Bóng chuyền",
+            hourly_rate: 150000,
+            status: "available",
+            image: "/images/court-4.jpg",
+            venue_id: 1,
+            venue_name: "Nhà Thi Đấu TVU",
+            is_indoor: true,
+        },
+    ];
 
-    if (error) {
-        return (
-            <div className="container mx-auto px-4 py-16 text-center">
-                <p className="text-red-500">{error}</p>
-            </div>
-        );
-    }
+    const displayCourts = courts.length > 0 ? courts : placeholderCourts;
 
     return (
         <section className="bg-gray-50 py-16">
@@ -84,7 +123,7 @@ export default function PopularCourts() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {courts.map((court) => (
+                    {displayCourts.map((court) => (
                         <CourtCard
                             key={court.court_id}
                             id={court.court_id}
@@ -94,8 +133,7 @@ export default function PopularCourts() {
                             hourlyRate={court.hourly_rate}
                             status={court.status}
                             image={
-                                court.image ||
-                                "https://via.placeholder.com/300x200?text=No+Image"
+                                court.image || "/images/court-placeholder.jpg"
                             }
                             venueId={court.venue_id}
                             venueName={court.venue_name}

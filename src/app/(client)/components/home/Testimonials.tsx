@@ -1,5 +1,6 @@
 import React from "react";
 import { Star } from "lucide-react";
+import Image from "next/image";
 
 interface Testimonial {
     id: number;
@@ -15,17 +16,17 @@ export default function Testimonials() {
         {
             id: 1,
             name: "Nguyễn Văn An",
-            role: "Sinh viên",
-            avatar: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200&q=80",
+            role: "Sinh viên Khoa Kỹ thuật và Công nghệ",
+            avatar: "/images/avatar-1.jpg",
             content:
-                "Tôi rất hài lòng với chất lượng sân cầu lông tại TVU Sports Hub. Hệ thống đặt sân trực tuyến rất dễ sử dụng và tiện lợi.",
+                "Tôi rất hài lòng với chất lượng sân cầu lông tại TVU Sports Hub. Hệ thống đặt sân trực tuyến rất dễ sử dụng và tiện lợi. Giá cả hợp lý cho sinh viên.",
             rating: 5,
         },
         {
             id: 2,
             name: "Trần Thị Bình",
-            role: "Giảng viên",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200&q=80",
+            role: "Giảng viên Khoa Kinh tế",
+            avatar: "/images/avatar-2.jpg",
             content:
                 "Nhà thi đấu TVU có cơ sở vật chất hiện đại, sạch sẽ và nhân viên phục vụ rất nhiệt tình. Tôi thường xuyên tổ chức các hoạt động thể thao cho sinh viên tại đây.",
             rating: 5,
@@ -34,7 +35,7 @@ export default function Testimonials() {
             id: 3,
             name: "Lê Văn Cường",
             role: "Cựu sinh viên",
-            avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200&q=80",
+            avatar: "/images/avatar-3.jpg",
             content:
                 "Tôi đã tổ chức giải đấu bóng rổ tại TVU Sports Hub và rất hài lòng với dịch vụ. Hệ thống âm thanh, ánh sáng và các tiện nghi khác đều rất tốt.",
             rating: 4,
@@ -42,11 +43,11 @@ export default function Testimonials() {
     ];
 
     const renderStars = (rating: number) => {
-        return Array.from({ length: 5 }, (_, i) => (
+        return Array.from({ length: 5 }).map((_, index) => (
             <Star
-                key={i}
+                key={index}
                 className={`h-4 w-4 ${
-                    i < rating
+                    index < rating
                         ? "text-yellow-400 fill-yellow-400"
                         : "text-gray-300"
                 }`}
@@ -55,15 +56,16 @@ export default function Testimonials() {
     };
 
     return (
-        <section className="bg-gradient-to-r from-blue-50 to-indigo-50 py-16">
+        <section className="py-16 bg-blue-50">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
                         Đánh giá từ người dùng
                     </h2>
                     <p className="text-gray-600 max-w-2xl mx-auto">
-                        Hãy xem những gì mọi người nói về trải nghiệm sử dụng
-                        dịch vụ tại TVU Sports Hub
+                        Khám phá những trải nghiệm và đánh giá từ sinh viên,
+                        giảng viên và đối tác đã sử dụng dịch vụ tại nhà thi đấu
+                        TVU
                     </p>
                 </div>
 
@@ -71,18 +73,21 @@ export default function Testimonials() {
                     {testimonials.map((testimonial) => (
                         <div
                             key={testimonial.id}
-                            className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
+                            className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
                         >
                             <div className="flex items-center mb-4">
-                                <img
-                                    src={testimonial.avatar}
-                                    alt={testimonial.name}
-                                    className="w-12 h-12 rounded-full object-cover mr-4"
-                                />
+                                <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4">
+                                    <Image
+                                        src={testimonial.avatar}
+                                        alt={testimonial.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
                                 <div>
-                                    <h4 className="font-bold text-gray-900">
+                                    <h3 className="font-bold text-gray-900">
                                         {testimonial.name}
-                                    </h4>
+                                    </h3>
                                     <p className="text-sm text-gray-600">
                                         {testimonial.role}
                                     </p>
@@ -93,8 +98,8 @@ export default function Testimonials() {
                                 {renderStars(testimonial.rating)}
                             </div>
 
-                            <p className="text-gray-700">
-                                {testimonial.content}
+                            <p className="text-gray-700 italic">
+                                `{testimonial.content}`
                             </p>
                         </div>
                     ))}

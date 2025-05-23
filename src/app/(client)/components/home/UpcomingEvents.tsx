@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
-import EventCard from "../shared/EventCard";
+import { ArrowRight } from "lucide-react";
+import EventCard from "@/app/(client)/components/shared/EventCard";
 // import { fetchApi } from "@/lib/api";
+// import EventCard from "../shared/EventCard";
 
 interface Event {
     event_id: number;
@@ -28,7 +29,6 @@ interface Event {
 export default function UpcomingEvents() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -50,7 +50,7 @@ export default function UpcomingEvents() {
                         max_participants: 32,
                         current_participants: 24,
                         event_type: "competition",
-                        image: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                        image: "/images/event-1.jpg",
                         is_public: true,
                         is_featured: true,
                     },
@@ -69,7 +69,7 @@ export default function UpcomingEvents() {
                         max_participants: 64,
                         current_participants: 48,
                         event_type: "competition",
-                        image: "https://images.unsplash.com/photo-1622279488802-995459fa5edd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                        image: "/images/event-2.jpg",
                         is_public: true,
                         is_featured: true,
                     },
@@ -88,7 +88,7 @@ export default function UpcomingEvents() {
                         max_participants: 30,
                         current_participants: 12,
                         event_type: "training",
-                        image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                        image: "/images/event-3.jpg",
                         is_public: true,
                         is_featured: false,
                     },
@@ -107,7 +107,7 @@ export default function UpcomingEvents() {
                         max_participants: 40,
                         current_participants: 32,
                         event_type: "friendly",
-                        image: "https://images.unsplash.com/photo-1562552476-8ac59b2a2e46?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                        image: "/images/event-4.jpg",
                         is_public: true,
                         is_featured: false,
                     },
@@ -117,16 +117,13 @@ export default function UpcomingEvents() {
                 // Đoạn code gọi API thực tế (comment lại vì chưa có API)
                 /*
         const response = await fetchApi('/events?status=upcoming&limit=4');
-        if (!response.ok) {
-          throw new Error('Không thể tải thông tin sự kiện');
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(data);
         }
-        
-        const data = await response.json();
-        setEvents(data);
         */
             } catch (error) {
                 console.error("Error fetching events:", error);
-                setError("Đã xảy ra lỗi khi tải dữ liệu");
             } finally {
                 setLoading(false);
             }
@@ -134,22 +131,6 @@ export default function UpcomingEvents() {
 
         fetchEvents();
     }, []);
-
-    if (loading) {
-        return (
-            <div className="container mx-auto px-4 py-16 flex justify-center items-center">
-                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="container mx-auto px-4 py-16 text-center">
-                <p className="text-red-500">{error}</p>
-            </div>
-        );
-    }
 
     return (
         <section className="container mx-auto px-4 py-16">
@@ -178,7 +159,7 @@ export default function UpcomingEvents() {
                         id={event.event_id}
                         title={event.title}
                         description={event.description || ""}
-                        image={event.image || ""}
+                        image={event.image || "/images/event-placeholder.jpg"}
                         startDate={event.start_date}
                         endDate={event.end_date || undefined}
                         startTime={event.start_time || undefined}

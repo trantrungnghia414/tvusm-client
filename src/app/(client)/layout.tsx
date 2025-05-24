@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Toaster } from "sonner";
+// import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
     title: "TVU Sports Hub - Hệ thống quản lý nhà thi đấu Đại học Trà Vinh",
@@ -15,7 +15,7 @@ export default function ClientLayout({
     return (
         <>
             {children}
-            <Toaster position="top-center" richColors closeButton />
+            {/* <Toaster position="top-center" richColors closeButton /> */}
         </>
     );
 }

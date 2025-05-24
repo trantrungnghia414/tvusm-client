@@ -279,7 +279,7 @@ export default function Navbar() {
 
             {/* Mobile Menu - Full Screen với animation */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden fixed inset-0 top-[56px] bg-white z-50 overflow-y-auto animate-in slide-in-from-top">
+                <div className="lg:hidden fixed inset-0 top-[55px] bg-white z-50 overflow-y-auto animate-in slide-in-from-top">
                     <div className="container mx-auto px-4 py-6 flex flex-col space-y-4">
                         <Link
                             href="/"

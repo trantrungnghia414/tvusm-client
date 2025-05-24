@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import CourtCard from "@/app/(client)/components/shared/CourtCard";
-// import CourtCard from "../shared/CourtCard";
+import { Button } from "@/components/ui/button";
 
 interface Court {
     court_id: number;
@@ -24,17 +24,23 @@ interface Court {
 export default function PopularCourts() {
     const [courts, setCourts] = useState<Court[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchCourts = async () => {
             try {
+                setLoading(true);
                 const response = await fetchApi("/courts?limit=4");
+
                 if (response.ok) {
                     const data = await response.json();
                     setCourts(data);
+                } else {
+                    setError("Không thể tải dữ liệu sân thể thao");
                 }
             } catch (error) {
                 console.error("Error fetching courts:", error);
+                setError("Đã xảy ra lỗi khi tải dữ liệu");
             } finally {
                 setLoading(false);
             }
@@ -43,70 +49,12 @@ export default function PopularCourts() {
         fetchCourts();
     }, []);
 
-    // Dữ liệu mẫu
-    const placeholderCourts: Court[] = [
-        {
-            court_id: 1,
-            name: "Sân cầu lông 1",
-            code: "CL01",
-            type_id: 1,
-            type_name: "Cầu lông",
-            hourly_rate: 150000,
-            status: "available",
-            image: "/images/court-1.jpg",
-            venue_id: 1,
-            venue_name: "Nhà Thi Đấu TVU",
-            is_indoor: true,
-        },
-        {
-            court_id: 2,
-            name: "Sân cầu lông 2",
-            code: "CL02",
-            type_id: 1,
-            type_name: "Cầu lông",
-            hourly_rate: 150000,
-            status: "available",
-            image: "/images/court-2.jpg",
-            venue_id: 1,
-            venue_name: "Nhà Thi Đấu TVU",
-            is_indoor: true,
-        },
-        {
-            court_id: 3,
-            name: "Sân bóng rổ",
-            code: "BR01",
-            type_id: 2,
-            type_name: "Bóng rổ",
-            hourly_rate: 250000,
-            status: "available",
-            image: "/images/court-3.jpg",
-            venue_id: 1,
-            venue_name: "Nhà Thi Đấu TVU",
-            is_indoor: true,
-        },
-        {
-            court_id: 4,
-            name: "Sân bóng chuyền",
-            code: "BC01",
-            type_id: 3,
-            type_name: "Bóng chuyền",
-            hourly_rate: 150000,
-            status: "available",
-            image: "/images/court-4.jpg",
-            venue_id: 1,
-            venue_name: "Nhà Thi Đấu TVU",
-            is_indoor: true,
-        },
-    ];
-
-    const displayCourts = courts.length > 0 ? courts : placeholderCourts;
-
     return (
-        <section className="bg-gray-50 py-16">
+        <section className="bg-gray-50 py-12 md:py-16">
             <div className="container mx-auto px-4">
-                <div className="flex justify-between items-end mb-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 md:mb-10">
                     <div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                             Sân thi đấu phổ biến
                         </h2>
                         <p className="text-gray-600">
@@ -115,32 +63,62 @@ export default function PopularCourts() {
                     </div>
                     <Link
                         href="/courts"
-                        className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
+                        className="flex items-center text-blue-600 hover:text-blue-800 font-medium mt-3 sm:mt-0"
                     >
                         Xem tất cả
                         <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {displayCourts.map((court) => (
-                        <CourtCard
-                            key={court.court_id}
-                            id={court.court_id}
-                            name={court.name}
-                            code={court.code}
-                            type={court.type_name}
-                            hourlyRate={court.hourly_rate}
-                            status={court.status}
-                            image={
-                                court.image || "/images/court-placeholder.jpg"
-                            }
-                            venueId={court.venue_id}
-                            venueName={court.venue_name}
-                            isIndoor={court.is_indoor}
-                        />
-                    ))}
-                </div>
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                        <span className="ml-2 text-gray-600">
+                            Đang tải dữ liệu...
+                        </span>
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <p className="text-red-600 mb-4">{error}</p>
+                        <Button
+                            variant="outline"
+                            onClick={() => window.location.reload()}
+                            className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                            Thử lại
+                        </Button>
+                    </div>
+                ) : courts.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                        {courts.map((court) => (
+                            <CourtCard
+                                key={court.court_id}
+                                id={court.court_id}
+                                name={court.name}
+                                code={court.code}
+                                type={court.type_name}
+                                hourlyRate={court.hourly_rate}
+                                status={court.status}
+                                image={
+                                    court.image ||
+                                    "/images/court-placeholder.jpg"
+                                }
+                                venueId={court.venue_id}
+                                venueName={court.venue_name}
+                                isIndoor={court.is_indoor}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 bg-gray-50 rounded-lg">
+                        <p className="text-gray-500">
+                            Không có sân thể thao để hiển thị
+                        </p>
+                        <p className="text-sm text-gray-400 mt-2">
+                            Hãy quay lại sau
+                        </p>
+                    </div>
+                )}
             </div>
         </section>
     );

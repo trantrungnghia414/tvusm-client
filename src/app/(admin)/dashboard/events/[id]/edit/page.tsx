@@ -73,6 +73,12 @@ export default function EditEventPage() {
                 return;
             }
 
+            // Xử lý court_id trước khi gửi
+            const courtId = formData.get("court_id");
+            if (courtId === "none" || courtId === "") {
+                formData.delete("court_id");
+            }
+
             // Gửi request để cập nhật sự kiện
             const response = await fetchApi(`/events/${eventId}`, {
                 method: "PATCH",

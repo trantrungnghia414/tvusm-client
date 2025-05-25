@@ -84,8 +84,6 @@ export default function EventForm({
     const [hasTimeRange, setHasTimeRange] = useState<boolean>(
         !!(event?.start_time && event?.end_time)
     );
-    // Tạo một state để theo dõi trạng thái checkbox hủy
-    const [cancelEvent, setCancelEvent] = useState<boolean>(false);
 
     // Fetch venues và courts
     const fetchVenuesAndCourts = useCallback(async () => {
@@ -208,43 +206,107 @@ export default function EventForm({
         }
     };
 
-    // Sửa hàm handleSubmit để sử dụng selectedImage
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const formData = new FormData(e.currentTarget as HTMLFormElement);
 
-        // Lấy form data
-        const formData = new FormData(e.currentTarget);
+        try {
+            // Kiểm tra các trường bắt buộc
+            if (!formData.get("title")) {
+                throw new Error("Vui lòng nhập tên sự kiện");
+            }
 
-        // Xử lý court_id
-        const courtId = formData.get("court_id");
-        if (courtId === "none" || courtId === "") {
-            // Nếu giá trị là "none" hoặc rỗng, xóa trường court_id khỏi FormData
-            formData.delete("court_id");
+            if (!formData.get("event_type")) {
+                throw new Error("Vui lòng chọn loại sự kiện");
+            }
+
+            if (!formData.get("venue_id")) {
+                throw new Error("Vui lòng chọn địa điểm");
+            }
+
+            // Convert dates to string format
+            if (startDate) {
+                formData.set("start_date", format(startDate, "yyyy-MM-dd"));
+            } else {
+                throw new Error("Vui lòng chọn ngày bắt đầu");
+            }
+
+            if (endDate) {
+                formData.set("end_date", format(endDate, "yyyy-MM-dd"));
+            } else {
+                formData.delete("end_date");
+            }
+
+            if (registrationDeadline) {
+                formData.set(
+                    "registration_deadline",
+                    format(registrationDeadline, "yyyy-MM-dd")
+                );
+            } else {
+                formData.delete("registration_deadline");
+            }
+
+            // Xử lý giá trị court_id
+            const courtId = formData.get("court_id");
+            if (courtId === "none" || !courtId) {
+                formData.delete("court_id");
+            }
+
+            // Xử lý thời gian nếu có
+            if (hasTimeRange) {
+                const startTime = formData.get("start_time");
+                const endTime = formData.get("end_time");
+
+                if (!startTime) {
+                    formData.delete("start_time");
+                }
+
+                if (!endTime) {
+                    formData.delete("end_time");
+                }
+            } else {
+                formData.delete("start_time");
+                formData.delete("end_time");
+            }
+
+            // Xử lý Boolean values
+            formData.set(
+                "is_public",
+                formData.get("is_public") === "on" ? "true" : "false"
+            );
+            formData.set(
+                "is_featured",
+                formData.get("is_featured") === "on" ? "true" : "false"
+            );
+
+            // Xử lý file ảnh
+            if (selectedImage) {
+                formData.set("image", selectedImage);
+            } else {
+                formData.delete("image");
+            }
+
+            // Log ra để debug
+            console.log("Form data to be sent:", {
+                title: formData.get("title"),
+                start_date: formData.get("start_date"),
+                end_date: formData.get("end_date"),
+                event_type: formData.get("event_type"),
+                venue_id: formData.get("venue_id"),
+                court_id: formData.get("court_id"),
+                is_public: formData.get("is_public"),
+                is_featured: formData.get("is_featured"),
+            });
+
+            // Submit form
+            onSubmit(formData);
+        } catch (error) {
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Có lỗi xảy ra khi submit form"
+            );
         }
-
-        // Thêm file ảnh đã chọn vào FormData (nếu có)
-        if (selectedImage) {
-            formData.set("image", selectedImage);
-        }
-
-        // Kiểm tra nếu checkbox hủy được chọn
-        if (event && cancelEvent) {
-            formData.set("status", "cancelled");
-        } else if (!event) {
-            // Khi tạo mới, trạng thái luôn là upcoming (sẽ được server tự động điều chỉnh)
-            formData.set("status", "upcoming");
-        } else {
-            // Khi chỉnh sửa, để server tự động xác định trạng thái
-            formData.delete("status");
-        }
-
-        // Gọi onSubmit callback
-        onSubmit(formData);
-    };
-
-    // Thêm hàm xử lý khi checkbox thay đổi
-    const handleCancelEventChange = (checked: boolean | string) => {
-        setCancelEvent(!!checked);
     };
 
     return (
@@ -684,76 +746,33 @@ export default function EventForm({
                         <h3 className="text-base font-medium">Cài đặt khác</h3>
 
                         {/* Trạng thái */}
-                        {event ? (
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="status"
-                                    className="text-base flex items-center"
-                                >
-                                    Trạng thái
-                                    <span className="text-xs text-gray-500 ml-2">
-                                        (Tự động dựa trên thời gian, chỉ có thể
-                                        hủy)
-                                    </span>
-                                </Label>
-
-                                {/* Nếu sự kiện chưa hủy, hiển thị checkbox để hủy */}
-                                {event.status !== "cancelled" ? (
-                                    <div className="flex flex-col gap-2">
-                                        <div className="p-2 bg-gray-50 border rounded-md">
-                                            {event.status === "upcoming" &&
-                                                "Sắp diễn ra"}
-                                            {event.status === "ongoing" &&
-                                                "Đang diễn ra"}
-                                            {event.status === "completed" &&
-                                                "Đã hoàn thành"}
-                                        </div>
-
-                                        <div className="flex items-center space-x-2 pt-2">
-                                            <Checkbox
-                                                id="cancel_event"
-                                                name="cancel_event"
-                                                checked={cancelEvent}
-                                                onCheckedChange={
-                                                    handleCancelEventChange
-                                                }
-                                            />
-                                            <Label
-                                                htmlFor="cancel_event"
-                                                className="text-red-600 font-medium"
-                                            >
-                                                Hủy sự kiện này
-                                            </Label>
-                                            <input
-                                                type="hidden"
-                                                name="status"
-                                                value={
-                                                    cancelEvent
-                                                        ? "cancelled"
-                                                        : event.status
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-2 bg-red-50 text-red-800 border border-red-200 rounded-md">
-                                        Sự kiện đã bị hủy
-                                        <input
-                                            type="hidden"
-                                            name="status"
-                                            value="cancelled"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            // Khi tạo mới, không hiển thị trường chọn trạng thái
-                            <input
-                                type="hidden"
+                        <div className="space-y-2">
+                            <Label htmlFor="status" className="text-base">
+                                Trạng thái
+                            </Label>
+                            <Select
                                 name="status"
-                                value="upcoming"
-                            />
-                        )}
+                                defaultValue={event?.status || "upcoming"}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="upcoming">
+                                        Sắp diễn ra
+                                    </SelectItem>
+                                    <SelectItem value="ongoing">
+                                        Đang diễn ra
+                                    </SelectItem>
+                                    <SelectItem value="completed">
+                                        Đã hoàn thành
+                                    </SelectItem>
+                                    <SelectItem value="cancelled">
+                                        Đã hủy
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
                         {/* Công khai */}
                         <div className="flex items-center space-x-2">

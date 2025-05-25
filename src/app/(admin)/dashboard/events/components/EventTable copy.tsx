@@ -372,68 +372,65 @@ export default function EventTable({
                                                 <DropdownMenuLabel>
                                                     Trạng thái
                                                 </DropdownMenuLabel>
-
-                                                {/* Chỉ hiển thị nút "Hủy sự kiện" nếu sự kiện chưa hủy hoặc hoàn thành */}
-                                                {event.status !== "cancelled" &&
-                                                    event.status !==
-                                                        "completed" && (
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                onUpdateStatus(
-                                                                    event.event_id,
-                                                                    "cancelled"
-                                                                )
-                                                            }
-                                                        >
-                                                            <CalendarX className="mr-2 h-4 w-4 text-red-500" />
-                                                            <span>
-                                                                Hủy sự kiện
-                                                            </span>
-                                                        </DropdownMenuItem>
-                                                    )}
-
-                                                {/* Hiển thị trạng thái hiện tại */}
                                                 <DropdownMenuItem
-                                                    disabled
-                                                    className="opacity-50"
+                                                    disabled={
+                                                        event.status ===
+                                                        "upcoming"
+                                                    }
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            event.event_id,
+                                                            "upcoming"
+                                                        )
+                                                    }
                                                 >
-                                                    {event.status ===
-                                                        "upcoming" && (
-                                                        <>
-                                                            <CalendarClock className="mr-2 h-4 w-4 text-blue-500" />
-                                                            <span>
-                                                                Sắp diễn ra (tự
-                                                                động)
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    {event.status ===
-                                                        "ongoing" && (
-                                                        <>
-                                                            <Clock className="mr-2 h-4 w-4 text-green-500" />
-                                                            <span>
-                                                                Đang diễn ra (tự
-                                                                động)
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    {event.status ===
-                                                        "completed" && (
-                                                        <>
-                                                            <CheckCircle2 className="mr-2 h-4 w-4 text-gray-500" />
-                                                            <span>
-                                                                Đã hoàn thành
-                                                                (tự động)
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                    {event.status ===
-                                                        "cancelled" && (
-                                                        <>
-                                                            <CalendarX className="mr-2 h-4 w-4 text-red-500" />
-                                                            <span>Đã hủy</span>
-                                                        </>
-                                                    )}
+                                                    <CalendarClock className="mr-2 h-4 w-4 text-blue-500" />
+                                                    <span>Sắp diễn ra</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    disabled={
+                                                        event.status ===
+                                                        "ongoing"
+                                                    }
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            event.event_id,
+                                                            "ongoing"
+                                                        )
+                                                    }
+                                                >
+                                                    <Clock className="mr-2 h-4 w-4 text-green-500" />
+                                                    <span>Đang diễn ra</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    disabled={
+                                                        event.status ===
+                                                        "completed"
+                                                    }
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            event.event_id,
+                                                            "completed"
+                                                        )
+                                                    }
+                                                >
+                                                    <CheckCircle2 className="mr-2 h-4 w-4 text-gray-500" />
+                                                    <span>Đã hoàn thành</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    disabled={
+                                                        event.status ===
+                                                        "cancelled"
+                                                    }
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            event.event_id,
+                                                            "cancelled"
+                                                        )
+                                                    }
+                                                >
+                                                    <CalendarX className="mr-2 h-4 w-4 text-red-500" />
+                                                    <span>Đã hủy</span>
                                                 </DropdownMenuItem>
 
                                                 <DropdownMenuSeparator />

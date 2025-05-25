@@ -23,7 +23,6 @@ import {
     GraduationCap,
     Calendar as CalendarIcon,
     User,
-    Loader2, // Thêm import này cho icon loading
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 
@@ -69,7 +68,6 @@ export default function EventDetailPage() {
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [loading, setLoading] = useState(true);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-    const [isCancelling, setIsCancelling] = useState(false);
     const params = useParams();
     const router = useRouter();
     const eventId = params.id;
@@ -206,46 +204,6 @@ export default function EventDetailPage() {
                     ? error.message
                     : "Không thể cập nhật trạng thái người tham gia"
             );
-        }
-    };
-
-    // Hàm xử lý hủy sự kiện
-    const handleCancelEvent = async () => {
-        if (!confirm("Bạn có chắc chắn muốn hủy sự kiện này không?")) return;
-
-        setIsCancelling(true);
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                toast.error("Phiên đăng nhập hết hạn");
-                router.push("/login");
-                return;
-            }
-
-            const response = await fetchApi(`/events/${eventId}`, {
-                method: "PATCH",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ status: "cancelled" }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Không thể hủy sự kiện");
-            }
-
-            toast.success("Đã hủy sự kiện thành công");
-            // Refresh dữ liệu
-            fetchEventDetails();
-        } catch (error) {
-            console.error("Error cancelling event:", error);
-            toast.error(
-                error instanceof Error ? error.message : "Không thể hủy sự kiện"
-            );
-        } finally {
-            setIsCancelling(false);
         }
     };
 
@@ -464,21 +422,6 @@ export default function EventDetailPage() {
                             <Edit className="mr-2 h-4 w-4" />
                             Chỉnh sửa
                         </Button>
-                        
-                        {/* Thêm nút hủy sự kiện nếu trạng thái không phải đã hủy hoặc đã hoàn thành */}
-                        {event && event.status !== "cancelled" && event.status !== "completed" && (
-                            <Button
-                                variant="outline"
-                                className="text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={handleCancelEvent}
-                                disabled={isCancelling}
-                            >
-                                {isCancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <CalendarX className={`${isCancelling ? "" : "mr-2"} h-4 w-4`} />
-                                {!isCancelling && "Hủy sự kiện"}
-                            </Button>
-                        )}
-                        
                         <Button variant="destructive" onClick={handleDelete}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Xóa
@@ -884,7 +827,7 @@ export default function EventDetailPage() {
                     </div>
                 </div>
             </div>
-            
+
             {/* Alert dialog for delete confirmation */}
             <AlertDialog
                 open={confirmDeleteOpen}

@@ -3,9 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, FileDown } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
-
 import { Event } from "../types/eventTypes";
 
 interface EventActionsProps {
@@ -19,15 +16,14 @@ interface CellStyle {
         bold?: boolean;
         sz?: number;
         color?: { rgb: string };
-        name?: string;
+        italic?: boolean;
     };
     alignment?: {
-        horizontal?: string;
-        vertical?: string;
-        wrapText?: boolean;
+        horizontal?: "center" | "left" | "right";
+        vertical?: "center" | "top" | "bottom";
     };
     fill?: {
-        fgColor: { rgb: string };
+        fgColor?: { rgb: string };
     };
     border?: {
         top?: { style: string; color: { rgb: string } };
@@ -62,19 +58,19 @@ export default function EventActions({
 
             // Tạo title và subtitle
             const title = "DANH SÁCH SỰ KIỆN";
-            const subtitle = "TVU Sports Hub - Trường Đại học Trà Vinh";
-            const dateTitle =
-                "Ngày xuất: " +
-                format(new Date(), "dd/MM/yyyy HH:mm", { locale: vi });
+            const subtitle = "NHÀ THI ĐẤU TRƯỜNG ĐẠI HỌC TRÀ VINH";
+            const dateTitle = `Ngày xuất: ${formatDate(
+                new Date().toISOString()
+            )}`;
 
             // Tạo mảng cho toàn bộ nội dung worksheet
             const wsData = [
-                [subtitle, "", "", "", "", "", "", "", ""],
-                ["", "", "", "", "", "", "", "", ""],
-                [title, "", "", "", "", "", "", "", ""],
-                ["", "", "", "", "", "", "", "", ""],
-                [dateTitle, "", "", "", "", "", "", "", ""],
-                ["", "", "", "", "", "", "", "", ""],
+                [subtitle, "", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", "", ""],
+                [title, "", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", "", ""],
+                [dateTitle, "", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", "", ""],
                 [
                     "STT",
                     "Tên sự kiện",
@@ -82,7 +78,8 @@ export default function EventActions({
                     "Địa điểm",
                     "Ngày bắt đầu",
                     "Ngày kết thúc",
-                    "Người tổ chức", // Thêm cột "Người tổ chức"
+                    "Người/Đơn vị tổ chức",
+                    "Người tạo",
                     "Người tham gia",
                     "Trạng thái",
                 ],
@@ -99,10 +96,10 @@ export default function EventActions({
                     event.end_date
                         ? formatDate(event.end_date)
                         : "Chưa có thông tin",
-                    event.organizer_name ||
-                        event.organizer?.fullname ||
+                    event.organizer_name || "Không có thông tin",
+                    event.organizer?.fullname ||
                         event.organizer?.username ||
-                        "", // Thêm người/đơn vị tổ chức
+                        "",
                     `${event.current_participants}${
                         event.max_participants
                             ? `/${event.max_participants}`
@@ -113,9 +110,11 @@ export default function EventActions({
             });
 
             // Thêm hàng tổng số sự kiện
-            wsData.push(["", "", "", "", "", "", "", ""]);
+            wsData.push(["", "", "", "", "", "", "", "", "", ""]);
             wsData.push([
                 `Tổng số sự kiện: ${dataToExport.length}`,
+                "",
+                "",
                 "",
                 "",
                 "",
@@ -135,20 +134,10 @@ export default function EventActions({
                 alignment: { horizontal: "center" },
             };
 
-            const subtitleStyle: CellStyle = {
-                font: { bold: true, sz: 14 },
-                alignment: { horizontal: "center" },
-            };
-
-            const dateTitleStyle: CellStyle = {
-                font: { bold: true, sz: 12 },
-                alignment: { horizontal: "center" },
-            };
-
             const headerStyle: CellStyle = {
                 font: { bold: true, color: { rgb: "FFFFFF" } },
-                alignment: { horizontal: "center", vertical: "center" },
                 fill: { fgColor: { rgb: "4472C4" } },
+                alignment: { horizontal: "center", vertical: "center" },
                 border: {
                     top: { style: "thin", color: { rgb: "000000" } },
                     bottom: { style: "thin", color: { rgb: "000000" } },
@@ -157,24 +146,6 @@ export default function EventActions({
                 },
             };
 
-            const totalRowIndex = 7 + dataToExport.length + 1;
-
-            // Áp dụng style cho subtitle
-            ws["A1"].s = subtitleStyle;
-
-            // Áp dụng style cho title
-            ws["A3"].s = titleStyle;
-
-            // Áp dụng style cho date title
-            ws["A5"].s = dateTitleStyle;
-
-            // Áp dụng style cho header
-            for (let i = 0; i < 8; i++) {
-                const cell = XLSX.utils.encode_cell({ r: 6, c: i });
-                ws[cell].s = headerStyle;
-            }
-
-            // Style cho dòng có nền màu
             const dataBorderStyle: CellStyle = {
                 border: {
                     top: { style: "thin", color: { rgb: "000000" } },
@@ -191,6 +162,23 @@ export default function EventActions({
                 fill: { fgColor: { rgb: "E6F0FF" } }, // Màu xanh nhạt
             };
 
+            // Áp dụng style cho tiêu đề
+            const titleCell = XLSX.utils.encode_cell({ r: 2, c: 0 });
+            if (!ws[titleCell]) ws[titleCell] = {};
+            ws[titleCell].s = titleStyle;
+
+            // Áp dụng style cho subtitle
+            const subtitleCell = XLSX.utils.encode_cell({ r: 0, c: 0 });
+            if (!ws[subtitleCell]) ws[subtitleCell] = {};
+            ws[subtitleCell].s = titleStyle;
+
+            // Áp dụng style cho header
+            for (let i = 0; i < 10; i++) {
+                const cell = XLSX.utils.encode_cell({ r: 6, c: i });
+                if (!ws[cell]) ws[cell] = {};
+                ws[cell].s = headerStyle;
+            }
+
             // Áp dụng style cho tất cả các ô dữ liệu và thêm màu nền xen kẽ
             dataToExport.forEach((_, rowIndex) => {
                 // Hàng bắt đầu từ 7 (sau header ở hàng 6)
@@ -204,19 +192,20 @@ export default function EventActions({
                         : dataBorderStyle;
 
                 // Áp dụng style cho từng ô trong hàng
-                for (let i = 0; i < 8; i++) {
+                for (let colIndex = 0; colIndex < 10; colIndex++) {
                     const cell = XLSX.utils.encode_cell({
                         r: currentRow,
-                        c: i,
+                        c: colIndex,
                     });
                     if (!ws[cell]) ws[cell] = { v: "", t: "s" };
                     ws[cell].s = currentStyle;
                 }
             });
 
-            // Style cho dòng tổng
+            // Áp dụng style cho dòng tổng
+            const totalRowIndex = dataToExport.length + 8;
             const totalStyle: CellStyle = {
-                font: { bold: true },
+                font: { bold: true, sz: 12 },
                 border: {
                     top: { style: "thin", color: { rgb: "000000" } },
                     bottom: { style: "thin", color: { rgb: "000000" } },
@@ -228,7 +217,7 @@ export default function EventActions({
             };
 
             // Áp dụng style cho dòng tổng
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 10; i++) {
                 const cell = XLSX.utils.encode_cell({ r: totalRowIndex, c: i });
                 if (!ws[cell]) ws[cell] = { v: "", t: "s" };
                 ws[cell].s = totalStyle;
@@ -242,23 +231,29 @@ export default function EventActions({
                 { wch: 25 }, // Địa điểm
                 { wch: 15 }, // Ngày bắt đầu
                 { wch: 15 }, // Ngày kết thúc
+                { wch: 25 }, // Người/Đơn vị tổ chức
+                { wch: 20 }, // Người tạo
                 { wch: 15 }, // Người tham gia
                 { wch: 15 }, // Trạng thái
             ];
 
             // Merge cells cho tiêu đề
             ws["!merges"] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Subtitle
-                { s: { r: 2, c: 0 }, e: { r: 2, c: 7 } }, // Title
-                { s: { r: 4, c: 0 }, e: { r: 4, c: 7 } }, // Date
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Subtitle
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }, // Title
+                { s: { r: 4, c: 0 }, e: { r: 4, c: 9 } }, // Date
+                {
+                    s: { r: dataToExport.length + 8, c: 0 },
+                    e: { r: dataToExport.length + 8, c: 9 },
+                }, // Total row
             ];
 
-            // Thêm worksheet vào workbook
+            // Tạo workbook và thêm worksheet
             XLSX.utils.book_append_sheet(wb, ws, "Danh sách sự kiện");
 
             // Xuất file Excel
             XLSX.writeFile(wb, fileName);
-            toast.success("Xuất file Excel thành công");
+            toast.success("Xuất Excel thành công!");
         } catch (error) {
             console.error("Error exporting to Excel:", error);
             toast.error(
@@ -312,6 +307,8 @@ export default function EventActions({
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
         });
     };
 

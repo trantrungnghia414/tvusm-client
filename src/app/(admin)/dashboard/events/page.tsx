@@ -133,7 +133,9 @@ export default function EventsPage() {
         // Lọc theo địa điểm
         if (venueFilter !== "all") {
             result = result.filter(
-                (event) => event.venue_id.toString() === venueFilter
+                (event) =>
+                    event.venue_id !== undefined &&
+                    event.venue_id.toString() === venueFilter
             );
         }
 

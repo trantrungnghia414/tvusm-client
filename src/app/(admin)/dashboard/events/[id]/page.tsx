@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import Image from "next/image";
+// import Image from "next/image";
 import {
     ArrowLeft,
     Edit,
@@ -471,12 +471,11 @@ export default function EventDetailPage() {
                             <CardContent className="pt-4 space-y-4">
                                 {/* Event image */}
                                 {event.image && (
-                                    <div className="relative h-60 rounded-md overflow-hidden">
-                                        <Image
+                                    <div className="h-60 rounded-md overflow-hidden">
+                                        <img
                                             src={getImageUrl(event.image) || ""}
                                             alt={event.title}
-                                            fill
-                                            className="object-cover"
+                                            className="w-full h-full object-cover"
                                         />
                                     </div>
                                 )}
@@ -554,7 +553,7 @@ export default function EventDetailPage() {
                                                                         <div className="flex items-center gap-2">
                                                                             <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-100 relative">
                                                                                 {participant.avatar ? (
-                                                                                    <Image
+                                                                                    <img
                                                                                         src={
                                                                                             getImageUrl(
                                                                                                 participant.avatar
@@ -565,8 +564,7 @@ export default function EventDetailPage() {
                                                                                             participant.fullname ||
                                                                                             ""
                                                                                         }
-                                                                                        fill
-                                                                                        className="object-cover"
+                                                                                        className="w-full h-full object-cover"
                                                                                     />
                                                                                 ) : (
                                                                                     <div className="h-full w-full flex items-center justify-center bg-blue-100 text-blue-500">
@@ -685,10 +683,22 @@ export default function EventDetailPage() {
                                         <dl className="space-y-4">
                                             <div className="flex flex-col sm:flex-row sm:gap-8">
                                                 <dt className="font-medium text-gray-500 sm:w-1/3">
-                                                    Người tổ chức:
+                                                    Người/Đơn vị tổ chức:
                                                 </dt>
                                                 <dd className="sm:w-2/3">
                                                     {event.organizer_name ||
+                                                        "Không có thông tin"}
+                                                </dd>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:gap-8">
+                                                <dt className="font-medium text-gray-500 sm:w-1/3">
+                                                    Người tạo sự kiện:
+                                                </dt>
+                                                <dd className="sm:w-2/3">
+                                                    {event.organizer
+                                                        ?.fullname ||
+                                                        event.organizer
+                                                            ?.username ||
                                                         "Không có thông tin"}
                                                 </dd>
                                             </div>
@@ -772,13 +782,14 @@ export default function EventDetailPage() {
                                     <div>
                                         <p className="font-medium">Địa điểm</p>
                                         <p className="text-sm text-gray-600">
-                                            {event.venue_name}
+                                            {event.venue_name ||
+                                                "Chưa có địa điểm"}
                                         </p>
-                                        {event.court_name && (
+                                        {/* {event.court_name && (
                                             <p className="text-sm text-gray-600 mt-1">
                                                 {event.court_name}
                                             </p>
-                                        )}
+                                        )} */}
                                     </div>
                                 </div>
 

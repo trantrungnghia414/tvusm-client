@@ -10,9 +10,6 @@ import { fetchApi } from "@/lib/api";
 import EventForm from "@/app/(admin)/dashboard/events/components/EventForm";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 
-// import DashboardLayout from "../../../components/layout/DashboardLayout";
-// import EventForm from "../components/EventForm";
-
 export default function AddEventPage() {
     const [submitting, setSubmitting] = useState(false);
     const router = useRouter();
@@ -27,66 +24,38 @@ export default function AddEventPage() {
                 return;
             }
 
-            // Kiểm tra các trường bắt buộc
-            const title = formData.get("title");
-            const startDate = formData.get("startDate");
-            const venueId = formData.get("venueId");
-            const eventType = formData.get("eventType");
+            // Hardcode organizer_id cho trường hợp tạm thời
+            // Đây là giải pháp tạm thời, nên sử dụng ID từ token khi có thể
+            formData.set("organizer_id", "1");
 
-            if (!title || !startDate || !venueId || !eventType) {
-                toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
-                return;
+            // Đảm bảo tất cả trường số được gửi đúng định dạng
+            const venueId = formData.get("venue_id");
+            if (venueId) {
+                formData.set("venue_id", venueId.toString());
             }
 
-            // Kiểm tra ngày bắt đầu và kết thúc
-            const endDate = formData.get("endDate");
-            if (
-                endDate &&
-                new Date(endDate as string) < new Date(startDate as string)
-            ) {
-                toast.error("Ngày kết thúc phải sau ngày bắt đầu");
-                return;
-            }
-
-            // Kiểm tra thời gian bắt đầu và kết thúc
-            const startTime = formData.get("startTime");
-            const endTime = formData.get("endTime");
-
-            if (startTime && endTime) {
-                const startDateTime = new Date(`2000-01-01T${startTime}`);
-                const endDateTime = new Date(`2000-01-01T${endTime}`);
-
-                if (endDateTime <= startDateTime) {
-                    toast.error(
-                        "Thời gian kết thúc phải sau thời gian bắt đầu"
-                    );
-                    return;
-                }
-            }
-
-            // Xử lý file ảnh (nếu có)
-            const imageFile = formData.get("image") as File;
-            if (imageFile && imageFile.size > 0) {
-                const imageFormData = new FormData();
-                imageFormData.append("file", imageFile);
-
-                const uploadResponse = await fetchApi("/upload", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: imageFormData,
-                });
-
-                if (!uploadResponse.ok) {
-                    throw new Error("Không thể tải lên hình ảnh");
-                }
-
-                const uploadData = await uploadResponse.json();
-                formData.set("image", uploadData.filePath);
+            const courtId = formData.get("court_id");
+            if (courtId && courtId !== "none") {
+                formData.set("court_id", courtId.toString());
             } else {
-                formData.delete("image");
+                formData.delete("court_id"); // Đảm bảo không gửi giá trị "none"
             }
+
+            // Đảm bảo các trường Boolean được gửi đúng
+            const isPublic = formData.get("is_public");
+            formData.set("is_public", isPublic === "on" ? "true" : "false");
+
+            const isFeatured = formData.get("is_featured");
+            formData.set("is_featured", isFeatured === "on" ? "true" : "false");
+
+            // Log dữ liệu để debug
+            console.log("Submitting data:", {
+                title: formData.get("title"),
+                start_date: formData.get("start_date"),
+                venue_id: formData.get("venue_id"),
+                event_type: formData.get("event_type"),
+                organizer_id: formData.get("organizer_id"), // Kiểm tra giá trị này
+            });
 
             // Gọi API để tạo sự kiện mới
             const response = await fetchApi("/events", {
@@ -97,11 +66,26 @@ export default function AddEventPage() {
                 body: formData,
             });
 
+            // Xử lý lỗi chi tiết hơn
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(
-                    errorData.message || "Không thể tạo sự kiện mới"
-                );
+                let errorMessage = "Không thể tạo sự kiện mới";
+                const contentType = response.headers.get("content-type");
+
+                if (contentType && contentType.includes("application/json")) {
+                    const errorData = await response.json();
+                    console.error("API Error Response:", errorData);
+
+                    if (typeof errorData.message === "string") {
+                        errorMessage = errorData.message;
+                    } else if (Array.isArray(errorData.message)) {
+                        errorMessage = errorData.message.join(", ");
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error("API Error Text:", errorText);
+                }
+
+                throw new Error(errorMessage);
             }
 
             toast.success("Thêm sự kiện thành công");

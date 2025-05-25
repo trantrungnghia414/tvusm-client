@@ -1,32 +1,40 @@
 export interface Event {
     event_id: number;
     title: string;
-    description: string | null;
+    description?: string;
     start_date: string;
-    end_date: string | null;
-    start_time: string | null;
-    end_time: string | null;
-    venue_id: number;
-    venue_name?: string;
-    court_id: number | null;
-    court_name?: string;
+    end_date?: string;
+    start_time?: string;
+    end_time?: string;
+    venue_id?: number;
+    court_id?: number;
     organizer_id: number;
-    organizer_name?: string;
+    organizer_name?: string; // Thêm trường này
     status: "upcoming" | "ongoing" | "completed" | "cancelled";
-    max_participants: number | null;
+    max_participants?: number;
     current_participants: number;
-    event_type:
-        | "competition"
-        | "training"
-        | "friendly"
-        | "school_event"
-        | "other";
-    image: string | null;
+    event_type: string;
+    image?: string;
     is_public: boolean;
     is_featured: boolean;
-    registration_deadline: string | null;
+    registration_deadline?: string;
     created_at: string;
     updated_at: string;
+    venue_name?: string;
+    court_name?: string;
+    venue?: {
+        venue_id: number;
+        name: string;
+    };
+    court?: {
+        court_id: number;
+        name: string;
+    };
+    organizer?: {
+        user_id: number;
+        username: string;
+        fullname?: string;
+    };
 }
 
 export interface Participant {

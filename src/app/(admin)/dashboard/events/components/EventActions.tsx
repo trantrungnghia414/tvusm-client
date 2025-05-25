@@ -69,12 +69,12 @@ export default function EventActions({
 
             // Tạo mảng cho toàn bộ nội dung worksheet
             const wsData = [
-                [subtitle, "", "", "", "", "", "", ""],
-                ["", "", "", "", "", "", "", ""],
-                [title, "", "", "", "", "", "", ""],
-                ["", "", "", "", "", "", "", ""],
-                [dateTitle, "", "", "", "", "", "", ""],
-                ["", "", "", "", "", "", "", ""],
+                [subtitle, "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
+                [title, "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
+                [dateTitle, "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
                 [
                     "STT",
                     "Tên sự kiện",
@@ -82,6 +82,7 @@ export default function EventActions({
                     "Địa điểm",
                     "Ngày bắt đầu",
                     "Ngày kết thúc",
+                    "Người tổ chức", // Thêm cột "Người tổ chức"
                     "Người tham gia",
                     "Trạng thái",
                 ],
@@ -98,6 +99,10 @@ export default function EventActions({
                     event.end_date
                         ? formatDate(event.end_date)
                         : "Chưa có thông tin",
+                    event.organizer_name ||
+                        event.organizer?.fullname ||
+                        event.organizer?.username ||
+                        "", // Thêm người/đơn vị tổ chức
                     `${event.current_participants}${
                         event.max_participants
                             ? `/${event.max_participants}`

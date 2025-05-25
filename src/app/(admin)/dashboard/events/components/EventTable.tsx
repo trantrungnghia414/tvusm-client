@@ -1,7 +1,6 @@
 import React from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import Image from "next/image";
 import {
     Calendar,
     MapPin,
@@ -186,7 +185,7 @@ export default function EventTable({
     };
 
     const getImageUrl = (path: string | null) => {
-        if (!path) return null;
+        if (!path) return undefined; // Thay thế null bằng undefined
         if (path.startsWith("http://") || path.startsWith("https://")) {
             return path;
         }
@@ -227,15 +226,14 @@ export default function EventTable({
                                         <div className="flex items-center space-x-3">
                                             <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
                                                 {event.image ? (
-                                                    <Image
+                                                    <img
                                                         src={
                                                             getImageUrl(
                                                                 event.image
                                                             ) || ""
-                                                        }
+                                                        } // Thêm fallback là chuỗi rỗng
                                                         alt={event.title}
-                                                        fill
-                                                        className="object-cover"
+                                                        className="object-cover w-full h-full"
                                                     />
                                                 ) : (
                                                     <div className="flex items-center justify-center h-full bg-blue-100 text-blue-500">
@@ -266,11 +264,6 @@ export default function EventTable({
                                             <span className="text-sm">
                                                 {event.venue_name ||
                                                     "Chưa có địa điểm"}
-                                                {event.court_name && (
-                                                    <span className="block text-xs text-muted-foreground">
-                                                        {event.court_name}
-                                                    </span>
-                                                )}
                                             </span>
                                         </div>
                                     </TableCell>

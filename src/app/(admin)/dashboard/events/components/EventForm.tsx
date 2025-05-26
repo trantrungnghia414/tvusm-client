@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CalendarIcon, Clock, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { Globe, EyeOff, Star, StarOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { fetchApi } from "@/lib/api";
@@ -29,7 +30,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Event } from "../types/eventTypes";
-import { Switch } from "@/components/ui/switch";
 
 interface Venue {
     venue_id: number;
@@ -89,8 +89,10 @@ export default function EventForm({
     const [cancelEvent, setCancelEvent] = useState<boolean>(false);
 
     // Thêm state cho is_public và is_featured với giá trị mặc định là true
-    const [isPublic, setIsPublic] = useState<boolean>(true); // Mặc định true
-    const [isFeatured, setIsFeatured] = useState<boolean>(true); // Mặc định true
+    const [isPublic, setIsPublic] = useState<number>(event?.is_public ?? 1); // Mặc định là 1
+    const [isFeatured, setIsFeatured] = useState<number>(
+        event?.is_featured ?? 1
+    ); // Mặc định là 1
 
     // Thêm state để kiểm tra lỗi
     const [formErrors, setFormErrors] = useState({
@@ -350,8 +352,11 @@ export default function EventForm({
         }
 
         // Xử lý các trường boolean
-        formData.set("is_public", String(isPublic)); // "true" hoặc "false"
-        formData.set("is_featured", String(isFeatured)); // "true" hoặc "false"
+        // formData.set("is_public", String(isPublic)); // "true" hoặc "false"
+        // formData.set("is_featured", String(isFeatured)); // "true" hoặc "false"
+
+        formData.set("is_public", isPublic.toString());
+        formData.set("is_featured", isFeatured.toString());
 
         // Xử lý trạng thái
         if (event && cancelEvent) {
@@ -379,12 +384,24 @@ export default function EventForm({
             });
 
             // Xóa các trường cũ nếu có
-            formData.delete("is_public");
-            formData.delete("is_featured");
+            // formData.delete("is_public");
+            // formData.delete("is_featured");
 
-            // Thêm giá trị mới với kiểu boolean
-            formData.append("is_public", String(isPublic));
-            formData.append("is_featured", String(isFeatured));
+            formData.set("is_public", isPublic.toString()); // "0" hoặc "1"
+            formData.set("is_featured", isFeatured.toString()); // "0" hoặc "1"
+
+            // Thêm giá trị mới dưới dạng số 0/1
+            // formData.append("is_public", isPublic.toString());
+            // formData.append("is_featured", isFeatured.toString());
+
+            // Thêm log sau khi append các giá trị mới
+            console.log("Final form data being sent:", {
+                is_public: formData.get("is_public"),
+                is_featured: formData.get("is_featured"),
+                // Log thêm state để debug
+                isPublicState: isPublic,
+                isFeaturedState: isFeatured,
+            });
 
             await onSubmit(formData);
         } catch (error) {
@@ -397,19 +414,6 @@ export default function EventForm({
     const handleCancelEventChange = (checked: boolean | string) => {
         setCancelEvent(!!checked);
     };
-
-    // const handleFormValue = (name: string, value: boolean) => {
-    //     const input = document.querySelector(`input[name="${name}"]`);
-    //     if (input) {
-    //         (input as HTMLInputElement).value = value ? "true" : "false";
-    //     } else {
-    //         const newInput = document.createElement("input");
-    //         newInput.type = "hidden";
-    //         newInput.name = name;
-    //         newInput.value = value ? "true" : "false";
-    //         document.querySelector("form")?.appendChild(newInput);
-    //     }
-    // };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -922,36 +926,66 @@ export default function EventForm({
                             />
                         )}
 
-                        {/* Công khai */}
-                        <div className="flex items-center justify-between py-2">
-                            <div className="space-y-0.5">
-                                <Label className="text-base">Công khai</Label>
-                                <div className="flex items-center space-x-2">
-                                    <Switch
-                                        checked={isPublic}
-                                        onCheckedChange={setIsPublic}
-                                    />
-                                    <p className="text-sm text-muted-foreground">
-                                        Hiển thị cho người dùng
-                                    </p>
-                                </div>
-                            </div>
+                        {/* Trạng thái công khai */}
+                        <div className="space-y-2">
+                            <Label>Trạng thái công khai</Label>
+                            <Select
+                                value={isPublic === 1 ? "1" : "0"}
+                                onValueChange={(value) =>
+                                    setIsPublic(Number(value))
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        value="1"
+                                        className="flex items-center"
+                                    >
+                                        <Globe className="mr-2 h-4 w-4" />
+                                        <span>Công khai</span>
+                                    </SelectItem>
+                                    <SelectItem
+                                        value="0"
+                                        className="flex items-center"
+                                    >
+                                        <EyeOff className="mr-2 h-4 w-4" />
+                                        <span>Không công khai</span>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        {/* Nổi bật */}
-                        <div className="flex items-center justify-between py-2">
-                            <div className="space-y-0.5">
-                                <Label className="text-base">Nổi bật</Label>
-                                <div className="flex items-center space-x-2">
-                                    <Switch
-                                        checked={isFeatured}
-                                        onCheckedChange={setIsFeatured}
-                                    />
-                                    <p className="text-sm text-muted-foreground">
-                                        Hiển thị ở trang chủ
-                                    </p>
-                                </div>
-                            </div>
+                        {/* Hiển thị nổi bật */}
+                        <div className="space-y-2">
+                            <Label>Hiển thị nổi bật</Label>
+                            <Select
+                                value={isFeatured === 1 ? "1" : "0"}
+                                onValueChange={(value) =>
+                                    setIsFeatured(Number(value))
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn trạng thái" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        value="1"
+                                        className="flex items-center"
+                                    >
+                                        <Star className="mr-2 h-4 w-4" />
+                                        <span>Nổi bật</span>
+                                    </SelectItem>
+                                    <SelectItem
+                                        value="0"
+                                        className="flex items-center"
+                                    >
+                                        <StarOff className="mr-2 h-4 w-4" />
+                                        <span>Không nổi bật</span>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>

@@ -512,7 +512,7 @@ export default function EventDetailPage() {
                                         <div className="font-bold text-xl">
                                             {event.title}
                                         </div>
-                                        {event.is_featured && (
+                                        {event.is_featured === 1 && (
                                             <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                                         )}
                                     </div>

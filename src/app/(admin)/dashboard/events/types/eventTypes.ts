@@ -15,8 +15,8 @@ export interface Event {
     current_participants: number;
     event_type: string;
     image?: string;
-    is_public: boolean;
-    is_featured: boolean;
+    is_public: number; // Đổi từ boolean sang number
+    is_featured: number; // Đổi từ boolean sang number
     registration_deadline?: string;
     created_at: string;
     updated_at: string;

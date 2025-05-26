@@ -14,8 +14,27 @@ export default function AddEventPage() {
     const [submitting, setSubmitting] = useState(false);
     const router = useRouter();
 
+    // Sửa hàm handleSubmit để kiểm tra dữ liệu đầy đủ trước khi gửi lên server
     const handleSubmit = async (formData: FormData) => {
         try {
+            // Kiểm tra dữ liệu bắt buộc
+            const title = formData.get("title")?.toString().trim();
+            const eventType = formData.get("event_type")?.toString();
+            const venueId = formData.get("venue_id")?.toString();
+            const startDate = formData.get("start_date")?.toString();
+
+            // Kiểm tra chi tiết và hiển thị lỗi
+            const hasError = !title || !eventType || !venueId || !startDate;
+
+            if (hasError) {
+                if (!title) toast.error("Vui lòng nhập tên sự kiện");
+                if (!eventType) toast.error("Vui lòng chọn loại sự kiện");
+                if (!venueId) toast.error("Vui lòng chọn địa điểm");
+                if (!startDate) toast.error("Vui lòng chọn ngày bắt đầu");
+                return;
+            }
+
+            // Tiếp tục xử lý nếu dữ liệu đầy đủ
             setSubmitting(true);
             const token = localStorage.getItem("token");
             if (!token) {
@@ -29,11 +48,6 @@ export default function AddEventPage() {
             formData.set("organizer_id", "1");
 
             // Đảm bảo tất cả trường số được gửi đúng định dạng
-            const venueId = formData.get("venue_id");
-            if (venueId) {
-                formData.set("venue_id", venueId.toString());
-            }
-
             const courtId = formData.get("court_id");
             if (courtId && courtId !== "none") {
                 formData.set("court_id", courtId.toString());

@@ -63,8 +63,26 @@ export default function EditEventPage() {
         fetchEvent();
     }, [eventId, router]);
 
+    // Cập nhật hàm handleSubmit
     const handleSubmit = async (formData: FormData) => {
         try {
+            // Kiểm tra dữ liệu bắt buộc một lần nữa
+            const title = formData.get("title")?.toString().trim();
+            const eventType = formData.get("event_type")?.toString();
+            const venueId = formData.get("venue_id")?.toString();
+            const startDate = formData.get("start_date")?.toString();
+
+            // Kiểm tra đầy đủ các trường bắt buộc
+            if (!title || !eventType || !venueId || !startDate) {
+                if (!title) toast.error("Vui lòng nhập tên sự kiện");
+                if (!eventType) toast.error("Vui lòng chọn loại sự kiện");
+                if (!venueId) toast.error("Vui lòng chọn địa điểm");
+                if (!startDate) toast.error("Vui lòng chọn ngày bắt đầu");
+
+                return; // Ngăn API được gọi
+            }
+
+            // Tiếp tục xử lý nếu dữ liệu đầy đủ
             setSubmitting(true);
             const token = localStorage.getItem("token");
             if (!token) {
@@ -79,6 +97,16 @@ export default function EditEventPage() {
                 formData.delete("court_id");
             }
 
+            // Thêm logging để debug
+            console.log("Submitting data:", {
+                title: formData.get("title"),
+                event_type: formData.get("event_type"),
+                venue_id: formData.get("venue_id"),
+                start_date: formData.get("start_date"),
+                court_id: formData.get("court_id"),
+                status: formData.get("status"),
+            });
+
             // Gửi request để cập nhật sự kiện
             const response = await fetchApi(`/events/${eventId}`, {
                 method: "PATCH",
@@ -89,10 +117,17 @@ export default function EditEventPage() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(
-                    errorData.message || "Không thể cập nhật thông tin sự kiện"
-                );
+                // Xử lý lỗi chi tiết
+                const contentType = response.headers.get("content-type");
+                let errorMessage = "Không thể cập nhật thông tin sự kiện";
+
+                if (contentType && contentType.includes("application/json")) {
+                    const errorData = await response.json();
+                    console.error("API Error Response:", errorData);
+                    errorMessage = errorData.message || errorMessage;
+                }
+
+                throw new Error(errorMessage);
             }
 
             toast.success("Cập nhật thông tin sự kiện thành công");

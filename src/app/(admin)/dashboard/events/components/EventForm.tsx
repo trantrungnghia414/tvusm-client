@@ -29,6 +29,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Event } from "../types/eventTypes";
+import { Switch } from "@/components/ui/switch";
 
 interface Venue {
     venue_id: number;
@@ -86,6 +87,21 @@ export default function EventForm({
     );
     // Tạo một state để theo dõi trạng thái checkbox hủy
     const [cancelEvent, setCancelEvent] = useState<boolean>(false);
+
+    // Thêm state cho is_public và is_featured với giá trị mặc định là true
+    const [isPublic, setIsPublic] = useState<boolean>(true); // Mặc định true
+    const [isFeatured, setIsFeatured] = useState<boolean>(true); // Mặc định true
+
+    // Thêm state để kiểm tra lỗi
+    const [formErrors, setFormErrors] = useState({
+        title: false,
+        eventType: false,
+        venueId: false,
+        startDate: false,
+        registrationDeadline: false,
+        organizerName: false,
+        hasValidTime: true,
+    });
 
     // Fetch venues và courts
     const fetchVenuesAndCourts = useCallback(async () => {
@@ -208,18 +224,124 @@ export default function EventForm({
         }
     };
 
-    // Sửa hàm handleSubmit để sử dụng selectedImage
+    // Cập nhật hàm handleSubmit để sửa lỗi kiểm tra
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
-        // Lấy form data
         const formData = new FormData(e.currentTarget);
+
+        // Reset form errors
+        setFormErrors({
+            title: false,
+            eventType: false,
+            venueId: false,
+            startDate: false,
+            registrationDeadline: false,
+            organizerName: false,
+            hasValidTime: true,
+        });
+
+        // Validate title
+        const title = formData.get("title")?.toString().trim();
+        if (!title) {
+            setFormErrors((prev) => ({ ...prev, title: true }));
+            toast.error("Vui lòng nhập tên sự kiện");
+            return;
+        }
+
+        // Validate event type
+        const eventType = formData.get("event_type")?.toString();
+        if (!eventType) {
+            setFormErrors((prev) => ({ ...prev, eventType: true }));
+            toast.error("Vui lòng chọn loại sự kiện");
+            return;
+        }
+
+        // Kiểm tra địa điểm
+        const venueId = formData.get("venue_id")?.toString();
+        if (!venueId) {
+            toast.error("Vui lòng chọn địa điểm");
+            return;
+        }
+
+        // Kiểm tra ngày bắt đầu
+        const startDateValue = formData.get("start_date")?.toString();
+        if (!startDateValue) {
+            toast.error("Vui lòng chọn ngày bắt đầu");
+            return;
+        }
+
+        // Kiểm tra ngày kết thúc
+        const endDateValue = formData.get("end_date")?.toString();
+        if (!endDateValue) {
+            toast.error("Vui lòng chọn ngày kết thúc");
+            return;
+        }
+
+        // Kiểm tra hạn đăng ký
+        const registrationDeadlineValue = formData
+            .get("registration_deadline")
+            ?.toString();
+        if (!registrationDeadlineValue) {
+            toast.error("Vui lòng chọn hạn đăng ký");
+            return;
+        }
+
+        // Kiểm tra người/đơn vị tổ chức
+        const organizerName = formData.get("organizer_name")?.toString().trim();
+        if (!organizerName) {
+            toast.error("Vui lòng nhập người/đơn vị tổ chức");
+            return;
+        }
+
+        // Kiểm tra giờ nếu có chọn khung giờ
+        if (hasTimeRange) {
+            const startTime = formData.get("start_time")?.toString();
+            const endTime = formData.get("end_time")?.toString();
+
+            if (!startTime || startTime.trim() === "") {
+                toast.error("Vui lòng nhập giờ bắt đầu");
+                return;
+            }
+
+            if (!endTime || endTime.trim() === "") {
+                toast.error("Vui lòng nhập giờ kết thúc");
+                return;
+            }
+        } else {
+            // Nếu không có khung giờ, xóa các trường liên quan
+            formData.delete("start_time");
+            formData.delete("end_time");
+        }
+
+        // Kiểm tra ngày bắt đầu và kết thúc
+        if (startDate && endDate && endDate < startDate) {
+            toast.error("Ngày kết thúc phải sau ngày bắt đầu");
+            return;
+        }
+
+        // XỬ LÝ CÁC TRƯỜNG CÓ THỂ GÂY LỖI
 
         // Xử lý court_id
         const courtId = formData.get("court_id");
         if (courtId === "none" || courtId === "") {
-            // Nếu giá trị là "none" hoặc rỗng, xóa trường court_id khỏi FormData
             formData.delete("court_id");
+        }
+
+        // Kiểm tra registration_deadline - xóa nếu không có giá trị
+        const registrationDeadline = formData.get("registration_deadline");
+        if (!registrationDeadline || registrationDeadline === "") {
+            formData.delete("registration_deadline");
+        }
+
+        // Xử lý max_participants - đảm bảo là số nguyên hợp lệ
+        const maxParticipants = formData.get("max_participants");
+        if (!maxParticipants || maxParticipants === "") {
+            formData.delete("max_participants");
+        } else {
+            const maxParticipantsNum = parseInt(maxParticipants.toString());
+            if (isNaN(maxParticipantsNum) || maxParticipantsNum <= 0) {
+                formData.set("max_participants", "");
+            }
         }
 
         // Thêm file ảnh đã chọn vào FormData (nếu có)
@@ -227,25 +349,67 @@ export default function EventForm({
             formData.set("image", selectedImage);
         }
 
-        // Kiểm tra nếu checkbox hủy được chọn
+        // Xử lý các trường boolean
+        formData.set("is_public", String(isPublic)); // "true" hoặc "false"
+        formData.set("is_featured", String(isFeatured)); // "true" hoặc "false"
+
+        // Xử lý trạng thái
         if (event && cancelEvent) {
             formData.set("status", "cancelled");
         } else if (!event) {
-            // Khi tạo mới, trạng thái luôn là upcoming (sẽ được server tự động điều chỉnh)
             formData.set("status", "upcoming");
         } else {
-            // Khi chỉnh sửa, để server tự động xác định trạng thái
             formData.delete("status");
         }
 
-        // Gọi onSubmit callback
-        onSubmit(formData);
+        // Gọi onSubmit callback với formData đã kiểm tra
+        try {
+            console.log("Form data being sent:", {
+                title: formData.get("title"),
+                event_type: formData.get("event_type"),
+                venue_id: formData.get("venue_id"),
+                start_date: formData.get("start_date"),
+                end_date: formData.get("end_date"),
+                court_id: formData.get("court_id"),
+                max_participants: formData.get("max_participants"),
+                registration_deadline: formData.get("registration_deadline"),
+                status: formData.get("status"),
+                is_public: formData.get("is_public"),
+                is_featured: formData.get("is_featured"),
+            });
+
+            // Xóa các trường cũ nếu có
+            formData.delete("is_public");
+            formData.delete("is_featured");
+
+            // Thêm giá trị mới với kiểu boolean
+            formData.append("is_public", String(isPublic));
+            formData.append("is_featured", String(isFeatured));
+
+            await onSubmit(formData);
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            toast.error("Có lỗi xảy ra khi gửi biểu mẫu");
+        }
     };
 
     // Thêm hàm xử lý khi checkbox thay đổi
     const handleCancelEventChange = (checked: boolean | string) => {
         setCancelEvent(!!checked);
     };
+
+    // const handleFormValue = (name: string, value: boolean) => {
+    //     const input = document.querySelector(`input[name="${name}"]`);
+    //     if (input) {
+    //         (input as HTMLInputElement).value = value ? "true" : "false";
+    //     } else {
+    //         const newInput = document.createElement("input");
+    //         newInput.type = "hidden";
+    //         newInput.name = name;
+    //         newInput.value = value ? "true" : "false";
+    //         document.querySelector("form")?.appendChild(newInput);
+    //     }
+    // };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -263,8 +427,14 @@ export default function EventForm({
                             name="title"
                             placeholder="Nhập tên sự kiện"
                             defaultValue={event?.title || ""}
+                            className={formErrors.title ? "border-red-500" : ""}
                             required
                         />
+                        {formErrors.title && (
+                            <p className="text-sm text-red-500">
+                                Vui lòng nhập tên sự kiện
+                            </p>
+                        )}
                     </div>
 
                     {/* Mô tả */}
@@ -292,7 +462,11 @@ export default function EventForm({
                             defaultValue={event?.event_type || ""}
                             required
                         >
-                            <SelectTrigger>
+                            <SelectTrigger
+                                className={
+                                    formErrors.eventType ? "border-red-500" : ""
+                                }
+                            >
                                 <SelectValue placeholder="Chọn loại sự kiện" />
                             </SelectTrigger>
                             <SelectContent>
@@ -311,6 +485,11 @@ export default function EventForm({
                                 <SelectItem value="other">Khác</SelectItem>
                             </SelectContent>
                         </Select>
+                        {formErrors.eventType && (
+                            <p className="text-sm text-red-500">
+                                Vui lòng chọn loại sự kiện
+                            </p>
+                        )}
                     </div>
 
                     {/* Địa điểm và sân */}
@@ -348,7 +527,7 @@ export default function EventForm({
                         {selectedVenueId && (
                             <div className="space-y-2">
                                 <Label htmlFor="court_id" className="text-base">
-                                    Sân
+                                    Sân <span className="text-red-500">*</span>
                                 </Label>
                                 <Select
                                     name="court_id"
@@ -375,19 +554,6 @@ export default function EventForm({
                             </div>
                         )}
                     </div>
-
-                    {/* Người/Đơn vị tổ chức */}
-                    {/* <div className="space-y-2">
-                        <Label htmlFor="organizer_name" className="text-base">
-                            Người/Đơn vị tổ chức
-                        </Label>
-                        <Input
-                            id="organizer_name"
-                            name="organizer_name"
-                            placeholder="Nhập tên người/đơn vị tổ chức sự kiện"
-                            defaultValue={event?.organizer_name || ""}
-                        />
-                    </div> */}
                 </div>
 
                 {/* Cột phải */}
@@ -583,7 +749,7 @@ export default function EventForm({
                             htmlFor="registration_deadline"
                             className="text-base"
                         >
-                            Hạn đăng ký
+                            Hạn đăng ký <span className="text-red-500">*</span>
                         </Label>
                         <div className="flex items-center gap-2">
                             <Popover>
@@ -635,7 +801,8 @@ export default function EventForm({
                     {/* Người/Đơn vị tổ chức */}
                     <div className="space-y-2">
                         <Label htmlFor="organizer_name" className="text-base">
-                            Người/Đơn vị tổ chức
+                            Người/Đơn vị tổ chức{" "}
+                            <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             id="organizer_name"
@@ -756,31 +923,35 @@ export default function EventForm({
                         )}
 
                         {/* Công khai */}
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="is_public"
-                                name="is_public"
-                                defaultChecked={
-                                    event?.is_public === undefined
-                                        ? true
-                                        : event.is_public
-                                }
-                            />
-                            <Label htmlFor="is_public">
-                                Công khai (hiển thị cho người dùng)
-                            </Label>
+                        <div className="flex items-center justify-between py-2">
+                            <div className="space-y-0.5">
+                                <Label className="text-base">Công khai</Label>
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        checked={isPublic}
+                                        onCheckedChange={setIsPublic}
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        Hiển thị cho người dùng
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Nổi bật */}
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="is_featured"
-                                name="is_featured"
-                                defaultChecked={event?.is_featured}
-                            />
-                            <Label htmlFor="is_featured">
-                                Nổi bật (hiển thị ở trang chủ)
-                            </Label>
+                        <div className="flex items-center justify-between py-2">
+                            <div className="space-y-0.5">
+                                <Label className="text-base">Nổi bật</Label>
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        checked={isFeatured}
+                                        onCheckedChange={setIsFeatured}
+                                    />
+                                    <p className="text-sm text-muted-foreground">
+                                        Hiển thị ở trang chủ
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -70,6 +70,7 @@ export default function EventDetailPage() {
     const [loading, setLoading] = useState(true);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [confirmCancelOpen, setConfirmCancelOpen] = useState(false); // Thêm state cho dialog xác nhận hủy
     const params = useParams();
     const router = useRouter();
     const eventId = params.id;
@@ -210,9 +211,12 @@ export default function EventDetailPage() {
     };
 
     // Hàm xử lý hủy sự kiện
-    const handleCancelEvent = async () => {
-        if (!confirm("Bạn có chắc chắn muốn hủy sự kiện này không?")) return;
+    const handleCancelEvent = () => {
+        setConfirmCancelOpen(true);
+    };
 
+    // Thêm hàm xác nhận hủy
+    const confirmCancel = async () => {
         setIsCancelling(true);
         try {
             const token = localStorage.getItem("token");
@@ -246,6 +250,7 @@ export default function EventDetailPage() {
             );
         } finally {
             setIsCancelling(false);
+            setConfirmCancelOpen(false);
         }
     };
 
@@ -464,21 +469,29 @@ export default function EventDetailPage() {
                             <Edit className="mr-2 h-4 w-4" />
                             Chỉnh sửa
                         </Button>
-                        
+
                         {/* Thêm nút hủy sự kiện nếu trạng thái không phải đã hủy hoặc đã hoàn thành */}
-                        {event && event.status !== "cancelled" && event.status !== "completed" && (
-                            <Button
-                                variant="outline"
-                                className="text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={handleCancelEvent}
-                                disabled={isCancelling}
-                            >
-                                {isCancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <CalendarX className={`${isCancelling ? "" : "mr-2"} h-4 w-4`} />
-                                {!isCancelling && "Hủy sự kiện"}
-                            </Button>
-                        )}
-                        
+                        {event &&
+                            event.status !== "cancelled" &&
+                            event.status !== "completed" && (
+                                <Button
+                                    variant="outline"
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                    onClick={handleCancelEvent}
+                                    disabled={isCancelling}
+                                >
+                                    {isCancelling && (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    <CalendarX
+                                        className={`${
+                                            isCancelling ? "" : "mr-2"
+                                        } h-4 w-4`}
+                                    />
+                                    {!isCancelling && "Hủy sự kiện"}
+                                </Button>
+                            )}
+
                         <Button variant="destructive" onClick={handleDelete}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Xóa
@@ -884,7 +897,7 @@ export default function EventDetailPage() {
                     </div>
                 </div>
             </div>
-            
+
             {/* Alert dialog for delete confirmation */}
             <AlertDialog
                 open={confirmDeleteOpen}
@@ -908,6 +921,38 @@ export default function EventDetailPage() {
                             className="bg-red-600 hover:bg-red-700"
                         >
                             Xóa
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Thêm dialog xác nhận hủy sự kiện */}
+            <AlertDialog
+                open={confirmCancelOpen}
+                onOpenChange={setConfirmCancelOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Xác nhận hủy sự kiện
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn hủy sự kiện này? Hành động này
+                            sẽ thay đổi trạng thái sự kiện thành &quot;Đã hủy&quot; và
+                            người dùng sẽ không thể tham gia sự kiện này nữa.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Đóng</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmCancel}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isCancelling}
+                        >
+                            {isCancelling && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Hủy sự kiện
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

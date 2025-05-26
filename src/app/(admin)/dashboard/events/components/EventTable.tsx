@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
@@ -73,6 +73,24 @@ export default function EventTable({
     setConfirmDeleteOpen,
     confirmDelete,
 }: EventTableProps) {
+    // Thêm state cho hủy sự kiện
+    const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+    const [eventToCancel, setEventToCancel] = useState<number | null>(null);
+
+    // Thêm hàm xử lý hủy sự kiện
+    const handleCancelClick = (eventId: number) => {
+        setEventToCancel(eventId);
+        setConfirmCancelOpen(true);
+    };
+
+    // Hàm xác nhận hủy sự kiện
+    const confirmCancel = () => {
+        if (eventToCancel) {
+            onUpdateStatus(eventToCancel, "cancelled");
+        }
+        setConfirmCancelOpen(false);
+    };
+
     const formatDate = (dateString: string | null) => {
         if (!dateString) return "-";
         return format(new Date(dateString), "dd/MM/yyyy", { locale: vi });
@@ -379,9 +397,8 @@ export default function EventTable({
                                                         "completed" && (
                                                         <DropdownMenuItem
                                                             onClick={() =>
-                                                                onUpdateStatus(
-                                                                    event.event_id,
-                                                                    "cancelled"
+                                                                handleCancelClick(
+                                                                    event.event_id
                                                                 )
                                                             }
                                                         >
@@ -479,6 +496,34 @@ export default function EventTable({
                             className="bg-red-600 hover:bg-red-700"
                         >
                             Xóa
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Thêm dialog xác nhận hủy sự kiện */}
+            <AlertDialog
+                open={confirmCancelOpen}
+                onOpenChange={setConfirmCancelOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Xác nhận hủy sự kiện
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bạn có chắc chắn muốn hủy sự kiện này? Hành động này
+                            sẽ thay đổi trạng thái sự kiện thành &quot;Đã hủy&quot; và
+                            người dùng sẽ không thể tham gia sự kiện này nữa.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Đóng</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmCancel}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Hủy sự kiện
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

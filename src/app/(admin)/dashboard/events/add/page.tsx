@@ -55,13 +55,6 @@ export default function AddEventPage() {
                 formData.delete("court_id"); // Đảm bảo không gửi giá trị "none"
             }
 
-            // Đảm bảo các trường Boolean được gửi đúng
-            const isPublic = formData.get("is_public");
-            formData.set("is_public", isPublic === "on" ? "true" : "false");
-
-            const isFeatured = formData.get("is_featured");
-            formData.set("is_featured", isFeatured === "on" ? "true" : "false");
-
             // Log dữ liệu để debug
             console.log("Submitting data:", {
                 title: formData.get("title"),
@@ -69,6 +62,12 @@ export default function AddEventPage() {
                 venue_id: formData.get("venue_id"),
                 event_type: formData.get("event_type"),
                 organizer_id: formData.get("organizer_id"), // Kiểm tra giá trị này
+            });
+            
+            // Log dữ liệu trước khi gửi để kiểm tra
+            console.log("Form data before submit:", {
+                is_public: formData.get("is_public"),
+                is_featured: formData.get("is_featured"),
             });
 
             // Gọi API để tạo sự kiện mới

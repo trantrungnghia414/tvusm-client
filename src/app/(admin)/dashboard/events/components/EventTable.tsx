@@ -262,7 +262,7 @@ export default function EventTable({
                                             <div>
                                                 <div className="font-medium">
                                                     {event.title}
-                                                    {event.is_featured && (
+                                                    {event.is_featured === 1 && (
                                                         <Star className="inline-block ml-1 h-3 w-3 text-amber-500 fill-amber-500" />
                                                     )}
                                                 </div>

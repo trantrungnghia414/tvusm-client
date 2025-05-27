@@ -89,10 +89,10 @@ export default function EventForm({
     const [cancelEvent, setCancelEvent] = useState<boolean>(false);
 
     // Thêm state cho is_public và is_featured với giá trị mặc định là true
-    const [isPublic, setIsPublic] = useState<number>(event?.is_public ?? 1); // Mặc định là 1
+    const [isPublic, setIsPublic] = useState<number>(event?.is_public ?? 1);
     const [isFeatured, setIsFeatured] = useState<number>(
         event?.is_featured ?? 1
-    ); // Mặc định là 1
+    );
 
     // Thêm state để kiểm tra lỗi
     const [formErrors, setFormErrors] = useState({
@@ -231,6 +231,17 @@ export default function EventForm({
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
 
+        // Log trước khi set giá trị
+        console.log("Current state values:", {
+            isPublic,
+            isFeatured,
+        });
+
+        // Log kiểm tra giá trị và kiểu dữ liệu trước khi gửi
+        const isPublicValue = formData.get("is_public");
+        console.log("Client side - is_public value:", isPublicValue);
+        console.log("Client side - is_public type:", typeof isPublicValue);
+
         // Reset form errors
         setFormErrors({
             title: false,
@@ -338,11 +349,12 @@ export default function EventForm({
         // Xử lý max_participants - đảm bảo là số nguyên hợp lệ
         const maxParticipants = formData.get("max_participants");
         if (!maxParticipants || maxParticipants === "") {
-            formData.delete("max_participants");
+            formData.set("max_participants", "9999");
+            // formData.delete("max_participants");
         } else {
             const maxParticipantsNum = parseInt(maxParticipants.toString());
             if (isNaN(maxParticipantsNum) || maxParticipantsNum <= 0) {
-                formData.set("max_participants", "");
+                formData.set("max_participants", "9999");
             }
         }
 
@@ -357,6 +369,12 @@ export default function EventForm({
 
         formData.set("is_public", isPublic.toString());
         formData.set("is_featured", isFeatured.toString());
+
+        // Log để kiểm tra giá trị cuối
+        console.log("Final form values:", {
+            is_public: formData.get("is_public"),
+            is_featured: formData.get("is_featured"),
+        });
 
         // Xử lý trạng thái
         if (event && cancelEvent) {
@@ -931,9 +949,13 @@ export default function EventForm({
                             <Label>Trạng thái công khai</Label>
                             <Select
                                 value={isPublic === 1 ? "1" : "0"}
-                                onValueChange={(value) =>
-                                    setIsPublic(Number(value))
-                                }
+                                onValueChange={(value) => {
+                                    console.log(
+                                        "Selected isPublic value:",
+                                        value
+                                    );
+                                    setIsPublic(Number(value));
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Chọn trạng thái" />

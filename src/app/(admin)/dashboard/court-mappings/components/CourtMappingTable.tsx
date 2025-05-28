@@ -55,7 +55,7 @@ export default function CourtMappingTable({
                 <TableBody>
                     {mappings.map((mapping, index) => (
                         <TableRow key={mapping.mapping_id}>
-                            <TableCell className="font-medium">
+                            <TableCell className="text-center font-medium text-gray-500">
                                 {index + 1}
                             </TableCell>
                             <TableCell>

@@ -82,163 +82,183 @@ NewsTableProps) {
             <Table>
                 <TableHeader>
                     <TableRow>
+                        <TableHead className="w-[40px]">STT</TableHead>
                         <TableHead className="w-[60px]">Ảnh</TableHead>
                         <TableHead className="min-w-[250px]">Tiêu đề</TableHead>
                         <TableHead>Danh mục</TableHead>
                         <TableHead>Trạng thái</TableHead>
                         <TableHead>Lượt xem</TableHead>
                         <TableHead>Ngày đăng</TableHead>
-                        <TableHead className="text-right">
-                            Thao tác
-                        </TableHead>
+                        <TableHead className="text-right">Thao tác</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {news.map((item) => (
-                        <TableRow key={item.news_id}>
-                            <TableCell>
-                                <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
-                                    {item.thumbnail ? (
-                                        <img
-                                            src={
-                                                getImageUrl(item.thumbnail) ||
-                                                ""
-                                            }
-                                            alt={item.title}
-                                            className="object-cover w-full h-full"
-                                        />
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full w-full bg-blue-100 text-blue-500">
-                                            <Image className="h-5 w-5" />
-                                        </div>
-                                    )}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex flex-col">
-                                    <span
-                                        className="font-medium truncate"
-                                        title={item.title}
-                                    >
-                                        {item.title.length > 100
-                                            ? `${item.title.substring(
-                                                  0,
-                                                  100
-                                              )}...`
-                                            : item.title}
-                                    </span>
-                                    {item.is_featured === 1 && (
-                                        <Badge
-                                            variant="secondary"
-                                            className="w-fit mt-1 bg-amber-50 text-amber-600"
-                                        >
-                                            Nổi bật
-                                        </Badge>
-                                    )}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                {item.category_name ||
-                                    `ID: ${item.category_id}`}
-                            </TableCell>
-                            <TableCell>
-                                <NewsStatusBadge status={item.status} />
-                            </TableCell>
-                            <TableCell>{item.view_count}</TableCell>
-                            <TableCell>
-                                {item.published_at
-                                    ? formatDate(item.published_at)
-                                    : "-"}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            className="h-8 w-8 p-0"
-                                        >
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="w-56"
-                                    >
-                                        <DropdownMenuItem
-                                            onClick={() => onView(item.news_id)}
-                                        >
-                                            <Eye className="mr-2 h-4 w-4" />
-                                            Xem chi tiết
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => onEdit(item.news_id)}
-                                        >
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Chỉnh sửa
-                                        </DropdownMenuItem>
-
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuLabel>
-                                            Trạng thái
-                                        </DropdownMenuLabel>
-
-                                        {item.status !== "published" && (
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    onUpdateStatus(
-                                                        item.news_id,
-                                                        "published"
-                                                    )
-                                                }
-                                            >
-                                                <ArrowUpCircle className="mr-2 h-4 w-4 text-green-500" />
-                                                <span>Xuất bản</span>
-                                            </DropdownMenuItem>
-                                        )}
-
-                                        {item.status !== "draft" && (
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    onUpdateStatus(
-                                                        item.news_id,
-                                                        "draft"
-                                                    )
-                                                }
-                                            >
-                                                <FileText className="mr-2 h-4 w-4 text-amber-500" />
-                                                <span>Lưu nháp</span>
-                                            </DropdownMenuItem>
-                                        )}
-
-                                        {item.status !== "archived" && (
-                                            <DropdownMenuItem
-                                                onClick={() =>
-                                                    onUpdateStatus(
-                                                        item.news_id,
-                                                        "archived"
-                                                    )
-                                                }
-                                            >
-                                                <Archive className="mr-2 h-4 w-4 text-gray-500" />
-                                                <span>Lưu trữ</span>
-                                            </DropdownMenuItem>
-                                        )}
-
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                handleDeleteClick(item.news_id)
-                                            }
-                                            className="text-red-600"
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Xóa
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                    {news.length === 0 ? (
+                        <TableRow>
+                            <TableCell
+                                colSpan={8}
+                                className="text-center py-10 text-gray-500"
+                            >
+                                Chưa có tin tức nào
                             </TableCell>
                         </TableRow>
-                    ))}
+                    ) : (
+                        news.map((item, index) => (
+                            <TableRow key={item.news_id}>
+                                <TableCell className="text-center font-medium text-gray-500">
+                                    {index + 1}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
+                                        {item.thumbnail ? (
+                                            <img
+                                                src={
+                                                    getImageUrl(
+                                                        item.thumbnail
+                                                    ) || ""
+                                                }
+                                                alt={item.title}
+                                                className="object-cover w-full h-full"
+                                            />
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full w-full bg-blue-100 text-blue-500">
+                                                <Image className="h-5 w-5" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span
+                                            className="font-medium truncate"
+                                            title={item.title}
+                                        >
+                                            {item.title.length > 80
+                                                ? `${item.title.substring(
+                                                      0,
+                                                      80
+                                                  )}...`
+                                                : item.title}
+                                        </span>
+                                        {item.is_featured === 1 && (
+                                            <Badge
+                                                variant="secondary"
+                                                className="w-fit mt-1 bg-amber-50 text-amber-600"
+                                            >
+                                                Nổi bật
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    {item.category_name ||
+                                        `ID: ${item.category_id}`}
+                                </TableCell>
+                                <TableCell>
+                                    <NewsStatusBadge status={item.status} />
+                                </TableCell>
+                                <TableCell>{item.view_count}</TableCell>
+                                <TableCell>
+                                    {item.published_at
+                                        ? formatDate(item.published_at)
+                                        : "-"}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-56"
+                                        >
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    onView(item.news_id)
+                                                }
+                                            >
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                Xem chi tiết
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    onEdit(item.news_id)
+                                                }
+                                            >
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Chỉnh sửa
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuLabel>
+                                                Trạng thái
+                                            </DropdownMenuLabel>
+
+                                            {item.status !== "published" && (
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            item.news_id,
+                                                            "published"
+                                                        )
+                                                    }
+                                                >
+                                                    <ArrowUpCircle className="mr-2 h-4 w-4 text-green-500" />
+                                                    <span>Xuất bản</span>
+                                                </DropdownMenuItem>
+                                            )}
+
+                                            {item.status !== "draft" && (
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            item.news_id,
+                                                            "draft"
+                                                        )
+                                                    }
+                                                >
+                                                    <FileText className="mr-2 h-4 w-4 text-amber-500" />
+                                                    <span>Lưu nháp</span>
+                                                </DropdownMenuItem>
+                                            )}
+
+                                            {item.status !== "archived" && (
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        onUpdateStatus(
+                                                            item.news_id,
+                                                            "archived"
+                                                        )
+                                                    }
+                                                >
+                                                    <Archive className="mr-2 h-4 w-4 text-gray-500" />
+                                                    <span>Lưu trữ</span>
+                                                </DropdownMenuItem>
+                                            )}
+
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    handleDeleteClick(
+                                                        item.news_id
+                                                    )
+                                                }
+                                                className="text-red-600"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Xóa
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    )}
                 </TableBody>
             </Table>
         </div>

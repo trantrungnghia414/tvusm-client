@@ -189,7 +189,7 @@ export default function UserTable({
                     <TableBody>
                         {users.map((user, index) => (
                             <TableRow key={user.user_id}>
-                                <TableCell className="font-medium">
+                                <TableCell className="text-center font-medium text-gray-500">
                                     {index + 1}
                                 </TableCell>
                                 <TableCell>

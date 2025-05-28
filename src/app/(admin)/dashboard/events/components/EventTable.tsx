@@ -216,6 +216,7 @@ export default function EventTable({
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead className="w-[40px]">STT</TableHead>
                             <TableHead className="w-[60px]">Ảnh</TableHead>
                             <TableHead className="min-w-[250px]">
                                 Tên sự kiện
@@ -234,15 +235,18 @@ export default function EventTable({
                         {events.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={7}
+                                    colSpan={9}
                                     className="text-center h-32 text-muted-foreground"
                                 >
                                     Không có dữ liệu sự kiện nào
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            events.map((event) => (
+                            events.map((event, index) => (
                                 <TableRow key={event.event_id}>
+                                    <TableCell className="text-center font-medium text-gray-500">
+                                        {index + 1}
+                                    </TableCell>
                                     <TableCell>
                                         <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
                                             {event.image ? (

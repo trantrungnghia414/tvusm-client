@@ -145,7 +145,7 @@ export default function CourtTable({
                     <TableBody>
                         {courts.map((court, index) => (
                             <TableRow key={court.court_id}>
-                                <TableCell className="font-medium">
+                                <TableCell className="text-center font-medium text-gray-500">
                                     {index + 1}
                                 </TableCell>
                                 <TableCell>

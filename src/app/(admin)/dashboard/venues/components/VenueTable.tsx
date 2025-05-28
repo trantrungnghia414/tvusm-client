@@ -135,7 +135,9 @@ export default function VenueTable({
                     <TableBody>
                         {venues.map((venue, index) => (
                             <TableRow key={venue.venue_id}>
-                                <TableCell>{index + 1}</TableCell>
+                                <TableCell className="text-center font-medium text-gray-500">
+                                    {index + 1}
+                                </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         <Avatar className="h-9 w-9">

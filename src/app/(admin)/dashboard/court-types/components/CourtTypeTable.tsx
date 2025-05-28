@@ -119,7 +119,7 @@ export default function CourtTypeTable({
                     <TableBody>
                         {courtTypes.map((type, index) => (
                             <TableRow key={type.type_id}>
-                                <TableCell className="font-medium">
+                                <TableCell className="text-center font-medium text-gray-500">
                                     {index + 1}
                                 </TableCell>
                                 <TableCell>

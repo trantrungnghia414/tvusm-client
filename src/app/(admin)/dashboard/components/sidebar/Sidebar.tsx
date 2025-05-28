@@ -95,14 +95,14 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                     <SidebarItem
                         icon={<Dumbbell className="h-4 w-4" />}
                         title="Thiết bị"
-                        active={activeTab === "equipment"}
-                        onClick={() => router.push("/dashboard/equipment")}
+                        active={activeTab === "equipments"}
+                        onClick={() => router.push("/dashboard/equipments")}
                     />
                     <SidebarItem
                         icon={<BadgePercent className="h-4 w-4" />}
                         title="Bảng giá"
-                        active={activeTab === "pricing"}
-                        onClick={() => router.push("/dashboard/pricing")}
+                        active={activeTab === "pricings"}
+                        onClick={() => router.push("/dashboard/pricings")}
                     />
 
                     <SidebarCategory label="QUẢN LÝ DỊCH VỤ" />
@@ -128,8 +128,8 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                     <SidebarItem
                         icon={<AlertTriangle className="h-4 w-4" />}
                         title="Bảo trì"
-                        active={activeTab === "maintenance"}
-                        onClick={() => router.push("/dashboard/maintenance")}
+                        active={activeTab === "maintenances"}
+                        onClick={() => router.push("/dashboard/maintenances")}
                     />
 
                     <SidebarCategory label="QUẢN LÝ NỘI DUNG" />

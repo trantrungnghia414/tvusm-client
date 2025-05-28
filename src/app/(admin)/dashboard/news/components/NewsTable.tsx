@@ -18,16 +18,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-// import {
-//     AlertDialog,
-//     AlertDialogContent,
-//     AlertDialogHeader,
-//     AlertDialogTitle,
-//     AlertDialogDescription,
-//     AlertDialogFooter,
-//     AlertDialogCancel,
-//     AlertDialogAction,
-// } from "@/components/ui/alert-dialog";
 import {
     MoreHorizontal,
     Pencil,
@@ -36,6 +26,7 @@ import {
     ArrowUpCircle,
     Archive,
     FileText,
+    Image,
 } from "lucide-react";
 import { News } from "../types/newsTypes";
 
@@ -77,18 +68,27 @@ NewsTableProps) {
         return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
     };
 
+    // Hàm lấy URL cho thumbnail
+    const getImageUrl = (path: string | null) => {
+        if (!path) return null;
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+        return `http://localhost:3000${path}`;
+    };
+
     return (
         <div className="border rounded-lg bg-white overflow-x-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[50px]">ID</TableHead>
+                        <TableHead className="w-[60px]">Ảnh</TableHead>
                         <TableHead className="min-w-[250px]">Tiêu đề</TableHead>
-                        <TableHead className="w-[150px]">Danh mục</TableHead>
-                        <TableHead className="w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="w-[100px]">Lượt xem</TableHead>
-                        <TableHead className="w-[180px]">Ngày đăng</TableHead>
-                        <TableHead className="w-[120px] text-right">
+                        <TableHead>Danh mục</TableHead>
+                        <TableHead>Trạng thái</TableHead>
+                        <TableHead>Lượt xem</TableHead>
+                        <TableHead>Ngày đăng</TableHead>
+                        <TableHead className="text-right">
                             Thao tác
                         </TableHead>
                     </TableRow>
@@ -96,13 +96,36 @@ NewsTableProps) {
                 <TableBody>
                     {news.map((item) => (
                         <TableRow key={item.news_id}>
-                            <TableCell className="font-medium">
-                                {item.news_id}
+                            <TableCell>
+                                <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
+                                    {item.thumbnail ? (
+                                        <img
+                                            src={
+                                                getImageUrl(item.thumbnail) ||
+                                                ""
+                                            }
+                                            alt={item.title}
+                                            className="object-cover w-full h-full"
+                                        />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full w-full bg-blue-100 text-blue-500">
+                                            <Image className="h-5 w-5" />
+                                        </div>
+                                    )}
+                                </div>
                             </TableCell>
                             <TableCell>
                                 <div className="flex flex-col">
-                                    <span className="font-medium line-clamp-2">
-                                        {item.title}
+                                    <span
+                                        className="font-medium truncate"
+                                        title={item.title}
+                                    >
+                                        {item.title.length > 100
+                                            ? `${item.title.substring(
+                                                  0,
+                                                  100
+                                              )}...`
+                                            : item.title}
                                     </span>
                                     {item.is_featured === 1 && (
                                         <Badge

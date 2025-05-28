@@ -1,15 +1,13 @@
 "use client";
 
+import { use } from "react"; // Thêm import use từ React
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api";
-import Image from "next/image";
 
-// import DashboardLayout from "../../../components/layout/DashboardLayout";
-// import LoadingSpinner from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +39,13 @@ import { News } from "../types/newsTypes";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-export default function NewsDetailPage({ params }: { params: { id: string } }) {
+export default function NewsDetailPage({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}) {
+    // Unwrap params để lấy id
+    const { id } = use(params);
     const [news, setNews] = useState<News | null>(null);
     const [loading, setLoading] = useState(true);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -57,7 +61,7 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
                     return;
                 }
 
-                const response = await fetchApi(`/news/${params.id}`, {
+                const response = await fetchApi(`/news/${id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -76,7 +80,7 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
         };
 
         fetchNewsDetails();
-    }, [params.id, router]);
+    }, [id, router]);
 
     const handleDelete = async () => {
         try {
@@ -87,7 +91,7 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
                 return;
             }
 
-            const response = await fetchApi(`/news/${params.id}`, {
+            const response = await fetchApi(`/news/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -262,7 +266,7 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
                                                 </Badge>
                                             )}
                                         </div>
-                                        <CardTitle className="text-2xl">
+                                        <CardTitle className="text-2xl text-left">
                                             {news.title}
                                         </CardTitle>
                                     </div>
@@ -340,12 +344,19 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
                             </CardHeader>
                             <CardContent>
                                 <div className="relative w-full h-48 rounded-md overflow-hidden border">
-                                    <Image
-                                        src={getImageUrl(news.thumbnail)}
-                                        alt={news.title}
-                                        fill
-                                        className="object-cover"
-                                    />
+                                    {news.thumbnail ? (
+                                        <img
+                                            src={getImageUrl(news.thumbnail)}
+                                            alt={news.title}
+                                            className="object-cover w-full h-full"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                            <span className="text-gray-400">
+                                                Không có ảnh
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -441,9 +452,9 @@ export default function NewsDetailPage({ params }: { params: { id: string } }) {
                             Xác nhận xóa tin tức
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc chắn muốn xóa tin tức &quoy;{news.title}&quoy;?
-                            Hành động này không thể hoàn tác và tất cả dữ liệu
-                            liên quan cũng sẽ bị xóa.
+                            Bạn có chắc chắn muốn xóa tin tức &quoy;{news.title}
+                            &quoy;? Hành động này không thể hoàn tác và tất cả
+                            dữ liệu liên quan cũng sẽ bị xóa.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

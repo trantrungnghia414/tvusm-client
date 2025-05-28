@@ -216,7 +216,10 @@ export default function EventTable({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Tên sự kiện</TableHead>
+                            <TableHead className="w-[60px]">Ảnh</TableHead>
+                            <TableHead className="min-w-[250px]">
+                                Tên sự kiện
+                            </TableHead>
                             <TableHead>Loại</TableHead>
                             <TableHead>Địa điểm</TableHead>
                             <TableHead>Thời gian</TableHead>
@@ -241,35 +244,43 @@ export default function EventTable({
                             events.map((event) => (
                                 <TableRow key={event.event_id}>
                                     <TableCell>
-                                        <div className="flex items-center space-x-3">
-                                            <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
-                                                {event.image ? (
-                                                    <img
-                                                        src={
-                                                            getImageUrl(
-                                                                event.image
-                                                            ) || ""
-                                                        } // Thêm fallback là chuỗi rỗng
-                                                        alt={event.title}
-                                                        className="object-cover w-full h-full"
-                                                    />
-                                                ) : (
-                                                    <div className="flex items-center justify-center h-full bg-blue-100 text-blue-500">
-                                                        <Calendar className="h-5 w-5" />
-                                                    </div>
+                                        <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 relative flex-shrink-0">
+                                            {event.image ? (
+                                                <img
+                                                    src={
+                                                        getImageUrl(
+                                                            event.image
+                                                        ) || ""
+                                                    }
+                                                    alt={event.title}
+                                                    className="object-cover w-full h-full"
+                                                />
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full bg-blue-100 text-blue-500">
+                                                    <Calendar className="h-5 w-5" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span
+                                                className="font-medium truncate"
+                                                title={event.title}
+                                            >
+                                                {event.title.length > 70
+                                                    ? `${event.title.substring(
+                                                          0,
+                                                          70
+                                                      )}...`
+                                                    : event.title}
+                                                {event.is_featured === 1 && (
+                                                    <Star className="inline-block ml-1 h-3 w-3 text-amber-500 fill-amber-500" />
                                                 )}
-                                            </div>
-                                            <div>
-                                                <div className="font-medium">
-                                                    {event.title}
-                                                    {event.is_featured === 1 && (
-                                                        <Star className="inline-block ml-1 h-3 w-3 text-amber-500 fill-amber-500" />
-                                                    )}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground line-clamp-1">
-                                                    {event.description ||
-                                                        "Không có mô tả"}
-                                                </div>
+                                            </span>
+                                            <div className="text-xs text-muted-foreground line-clamp-1">
+                                                {event.description ||
+                                                    "Không có mô tả"}
                                             </div>
                                         </div>
                                     </TableCell>
@@ -513,8 +524,9 @@ export default function EventTable({
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             Bạn có chắc chắn muốn hủy sự kiện này? Hành động này
-                            sẽ thay đổi trạng thái sự kiện thành &quot;Đã hủy&quot; và
-                            người dùng sẽ không thể tham gia sự kiện này nữa.
+                            sẽ thay đổi trạng thái sự kiện thành &quot;Đã
+                            hủy&quot; và người dùng sẽ không thể tham gia sự
+                            kiện này nữa.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

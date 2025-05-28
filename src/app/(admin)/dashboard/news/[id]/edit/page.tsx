@@ -1,18 +1,23 @@
 "use client";
 
+import { use } from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api";
 
-// import DashboardLayout from "../../../../components/layout/DashboardLayout";
 import NewsForm from "../../components/NewsForm";
-// import LoadingSpinner from "@/components/ui/loading-spinner";
 import { News } from "../../types/newsTypes";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-export default function EditNewsPage({ params }: { params: { id: string } }) {
+export default function EditNewsPage({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}) {
+    // Unwrap params
+    const { id } = use(params);
     const [news, setNews] = useState<News | null>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -28,7 +33,7 @@ export default function EditNewsPage({ params }: { params: { id: string } }) {
                     return;
                 }
 
-                const response = await fetchApi(`/news/${params.id}`, {
+                const response = await fetchApi(`/news/${id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -47,7 +52,7 @@ export default function EditNewsPage({ params }: { params: { id: string } }) {
         };
 
         fetchNewsDetails();
-    }, [params.id, router]);
+    }, [id, router]);
 
     const handleSubmit = async (formData: FormData) => {
         try {
@@ -61,7 +66,7 @@ export default function EditNewsPage({ params }: { params: { id: string } }) {
             }
 
             // Gọi API để cập nhật tin tức
-            const response = await fetchApi(`/news/${params.id}`, {
+            const response = await fetchApi(`/news/${id}`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,

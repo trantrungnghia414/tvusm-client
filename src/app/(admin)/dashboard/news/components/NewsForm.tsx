@@ -77,6 +77,11 @@ export default function NewsForm({
     const [slugGenerated, setSlugGenerated] = useState(!news);
     // const [errorMessage, setErrorMessage] = useState("");
 
+    const [showAddCategory, setShowAddCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState("");
+    const [newCategorySlug, setNewCategorySlug] = useState("");
+    const [addingCategory, setAddingCategory] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
@@ -244,6 +249,88 @@ export default function NewsForm({
         }
     };
 
+    // Thêm hàm tạo slug từ tên danh mục
+    const generateSlugFromName = (name: string) => {
+        return name
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[đĐ]/g, "d")
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "");
+    };
+
+    // Thêm hàm xử lý khi thay đổi tên danh mục
+    const handleCategoryNameChange = (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const name = e.target.value;
+        setNewCategoryName(name);
+        setNewCategorySlug(generateSlugFromName(name));
+    };
+
+    // Thêm hàm tạo danh mục mới
+    const handleAddCategory = async () => {
+        if (!newCategoryName.trim()) {
+            toast.error("Vui lòng nhập tên danh mục");
+            return;
+        }
+
+        if (!newCategorySlug.trim()) {
+            toast.error("Vui lòng nhập slug cho danh mục");
+            return;
+        }
+
+        setAddingCategory(true);
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                toast.error("Phiên đăng nhập hết hạn");
+                return;
+            }
+
+            const response = await fetchApi("/news/categories", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name: newCategoryName,
+                    slug: newCategorySlug,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Không thể tạo danh mục");
+            }
+
+            const newCategory = await response.json();
+
+            // Thêm danh mục mới vào danh sách và chọn nó
+            setCategories([...categories, newCategory]);
+            setCategoryId(newCategory.category_id.toString());
+
+            // Reset form thêm danh mục
+            setNewCategoryName("");
+            setNewCategorySlug("");
+            setShowAddCategory(false);
+
+            toast.success("Tạo danh mục thành công");
+        } catch (error) {
+            console.error("Error adding category:", error);
+            toast.error(
+                error instanceof Error
+                    ? error.message
+                    : "Không thể tạo danh mục"
+            );
+        } finally {
+            setAddingCategory(false);
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -385,24 +472,122 @@ export default function NewsForm({
                                     Danh mục{" "}
                                     <span className="text-red-500">*</span>
                                 </Label>
-                                <Select
-                                    value={categoryId}
-                                    onValueChange={setCategoryId}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Chọn danh mục" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {categories.map((category) => (
-                                            <SelectItem
-                                                key={category.category_id}
-                                                value={category.category_id.toString()}
+
+                                {showAddCategory ? (
+                                    <div className="space-y-3 p-3 border rounded-md bg-gray-50">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="new-category-name">
+                                                Tên danh mục
+                                            </Label>
+                                            <Input
+                                                id="new-category-name"
+                                                value={newCategoryName}
+                                                onChange={
+                                                    handleCategoryNameChange
+                                                }
+                                                placeholder="Nhập tên danh mục mới"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label htmlFor="new-category-slug">
+                                                Đường dẫn (slug)
+                                            </Label>
+                                            <Input
+                                                id="new-category-slug"
+                                                value={newCategorySlug}
+                                                onChange={(e) =>
+                                                    setNewCategorySlug(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                placeholder="nhap-duong-dan"
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-2 justify-end mt-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                    setShowAddCategory(false)
+                                                }
+                                                disabled={addingCategory}
                                             >
-                                                {category.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                                Hủy
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                onClick={handleAddCategory}
+                                                disabled={addingCategory}
+                                            >
+                                                {addingCategory ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                                        Đang thêm...
+                                                    </>
+                                                ) : (
+                                                    "Thêm"
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Select
+                                            value={categoryId}
+                                            onValueChange={setCategoryId}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn danh mục" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {categories.map((category) => (
+                                                    <SelectItem
+                                                        key={
+                                                            category.category_id
+                                                        }
+                                                        value={category.category_id.toString()}
+                                                    >
+                                                        {category.name}
+                                                    </SelectItem>
+                                                ))}
+                                                <div className="px-2 py-1.5">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        className="w-full text-left text-sm flex items-center gap-2 text-blue-600"
+                                                        onClick={() =>
+                                                            setShowAddCategory(
+                                                                true
+                                                            )
+                                                        }
+                                                    >
+                                                        <span className="font-medium">
+                                                            + Thêm danh mục mới
+                                                        </span>
+                                                    </Button>
+                                                </div>
+                                            </SelectContent>
+                                        </Select>
+
+                                        {categories.length === 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full mt-2"
+                                                onClick={() =>
+                                                    setShowAddCategory(true)
+                                                }
+                                            >
+                                                Chưa có danh mục. Thêm mới?
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
                             </div>
 
                             {/* Trạng thái */}
@@ -509,6 +694,61 @@ export default function NewsForm({
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Thêm danh mục mới */}
+                    {/* <Card>
+                        <CardHeader>
+                            <CardTitle>Thêm danh mục mới</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Label
+                                    htmlFor="new-category-name"
+                                    className="flex-1"
+                                >
+                                    Tên danh mục
+                                </Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        setShowAddCategory((prev) => !prev)
+                                    }
+                                >
+                                    {showAddCategory ? "Hủy" : "Thêm danh mục"}
+                                </Button>
+                            </div>
+
+                            {showAddCategory && (
+                                <div className="space-y-2">
+                                    <Input
+                                        id="new-category-name"
+                                        value={newCategoryName}
+                                        onChange={handleCategoryNameChange}
+                                        placeholder="Nhập tên danh mục"
+                                    />
+                                    <Input
+                                        id="new-category-slug"
+                                        value={newCategorySlug}
+                                        onChange={(e) =>
+                                            setNewCategorySlug(e.target.value)
+                                        }
+                                        placeholder="Nhập slug cho danh mục"
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={handleAddCategory}
+                                        disabled={addingCategory}
+                                    >
+                                        {addingCategory && (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        )}
+                                        Tạo danh mục
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card> */}
                 </div>
             </div>
 

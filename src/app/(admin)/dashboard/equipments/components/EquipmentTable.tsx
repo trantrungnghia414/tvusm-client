@@ -117,14 +117,18 @@ export default function EquipmentTable({
                             <TableCell>
                                 <div className="flex flex-col">
                                     <span
-                                        className="font-medium truncate max-w-[200px]"
+                                        className="font-medium truncate"
                                         title={item.name}
                                     >
-                                        {item.name}
+                                        {item.name.length > 40
+                                            ? `${item.name.slice(0, 40)}...`
+                                            : item.name}
                                     </span>
                                     {item.description && (
                                         <span className="text-xs text-muted-foreground line-clamp-1">
-                                            {item.description}
+                                            {item.description.length > 50
+                                                ? `${item.description.slice(0, 50)}...`
+                                                : item.description}
                                         </span>
                                     )}
                                 </div>
@@ -162,7 +166,7 @@ export default function EquipmentTable({
                                 {item.venue_name ||
                                     (item.venue_id
                                         ? `ID: ${item.venue_id}`
-                                        : "-")}
+                                        : "Các nhà thi đấu")}
                             </TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>

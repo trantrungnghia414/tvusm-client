@@ -5,8 +5,6 @@ import {
     Box,
     CheckCircle,
     DollarSign,
-    // Grid,
-    LayoutGrid,
     Settings,
     Wrench, // Sửa từ ToolIcon thành Tool
     AlertTriangle, // Sửa từ AlertTriangleIcon thành AlertTriangle
@@ -42,23 +40,16 @@ export default function EquipmentStats({ stats }: EquipmentStatsProps) {
         {
             title: "Đang bảo trì",
             value: stats.maintenance,
-            icon: Wrench, // Đã sửa từ ToolIcon thành Tool
+            icon: Wrench,
             color: "text-amber-600",
             bgColor: "bg-amber-50",
         },
         {
             title: "Không khả dụng",
             value: stats.unavailable,
-            icon: AlertTriangle, // Đã sửa từ AlertTriangleIcon thành AlertTriangle
+            icon: AlertTriangle,
             color: "text-gray-600",
             bgColor: "bg-gray-100",
-        },
-        {
-            title: "Danh mục",
-            value: stats.categories_count,
-            icon: LayoutGrid,
-            color: "text-purple-600",
-            bgColor: "bg-purple-50",
         },
         {
             title: "Tổng giá trị",
@@ -71,7 +62,7 @@ export default function EquipmentStats({ stats }: EquipmentStatsProps) {
     ];
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {statItems.map((item, index) => (
                 <Card key={index} className="border">
                     <CardContent className="p-4 flex items-center space-x-4">

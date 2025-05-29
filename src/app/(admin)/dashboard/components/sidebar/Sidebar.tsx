@@ -51,7 +51,7 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                 />
                 <h2 className="text-lg font-semibold">TVU Sports Center</h2>
             </div>
-            <div className="flex-1 overflow-y-auto py-2">
+            <div className="flex-1 overflow-y-auto">
                 <nav className="grid items-start px-2 text-sm">
                     <SidebarCategory label="TỔNG QUAN" />
                     <SidebarItem

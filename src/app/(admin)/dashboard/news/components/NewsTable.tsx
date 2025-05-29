@@ -298,3 +298,4 @@ function NewsStatusBadge({ status }: { status: string }) {
             return <Badge variant="outline">{status}</Badge>;
     }
 }
+// TEST THÊM XOÁ SỬA THIẾT BỊ, TẠO TRANG QUẢN LÝ TIN TỨC

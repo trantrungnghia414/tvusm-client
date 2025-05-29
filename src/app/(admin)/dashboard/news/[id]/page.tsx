@@ -38,6 +38,7 @@ import {
 import { News } from "../types/newsTypes";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import "@/styles/ckeditor-content.css"; // Thêm import CSS
 
 export default function NewsDetailPage({
     params,
@@ -324,7 +325,7 @@ export default function NewsDetailPage({
                             </CardHeader>
                             <CardContent>
                                 <div
-                                    className="prose max-w-none"
+                                    className="prose max-w-none ck-content"
                                     dangerouslySetInnerHTML={{
                                         __html: news.content,
                                     }}

@@ -1,0 +1,86 @@
+/* Các styles cho nội dung từ CKEditor */
+.ck-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+}
+
+.ck-content h2 {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    font-weight: bold;
+}
+
+.ck-content h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.ck-content p {
+    margin-bottom: 1rem;
+}
+
+.ck-content blockquote {
+    border-left: 4px solid #e5e7eb;
+    padding-left: 1rem;
+    font-style: italic;
+    margin: 1rem 0;
+}
+
+.ck-content ul,
+.ck-content ol {
+    padding-left: 2rem;
+    margin: 1rem 0;
+}
+
+.ck-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.ck-content table td,
+.ck-content table th {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem;
+}
+
+/* Căn chỉnh nội dung */
+.ck-content .text-center {
+    text-align: center;
+}
+
+.ck-content .text-right {
+    text-align: right;
+}
+
+.ck-content .text-justify {
+    text-align: justify;
+}
+
+/* Định dạng hình ảnh */
+.ck-content figure.image {
+    margin: 1rem auto;
+    text-align: center;
+}
+
+.ck-content figure.image img {
+    max-width: 100%;
+}
+
+.ck-content figure.image-style-side {
+    float: right;
+    margin-left: 1.5em;
+    max-width: 50%;
+}
+
+.ck-content figure.image-style-align-left {
+    float: left;
+    margin-right: 1.5em;
+}
+
+.ck-content figure.image-style-align-right {
+    float: right;
+    margin-left: 1.5em;
+}

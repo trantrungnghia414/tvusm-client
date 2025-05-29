@@ -1,9 +1,10 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FileDown } from "lucide-react";
+import { Plus, FileDown, Database } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 import { toast } from "sonner";
 import { News } from "../types/newsTypes";
+import { useRouter } from "next/navigation";
 
 interface NewsActionsProps {
     onAddNews: () => void;
@@ -307,11 +308,23 @@ export default function NewsActions({
         return date.toISOString().split("T")[0];
     };
 
+    const router = useRouter();
+
+    // Hàm chuyển đến trang quản lý danh mục tin tức
+    const handleGoToCategories = () => {
+        router.push("/dashboard/news-categories");
+    };
+
     return (
         <div className="flex gap-2">
             <Button onClick={onAddNews}>
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm tin tức
+            </Button>
+            {/* Thêm nút chuyển đến trang quản lý danh mục */}
+            <Button variant="outline" onClick={handleGoToCategories}>
+                <Database className="mr-2 h-4 w-4" />
+                Quản lý danh mục
             </Button>
             <Button variant="outline" onClick={handleExport}>
                 <FileDown className="mr-2 h-4 w-4" />

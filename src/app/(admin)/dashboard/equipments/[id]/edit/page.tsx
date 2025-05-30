@@ -30,7 +30,7 @@ export default function EditEquipmentPage({
                     return;
                 }
 
-                const response = await fetchApi(`/equipments/${id}`, {
+                const response = await fetchApi(`/equipment/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -64,7 +64,7 @@ export default function EditEquipmentPage({
                 return;
             }
 
-            const response = await fetchApi(`/equipments/${id}`, {
+            const response = await fetchApi(`/equipment/${id}`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,

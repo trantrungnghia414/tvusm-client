@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import VenueCard from "../shared/VenueCard";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +15,7 @@ interface Venue {
     capacity: number | null;
     status: "active" | "maintenance" | "inactive";
     image: string;
+    created_at: string;
 }
 
 export default function FeaturedVenues() {
@@ -26,11 +27,19 @@ export default function FeaturedVenues() {
         const fetchVenues = async () => {
             try {
                 setLoading(true);
-                const response = await fetchApi("/venues?limit=4");
+                // Lấy nhà thi đấu mới nhất, thêm tham số sort=latest
+                const response = await fetchApi("/venues?limit=4&sort=latest");
 
                 if (response.ok) {
                     const data = await response.json();
-                    setVenues(data);
+                    // Nếu API không hỗ trợ sắp xếp, thực hiện ở client
+                    const sortedVenues = [...data].sort(
+                        (a, b) =>
+                            new Date(b.created_at).getTime() -
+                            new Date(a.created_at).getTime()
+                    )
+                    .slice(0, 4);
+                    setVenues(sortedVenues);
                 } else {
                     setError("Không thể tải dữ liệu nhà thi đấu");
                 }
@@ -50,7 +59,7 @@ export default function FeaturedVenues() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 md:mb-10">
                 <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                        Nhà thi đấu nổi bật
+                        Nhà thi đấu mới nhất
                     </h2>
                     <p className="text-gray-600">
                         Khám phá các nhà thi đấu hiện đại và tiện nghi
@@ -92,9 +101,14 @@ export default function FeaturedVenues() {
                             name={venue.name}
                             location={venue.location}
                             description={venue.description || ""}
-                            image={
-                                venue.image || "/images/venue-placeholder.jpg"
-                            }
+                            image={(() => {
+                                const imageUrl = venue.image
+                                    ? getImageUrl(venue.image)
+                                    : null;
+                                return (
+                                    imageUrl || "/images/placeholder.jpg"
+                                );
+                            })()}
                             status={venue.status}
                             capacity={venue.capacity || undefined}
                         />

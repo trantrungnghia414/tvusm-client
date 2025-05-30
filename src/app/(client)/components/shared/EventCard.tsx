@@ -102,8 +102,9 @@ export default function EventCard({
                 <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1">
                     {title}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {description}
+                {/* Đảm bảo mô tả luôn chiếm một dòng và có chiều cao cố định */}
+                <p className="text-gray-600 text-sm mb-4 line-clamp-1 min-h-[1.25rem]">
+                    {description || "\u00A0"}
                 </p>
 
                 <div className="space-y-2 mb-4">

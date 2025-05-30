@@ -4,8 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import EventCard from "@/app/(client)/components/shared/EventCard";
-// import { fetchApi } from "@/lib/api";
-// import EventCard from "../shared/EventCard";
+import { fetchApi, getImageUrl } from "@/lib/api"; // Thêm import getImageUrl
 
 interface Event {
     event_id: number;
@@ -24,6 +23,7 @@ interface Event {
     image: string | null;
     is_public: boolean;
     is_featured: boolean;
+    created_at?: string;
 }
 
 export default function UpcomingEvents() {
@@ -33,95 +33,44 @@ export default function UpcomingEvents() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                // Giả lập dữ liệu vì chưa có API thực
-                setEvents([
-                    {
-                        event_id: 1,
-                        title: "Giải bóng đá sinh viên TVU 2025",
-                        description:
-                            "Giải đấu bóng đá thường niên dành cho sinh viên Trường Đại học Trà Vinh",
-                        start_date: "2025-06-15",
-                        end_date: "2025-06-20",
-                        start_time: "08:00",
-                        end_time: "17:00",
-                        venue_id: 4,
-                        venue_name: "Sân bóng đá TVU",
-                        status: "upcoming",
-                        max_participants: 32,
-                        current_participants: 24,
-                        event_type: "competition",
-                        image: "/images/event-1.jpg",
-                        is_public: true,
-                        is_featured: true,
-                    },
-                    {
-                        event_id: 2,
-                        title: "Giải cầu lông mở rộng TVU 2025",
-                        description:
-                            "Giải cầu lông dành cho sinh viên và cán bộ nhân viên Trường Đại học Trà Vinh",
-                        start_date: "2025-06-10",
-                        end_date: "2025-06-12",
-                        start_time: "09:00",
-                        end_time: "17:00",
-                        venue_id: 2,
-                        venue_name: "Nhà Thi Đấu TVU",
-                        status: "upcoming",
-                        max_participants: 64,
-                        current_participants: 48,
-                        event_type: "competition",
-                        image: "/images/event-2.jpg",
-                        is_public: true,
-                        is_featured: true,
-                    },
-                    {
-                        event_id: 3,
-                        title: "Buổi tập luyện bóng rổ TVU",
-                        description:
-                            "Buổi tập luyện và giao lưu bóng rổ dành cho sinh viên yêu thích môn thể thao này",
-                        start_date: "2025-06-05",
-                        end_date: null,
-                        start_time: "15:00",
-                        end_time: "17:00",
-                        venue_id: 2,
-                        venue_name: "Nhà Thi Đấu TVU",
-                        status: "upcoming",
-                        max_participants: 30,
-                        current_participants: 12,
-                        event_type: "training",
-                        image: "/images/event-3.jpg",
-                        is_public: true,
-                        is_featured: false,
-                    },
-                    {
-                        event_id: 4,
-                        title: "Giao lưu bóng chuyền các khoa",
-                        description:
-                            "Sự kiện giao lưu bóng chuyền giữa các khoa trong trường đại học",
-                        start_date: "2025-06-08",
-                        end_date: "2025-06-09",
-                        start_time: "14:00",
-                        end_time: "18:00",
-                        venue_id: 2,
-                        venue_name: "Nhà Thi Đấu TVU",
-                        status: "upcoming",
-                        max_participants: 40,
-                        current_participants: 32,
-                        event_type: "friendly",
-                        image: "/images/event-4.jpg",
-                        is_public: true,
-                        is_featured: false,
-                    },
-                ]);
-                setLoading(false);
+                // Gọi API thực tế để lấy sự kiện sắp diễn ra và công khai
+                // Lấy nhiều hơn 4 sự kiện để có thể lọc và sắp xếp
+                const response = await fetchApi(
+                    "/events?status=upcoming&is_public=1"
+                );
 
-                // Đoạn code gọi API thực tế (comment lại vì chưa có API)
-                /*
-        const response = await fetchApi('/events?status=upcoming&limit=4');
-        if (response.ok) {
-          const data = await response.json();
-          setEvents(data);
-        }
-        */
+                if (response.ok) {
+                    const data = await response.json();
+                    // Lọc bỏ sự kiện đã hủy
+                    const filteredEvents = data.filter(
+                        (event: Event) => event.status !== "cancelled"
+                    );
+
+                    // Sắp xếp sự kiện: ưu tiên nổi bật (featured), sau đó đến mới nhất
+                    const sortedEvents = filteredEvents.sort(
+                        (a: Event, b: Event) => {
+                            // Ưu tiên sự kiện nổi bật
+                            if (a.is_featured !== b.is_featured) {
+                                return a.is_featured ? -1 : 1;
+                            }
+
+                            // Nếu cùng trạng thái featured (có thể cả hai đều không nổi bật),
+                            // sắp xếp theo ngày tạo hoặc ngày bắt đầu
+                            const dateA = a.created_at
+                                ? new Date(a.created_at)
+                                : new Date(a.start_date);
+                            const dateB = b.created_at
+                                ? new Date(b.created_at)
+                                : new Date(b.start_date);
+                            return dateB.getTime() - dateA.getTime();
+                        }
+                    );
+
+                    // Chỉ lấy 4 sự kiện đầu tiên sau khi sắp xếp
+                    setEvents(sortedEvents.slice(0, 4));
+                } else {
+                    console.error("Failed to fetch events:", response.status);
+                }
             } catch (error) {
                 console.error("Error fetching events:", error);
             } finally {
@@ -152,28 +101,50 @@ export default function UpcomingEvents() {
                 </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {events.map((event) => (
-                    <EventCard
-                        key={event.event_id}
-                        id={event.event_id}
-                        title={event.title}
-                        description={event.description || ""}
-                        image={event.image || "/images/event-placeholder.jpg"}
-                        startDate={event.start_date}
-                        endDate={event.end_date || undefined}
-                        startTime={event.start_time || undefined}
-                        endTime={event.end_time || undefined}
-                        venueName={event.venue_name}
-                        status={event.status}
-                        maxParticipants={event.max_participants || undefined}
-                        currentParticipants={event.current_participants}
-                        eventType={event.event_type}
-                        isPublic={event.is_public}
-                        isFeatured={event.is_featured}
-                    />
-                ))}
-            </div>
+            {loading ? (
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            ) : events.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {events.map((event) => (
+                        <EventCard
+                            key={event.event_id}
+                            id={event.event_id}
+                            title={event.title}
+                            description={event.description || ""}
+                            // Thay đổi cách xử lý ảnh ở đây:
+                            image={(() => {
+                                const imageUrl = event.image
+                                    ? getImageUrl(event.image)
+                                    : null;
+                                return (
+                                    imageUrl || "/images/placeholder.jpg"
+                                );
+                            })()}
+                            startDate={event.start_date}
+                            endDate={event.end_date || undefined}
+                            startTime={event.start_time || undefined}
+                            endTime={event.end_time || undefined}
+                            venueName={event.venue_name}
+                            status={event.status}
+                            maxParticipants={
+                                event.max_participants || undefined
+                            }
+                            currentParticipants={event.current_participants}
+                            eventType={event.event_type}
+                            isPublic={event.is_public}
+                            isFeatured={event.is_featured}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-16">
+                    <p className="text-gray-500">
+                        Không có sự kiện nào sắp diễn ra
+                    </p>
+                </div>
+            )}
         </section>
     );
 }

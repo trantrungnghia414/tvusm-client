@@ -1,52 +1,99 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { fetchApi } from "@/lib/api";
+import NewsCard from "../shared/NewsCard";
 
 interface NewsArticle {
-    id: number;
+    news_id: number;
     title: string;
-    summary: string;
-    date: string;
-    image: string;
+    content: string;
+    summary?: string;
+    thumbnail: string | null;
+    created_at: string;
     category: string;
+    category_name?: string;
     slug: string;
+    view_count?: number;
+    is_featured?: number;
 }
 
 export default function NewsSection() {
-    const news: NewsArticle[] = [
-        {
-            id: 1,
-            title: "Lễ khai mạc Hội thao sinh viên TVU 2025",
-            summary:
-                "Ngày 10/06/2025, Trường Đại học Trà Vinh tổ chức Lễ khai mạc Hội thao sinh viên năm 2025 với nhiều môn thi đấu hấp dẫn.",
-            date: "05/06/2025",
-            image: "/images/news-1.jpg",
-            category: "Sự kiện",
-            slug: "le-khai-mac-hoi-thao-sinh-vien-tvu-2025",
-        },
-        {
-            id: 2,
-            title: "Cập nhật giá thuê sân mới nhất năm 2025",
-            summary:
-                "TVU Sports Hub thông báo cập nhật bảng giá thuê sân áp dụng từ ngày 01/06/2025 với nhiều ưu đãi dành cho sinh viên.",
-            date: "01/06/2025",
-            image: "/images/news-2.jpg",
-            category: "Thông báo",
-            slug: "cap-nhat-gia-thue-san-moi-nhat-nam-2025",
-        },
-        {
-            id: 3,
-            title: "Hướng dẫn đặt sân trực tuyến trên TVU Sports Hub",
-            summary:
-                "Bài viết hướng dẫn chi tiết cách thức đặt sân trực tuyến trên hệ thống TVU Sports Hub mới được nâng cấp.",
-            date: "28/05/2025",
-            image: "/images/news-3.jpg",
-            category: "Hướng dẫn",
-            slug: "huong-dan-dat-san-truc-tuyen-tren-tvu-sports-hub",
-        },
-    ];
+    const [news, setNews] = useState<NewsArticle[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchNews = async () => {
+            try {
+                setLoading(true);
+
+                // Thay vì sử dụng /news/featured, sử dụng endpoint cho tất cả tin tức công khai
+                const response = await fetchApi(
+                    "/news/public?limit=12&is_published=true"
+                );
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("News data:", data);
+
+                    // Sắp xếp để ưu tiên hiển thị tin đa dạng
+                    // Trộn tin nổi bật và tin thường để tạo sự đa dạng
+                    const sortedNews = [...data]
+                        .sort((a, b) => {
+                            // Chỉ ưu tiên tin nổi bật ở vị trí đầu tiên
+                            if (
+                                (a.is_featured === 1) !==
+                                (b.is_featured === 1)
+                            ) {
+                                return a.is_featured === 1 ? -1 : 1;
+                            }
+
+                            // Chủ yếu sắp xếp theo thời gian tạo mới nhất
+                            return (
+                                new Date(b.created_at).getTime() -
+                                new Date(a.created_at).getTime()
+                            );
+                        })
+                        .slice(0, 3); // Lấy 3 bài viết đầu tiên
+
+                    setNews(sortedNews);
+                } else {
+                    console.error("Failed to fetch news:", response.status);
+                    setError("Không thể tải tin tức");
+                }
+            } catch (error) {
+                console.error("Error fetching news:", error);
+                setError("Đã xảy ra lỗi khi tải tin tức");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchNews();
+    }, []);
+
+    // Định dạng ngày tháng (VD: 05/06/2025)
+    const formatDate = (dateString: string): string => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
+    };
+
+    // URL ảnh
+    const getImageUrl = (path: string | null): string => {
+        if (!path) return "/images/placeholder.jpg";
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            return path;
+        }
+        return `http://localhost:3000${path}`;
+    };
 
     return (
         <section className="bg-gray-50 py-16">
@@ -69,54 +116,58 @@ export default function NewsSection() {
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {news.map((article) => (
-                        <div
-                            key={article.id}
-                            className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 group"
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                        <span className="ml-2 text-gray-600">
+                            Đang tải tin tức...
+                        </span>
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <p className="text-red-600 mb-4">{error}</p>
+                        <Button
+                            variant="outline"
+                            onClick={() => window.location.reload()}
+                            className="border-red-300 text-red-600 hover:bg-red-50"
                         >
-                            <div className="relative h-48 overflow-hidden">
-                                <img
-                                    src={article.image}
-                                    alt={article.title}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                />
-                                <div className="absolute top-3 left-3">
-                                    <Badge className="bg-blue-100 text-blue-800">
-                                        {article.category}
-                                    </Badge>
-                                </div>
-                                <div className="absolute bottom-3 right-3">
-                                    <Badge
-                                        variant="outline"
-                                        className="bg-white/80 backdrop-blur-sm"
-                                    >
-                                        {article.date}
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            <div className="p-5">
-                                <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                                    {article.title}
-                                </h3>
-                                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                                    {article.summary}
-                                </p>
-
-                                <Link href={`/news/${article.slug}`}>
-                                    <Button
-                                        variant="link"
-                                        className="p-0 h-auto text-blue-600 hover:text-blue-800 font-medium"
-                                    >
-                                        Đọc tiếp{" "}
-                                        <ArrowRight className="ml-1 h-4 w-4" />
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                            Thử lại
+                        </Button>
+                    </div>
+                ) : news.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {news.map((article) => (
+                            <NewsCard
+                                key={article.news_id}
+                                id={article.news_id}
+                                title={article.title}
+                                summary={
+                                    article.summary ||
+                                    article.content.substring(0, 150) + "..."
+                                }
+                                date={formatDate(article.created_at)}
+                                image={getImageUrl(article.thumbnail)}
+                                category={
+                                    article.category_name ||
+                                    article.category ||
+                                    "Tin tức"
+                                }
+                                slug={article.slug || `news-${article.news_id}`}
+                                view_count={article.view_count}
+                                is_featured={article.is_featured}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 bg-gray-50 rounded-lg">
+                        <p className="text-gray-500">
+                            Không có tin tức nào để hiển thị
+                        </p>
+                        <p className="text-sm text-gray-400 mt-2">
+                            Hãy quay lại sau
+                        </p>
+                    </div>
+                )}
             </div>
         </section>
     );

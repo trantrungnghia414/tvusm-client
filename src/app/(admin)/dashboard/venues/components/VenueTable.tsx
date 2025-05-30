@@ -278,12 +278,23 @@ export default function VenueTable({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>
-                            Bạn có chắc chắn muốn xóa?
+                            Xác nhận xóa nhà thi đấu
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             Bạn có chắc chắn muốn xóa nhà thi đấu này? Hành động
-                            này không thể hoàn tác và tất cả dữ liệu liên quan
-                            cũng sẽ bị xóa.
+                            này không thể hoàn tác.
+                            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+                                <p className="text-sm font-medium">
+                                    Lưu ý quan trọng:
+                                </p>
+                                <p className="text-sm mt-1">
+                                    Nhà thi đấu chỉ có thể xóa khi không có sân
+                                    thể thao, sự kiện hoặc thiết bị nào đang
+                                    liên kết với nó. Vui lòng kiểm tra và di
+                                    chuyển hoặc xóa dữ liệu liên quan trước khi
+                                    tiếp tục.
+                                </p>
+                            </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

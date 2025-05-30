@@ -56,7 +56,7 @@ export default function EquipmentDetailPage({
                     return;
                 }
 
-                const response = await fetchApi(`/equipments/${id}`, {
+                const response = await fetchApi(`/equipment/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -88,7 +88,7 @@ export default function EquipmentDetailPage({
                 return;
             }
 
-            const response = await fetchApi(`/equipments/${id}`, {
+            const response = await fetchApi(`/equipment/${id}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,

@@ -122,7 +122,7 @@ export function ResetPasswordForm() {
     if (!email) {
         return (
             <Card>
-                <CardContent className="pt-6">
+                <CardContent>
                     <p className="text-center text-red-500">
                         Không tìm thấy email. Vui lòng thử lại từ trang quên mật
                         khẩu.

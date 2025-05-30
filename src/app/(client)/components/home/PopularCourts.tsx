@@ -30,11 +30,20 @@ export default function PopularCourts() {
         const fetchCourts = async () => {
             try {
                 setLoading(true);
-                const response = await fetchApi("/courts?limit=4");
+                // Tăng limit từ 4 lên 8 để lấy 8 sân
+                const response = await fetchApi("/courts?limit=8&sort=popular");
 
+                // Sắp xếp phía client (nếu cần)
                 if (response.ok) {
                     const data = await response.json();
-                    setCourts(data);
+                    // Giả sử API trả về booking_count
+                    const sortedCourts = [...data]
+                        .sort(
+                            (a, b) =>
+                                (b.booking_count || 0) - (a.booking_count || 0)
+                        )
+                        .slice(0, 8);
+                    setCourts(sortedCourts);
                 } else {
                     setError("Không thể tải dữ liệu sân thể thao");
                 }
@@ -58,7 +67,7 @@ export default function PopularCourts() {
                             Sân thi đấu phổ biến
                         </h2>
                         <p className="text-gray-600">
-                            Khám phá các sân thi đấu được yêu thích nhất
+                            Khám phá 8 sân thi đấu được yêu thích nhất
                         </p>
                     </div>
                     <Link
@@ -101,7 +110,7 @@ export default function PopularCourts() {
                                 status={court.status}
                                 image={
                                     court.image ||
-                                    "/images/court-placeholder.jpg"
+                                    "/images/placeholder.jpg"
                                 }
                                 venueId={court.venue_id}
                                 venueName={court.venue_name}

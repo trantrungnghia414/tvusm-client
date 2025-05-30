@@ -174,11 +174,28 @@ export default function EquipmentPage() {
                 throw new Error(errorData.message || "Không thể xóa thiết bị");
             }
 
-            setEquipment(
-                equipment.filter(
-                    (item) => item.equipment_id !== equipmentToDelete
-                )
+            // Cập nhật state
+            const updatedEquipment = equipment.filter(
+                (item) => item.equipment_id !== equipmentToDelete
             );
+
+            // Cập nhật cả equipment và filteredEquipment
+            setEquipment(updatedEquipment);
+            setFilteredEquipment(updatedEquipment);
+
+            // Cập nhật lại thống kê nếu đây là thiết bị cuối cùng
+            if (updatedEquipment.length === 0) {
+                setStats({
+                    total: 0,
+                    available: 0,
+                    in_use: 0,
+                    maintenance: 0,
+                    unavailable: 0,
+                    categories_count: 0,
+                    total_value: 0,
+                });
+            }
+
             toast.success("Xóa thiết bị thành công");
         } catch (error) {
             console.error("Error deleting equipment:", error);

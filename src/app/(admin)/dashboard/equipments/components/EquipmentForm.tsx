@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Equipment, EquipmentCategory } from "../types/equipmentTypes";
 import { toast } from "sonner";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import { Plus, ImageIcon, Loader2 } from "lucide-react";
 import {
     Dialog,
@@ -44,6 +44,10 @@ export default function EquipmentForm({
     onSubmit,
     isSubmitting = false,
 }: EquipmentFormProps) {
+    // Thay đổi cách khởi tạo imagePreview
+    const [imagePreview, setImagePreview] = useState(
+        equipment?.image ? getImageUrl(equipment.image) : null
+    );
     // Form fields
     const [name, setName] = useState(equipment?.name || "");
     const [code, setCode] = useState(equipment?.code || "");
@@ -80,7 +84,7 @@ export default function EquipmentForm({
     const [rentalFee, setRentalFee] = useState(
         equipment?.rental_fee?.toString() || "0"
     );
-    const [imagePreview, setImagePreview] = useState(equipment?.image || null);
+    // const [imagePreview, setImagePreview] = useState(equipment?.image || null);
 
     // Options
     const [categories, setCategories] = useState<EquipmentCategory[]>([]);
@@ -256,6 +260,21 @@ export default function EquipmentForm({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Kiểm tra ngày mua không được là trong tương lai
+        if (purchaseDate) {
+            const selectedDate = new Date(purchaseDate);
+            const currentDate = new Date();
+
+            // Loại bỏ giờ, phút, giây để chỉ so sánh ngày
+            selectedDate.setHours(0, 0, 0, 0);
+            currentDate.setHours(0, 0, 0, 0);
+
+            if (selectedDate > currentDate) {
+                toast.error("Ngày mua không được là ngày trong tương lai");
+                return;
+            }
+        }
+
         if (!name || !code || !categoryId) {
             toast.error("Vui lòng điền đầy đủ các trường bắt buộc");
             return;
@@ -309,7 +328,7 @@ export default function EquipmentForm({
                 {/* Thông tin cơ bản */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card>
-                        <CardContent className="pt-6 space-y-4">
+                        <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name" className="font-medium">
                                     Tên thiết bị{" "}
@@ -562,6 +581,7 @@ export default function EquipmentForm({
                                                 setPurchaseDate(e.target.value)
                                             }
                                             className="pr-10"
+                                            required
                                         />
                                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                                             <svg
@@ -600,6 +620,7 @@ export default function EquipmentForm({
                                         }
                                         min="0"
                                         placeholder="0"
+                                        required
                                     />
                                 </div>
 
@@ -629,7 +650,7 @@ export default function EquipmentForm({
                 {/* Hình ảnh và các tùy chọn */}
                 <div className="space-y-6">
                     <Card>
-                        <CardContent className="pt-6 space-y-4">
+                        <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="image" className="font-medium">
                                     Hình ảnh thiết bị
@@ -726,13 +747,13 @@ export default function EquipmentForm({
 
                     <div className="flex items-center justify-end gap-2">
                         <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.push("/dashboard/equipments")}
-                    disabled={isSubmitting}
-                >
-                    Hủy
-                </Button>
+                            type="button"
+                            variant="outline"
+                            onClick={() => router.push("/dashboard/equipments")}
+                            disabled={isSubmitting}
+                        >
+                            Hủy
+                        </Button>
                         <Button
                             type="submit"
                             className="min-w-[120px]"

@@ -124,6 +124,45 @@ export default function VenuesPage() {
         fetchVenuesData();
     }, []);
 
+    // Define Event interface
+    interface Event {
+        status: string;
+    }
+
+    // Cập nhật useEffect để lấy thêm dữ liệu từ endpoint events
+    useEffect(() => {
+        const fetchEventStats = async () => {
+            try {
+                // Gọi API để lấy danh sách tất cả các sự kiện
+                const response = await fetchApi("/events");
+
+                if (response.ok) {
+                    const events = await response.json();
+
+                    // Lọc sự kiện đã hoàn thành và đang diễn ra
+                    const completedAndOngoingEvents = events.filter(
+                        (event: Event) =>
+                            event.status === "completed" ||
+                            event.status === "ongoing"
+                    );
+
+                    // Cập nhật stats với số lượng sự kiện thực tế
+                    setStats((prevStats) => ({
+                        ...prevStats,
+                        totalEvents: completedAndOngoingEvents.length,
+                    }));
+                }
+            } catch (error) {
+                console.error("Error fetching event stats:", error);
+            }
+        };
+
+        // Gọi fetchEventStats sau khi đã load venues
+        if (!loading) {
+            fetchEventStats();
+        }
+    }, [loading]);
+
     // Interface cho dữ liệu thô từ API
     interface RawVenue {
         venue_id?: number;
@@ -153,7 +192,7 @@ export default function VenuesPage() {
             image:
                 venue.image ||
                 venue.thumbnail ||
-                "/images/venue-placeholder.jpg",
+                "/images/placeholder.jpg",
             created_at: venue.created_at || new Date().toISOString(),
             updated_at: venue.updated_at,
             description: venue.description || "Thông tin đang được cập nhật",

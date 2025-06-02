@@ -19,6 +19,9 @@ interface Court {
     venue_id: number;
     venue_name: string;
     is_indoor: boolean;
+    // Thêm các trường mới
+    description?: string;
+    booking_count?: number;
 }
 
 export default function PopularCourts() {
@@ -108,13 +111,12 @@ export default function PopularCourts() {
                                 type={court.type_name}
                                 hourlyRate={court.hourly_rate}
                                 status={court.status}
-                                image={
-                                    court.image ||
-                                    "/images/placeholder.jpg"
-                                }
+                                image={court.image || "/images/placeholder.jpg"}
                                 venueId={court.venue_id}
                                 venueName={court.venue_name}
                                 isIndoor={court.is_indoor}
+                                description={court.description}
+                                bookingCount={court.booking_count || 0}
                             />
                         ))}
                     </div>

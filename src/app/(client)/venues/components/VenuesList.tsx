@@ -151,7 +151,7 @@ export default function VenuesList({
                                 description={venue.description || ""} // Xử lý undefined
                                 image={
                                     (venue.image && getImageUrl(venue.image)) ||
-                                    "/images/venue-placeholder.jpg"
+                                    "/images/placeholder.jpg"
                                 }
                                 status={venue.status}
                                 capacity={venue.capacity || undefined}

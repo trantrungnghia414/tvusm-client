@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
     Menu,
     X,
@@ -34,6 +34,27 @@ export default function Navbar() {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const pathname = usePathname();
+
+    // Danh sách các route và tên tương ứng để kiểm tra trang hiện tại
+    const routes = [
+        { path: "/", label: "Trang chủ" },
+        { path: "/venues", label: "Nhà thi đấu" },
+        { path: "/courts", label: "Sân thể thao" },
+        { path: "/booking", label: "Đặt sân" },
+        { path: "/events", label: "Sự kiện" },
+        { path: "/pricing", label: "Bảng giá" },
+    ];
+
+    // Kiểm tra đường dẫn hiện tại có khớp với route không
+    const isActive = (path: string): boolean => {
+        // Kiểm tra chính xác trang chủ
+        if (path === "/" && pathname === "/") return true;
+
+        // Cho các trang khác, kiểm tra xem pathname có bắt đầu bằng path không
+        // (để xử lý các trang con như /courts/1, /venues/detail, v.v.)
+        return path !== "/" && pathname.startsWith(path);
+    };
 
     // Kiểm tra đăng nhập và xử lý scroll
     useEffect(() => {
@@ -64,7 +85,7 @@ export default function Navbar() {
             window.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", handleResize);
         };
-    }, [isMobileMenuOpen]);
+    }, [isMobileMenuOpen, pathname]);
 
     const fetchUserProfile = async (token: string) => {
         try {
@@ -119,60 +140,26 @@ export default function Navbar() {
 
                 {/* Desktop & Tablet Navigation */}
                 <nav className="hidden lg:flex items-center space-x-4 xl:space-x-6">
-                    <Link
-                        href="/"
-                        className={`font-medium text-sm xl:text-base transition-colors relative group ${
-                            isScrolled ? "text-gray-800" : "text-white"
-                        }`}
-                    >
-                        Trang chủ
-                        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform scale-x-0 origin-left transition-transform group-hover:scale-x-100"></span>
-                    </Link>
-                    <Link
-                        href="/venues"
-                        className={`font-medium text-sm xl:text-base transition-colors relative group ${
-                            isScrolled ? "text-gray-800" : "text-white"
-                        }`}
-                    >
-                        Nhà thi đấu
-                        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform scale-x-0 origin-left transition-transform group-hover:scale-x-100"></span>
-                    </Link>
-                    <Link
-                        href="/courts"
-                        className={`font-medium text-sm xl:text-base transition-colors relative group ${
-                            isScrolled ? "text-gray-800" : "text-white"
-                        }`}
-                    >
-                        Sân thể thao
-                        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform scale-x-0 origin-left transition-transform group-hover:scale-x-100"></span>
-                    </Link>
-                    <Link
-                        href="/booking"
-                        className={`font-medium text-sm xl:text-base transition-colors relative group ${
-                            isScrolled ? "text-gray-800" : "text-white"
-                        }`}
-                    >
-                        Đặt sân
-                        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform scale-x-0 origin-left transition-transform group-hover:scale-x-100"></span>
-                    </Link>
-                    <Link
-                        href="/events"
-                        className={`font-medium text-sm xl:text-base transition-colors relative group ${
-                            isScrolled ? "text-gray-800" : "text-white"
-                        }`}
-                    >
-                        Sự kiện
-                        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform scale-x-0 origin-left transition-transform group-hover:scale-x-100"></span>
-                    </Link>
-                    <Link
-                        href="/pricing"
-                        className={`font-medium text-sm xl:text-base transition-colors relative group ${
-                            isScrolled ? "text-gray-800" : "text-white"
-                        }`}
-                    >
-                        Bảng giá
-                        <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform scale-x-0 origin-left transition-transform group-hover:scale-x-100"></span>
-                    </Link>
+                    {routes.map((route) => (
+                        <Link
+                            key={route.path}
+                            href={route.path}
+                            className={`font-medium text-sm xl:text-base transition-colors relative group 
+                                ${isScrolled ? "text-gray-800" : "text-white"} 
+                                ${isActive(route.path) ? "font-bold" : ""}`}
+                        >
+                            {route.label}
+                            <span
+                                className={`absolute inset-x-0 bottom-0 h-0.5 ${
+                                    isScrolled ? "bg-blue-600" : "bg-white"
+                                } transform origin-left transition-transform ${
+                                    isActive(route.path)
+                                        ? "scale-x-100"
+                                        : "scale-x-0 group-hover:scale-x-100"
+                                }`}
+                            ></span>
+                        </Link>
+                    ))}
                 </nav>
 
                 {/* Desktop & Tablet Actions */}
@@ -199,6 +186,10 @@ export default function Navbar() {
                                             isScrolled
                                                 ? "text-gray-800 hover:text-blue-600"
                                                 : "text-white hover:text-blue-600"
+                                        } ${
+                                            isActive("/profile")
+                                                ? "font-bold"
+                                                : ""
                                         }`}
                                         size="sm"
                                     >
@@ -233,6 +224,10 @@ export default function Navbar() {
                                             isScrolled
                                                 ? "text-gray-800 hover:text-blue-600"
                                                 : "text-white hover:text-blue-600"
+                                        } ${
+                                            isActive("/login")
+                                                ? "font-bold"
+                                                : ""
                                         }`}
                                         size="sm"
                                     >
@@ -248,6 +243,10 @@ export default function Navbar() {
                                             isScrolled
                                                 ? "bg-blue-600 text-white hover:bg-blue-700"
                                                 : "bg-white text-blue-600 hover:bg-blue-50"
+                                        } ${
+                                            isActive("/register")
+                                                ? "font-bold"
+                                                : ""
                                         }`}
                                         size="sm"
                                     >
@@ -281,53 +280,107 @@ export default function Navbar() {
             {isMobileMenuOpen && (
                 <div className="lg:hidden fixed inset-0 top-[55px] bg-white z-50 overflow-y-auto animate-in slide-in-from-top">
                     <div className="container mx-auto px-4 py-6 flex flex-col space-y-4">
+                        {/* Các menu item cho mobile */}
                         <Link
                             href="/"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center py-3 px-4 font-medium text-gray-800 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-[15px] xs:text-base"
+                            className={`flex items-center py-3 px-4 font-medium text-gray-800 transition-colors text-[15px] xs:text-base rounded-lg 
+                                ${
+                                    isActive("/")
+                                        ? "bg-blue-50 text-blue-700 font-bold"
+                                        : "hover:bg-blue-50 hover:text-blue-600"
+                                }`}
                         >
                             <Home className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
                             Trang chủ
+                            {isActive("/") && (
+                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                            )}
                         </Link>
+
                         <Link
                             href="/venues"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center py-3 px-4 font-medium text-gray-800 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-[15px] xs:text-base"
+                            className={`flex items-center py-3 px-4 font-medium text-gray-800 transition-colors text-[15px] xs:text-base rounded-lg 
+                                ${
+                                    isActive("/venues")
+                                        ? "bg-blue-50 text-blue-700 font-bold"
+                                        : "hover:bg-blue-50 hover:text-blue-600"
+                                }`}
                         >
                             <MapPin className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
                             Nhà thi đấu
+                            {isActive("/venues") && (
+                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                            )}
                         </Link>
+
                         <Link
                             href="/courts"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center py-3 px-4 font-medium text-gray-800 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-[15px] xs:text-base"
+                            className={`flex items-center py-3 px-4 font-medium text-gray-800 transition-colors text-[15px] xs:text-base rounded-lg 
+                                ${
+                                    isActive("/courts")
+                                        ? "bg-blue-50 text-blue-700 font-bold"
+                                        : "hover:bg-blue-50 hover:text-blue-600"
+                                }`}
                         >
                             <Dumbbell className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
                             Sân thể thao
+                            {isActive("/courts") && (
+                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                            )}
                         </Link>
+
                         <Link
                             href="/booking"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center py-3 px-4 font-medium text-gray-800 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-[15px] xs:text-base"
+                            className={`flex items-center py-3 px-4 font-medium text-gray-800 transition-colors text-[15px] xs:text-base rounded-lg 
+                                ${
+                                    isActive("/booking")
+                                        ? "bg-blue-50 text-blue-700 font-bold"
+                                        : "hover:bg-blue-50 hover:text-blue-600"
+                                }`}
                         >
                             <CalendarDays className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
                             Đặt sân
+                            {isActive("/booking") && (
+                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                            )}
                         </Link>
+
                         <Link
                             href="/events"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center py-3 px-4 font-medium text-gray-800 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-[15px] xs:text-base"
+                            className={`flex items-center py-3 px-4 font-medium text-gray-800 transition-colors text-[15px] xs:text-base rounded-lg 
+                                ${
+                                    isActive("/events")
+                                        ? "bg-blue-50 text-blue-700 font-bold"
+                                        : "hover:bg-blue-50 hover:text-blue-600"
+                                }`}
                         >
                             <Calendar className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
                             Sự kiện
+                            {isActive("/events") && (
+                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                            )}
                         </Link>
+
                         <Link
                             href="/pricing"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center py-3 px-4 font-medium text-gray-800 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors text-[15px] xs:text-base"
+                            className={`flex items-center py-3 px-4 font-medium text-gray-800 transition-colors text-[15px] xs:text-base rounded-lg 
+                                ${
+                                    isActive("/pricing")
+                                        ? "bg-blue-50 text-blue-700 font-bold"
+                                        : "hover:bg-blue-50 hover:text-blue-600"
+                                }`}
                         >
                             <CreditCard className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
                             Bảng giá
+                            {isActive("/pricing") && (
+                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                            )}
                         </Link>
 
                         <div className="pt-6 border-t border-gray-200 mt-4">
@@ -339,7 +392,11 @@ export default function Navbar() {
                                             onClick={() =>
                                                 setIsMobileMenuOpen(false)
                                             }
-                                            className="flex items-center px-4 py-3 rounded-lg bg-blue-50 text-blue-700"
+                                            className={`flex items-center px-4 py-3 rounded-lg ${
+                                                isActive("/profile")
+                                                    ? "bg-blue-100 text-blue-800 font-bold"
+                                                    : "bg-blue-50 text-blue-700"
+                                            }`}
                                         >
                                             <User className="mr-3 h-5 w-5 flex-shrink-0" />
                                             <div>
@@ -354,6 +411,9 @@ export default function Navbar() {
                                                         : "Người dùng"}
                                                 </p>
                                             </div>
+                                            {isActive("/profile") && (
+                                                <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
+                                            )}
                                         </Link>
 
                                         <Button
@@ -378,7 +438,12 @@ export default function Navbar() {
                                         >
                                             <Button
                                                 variant="outline"
-                                                className="w-full py-5 justify-center border-blue-600 text-blue-600 rounded-lg text-[15px] xs:text-base"
+                                                className={`w-full py-5 justify-center border-blue-600 rounded-lg text-[15px] xs:text-base
+                                                    ${
+                                                        isActive("/login")
+                                                            ? "bg-blue-100 text-blue-800 font-bold"
+                                                            : "text-blue-600"
+                                                    }`}
                                             >
                                                 <LogIn className="mr-2 h-5 w-5 flex-shrink-0" />
                                                 Đăng nhập
@@ -391,7 +456,14 @@ export default function Navbar() {
                                             }
                                             className="w-full"
                                         >
-                                            <Button className="w-full py-5 justify-center bg-blue-600 hover:bg-blue-700 rounded-lg text-[15px] xs:text-base">
+                                            <Button
+                                                className={`w-full py-5 justify-center bg-blue-600 hover:bg-blue-700 rounded-lg text-[15px] xs:text-base
+                                                    ${
+                                                        isActive("/register")
+                                                            ? "font-bold"
+                                                            : ""
+                                                    }`}
+                                            >
                                                 Đăng ký tài khoản
                                             </Button>
                                         </Link>

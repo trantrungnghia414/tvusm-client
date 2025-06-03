@@ -108,10 +108,18 @@ export default function VenuesPage() {
 
                 // Đảm bảo dữ liệu có định dạng đúng
                 const normalizedData = data.map(normalizeVenueData);
-                setVenues(normalizedData);
 
-                // Tính toán số liệu thống kê từ dữ liệu đã chuẩn hóa
-                calculateAndSetStats(normalizedData);
+                // Lọc bỏ các nhà thi đấu ngưng hoạt động (status = "inactive")
+                const activeVenues = normalizedData.filter(
+                    (venue:Venue) =>
+                        venue.status === "active" ||
+                        venue.status === "maintenance"
+                );
+
+                setVenues(activeVenues);
+
+                // Tính toán số liệu thống kê từ dữ liệu đã lọc
+                calculateAndSetStats(activeVenues);
             } catch (err) {
                 console.error("Error fetching venues:", err);
                 setError("Đã xảy ra lỗi khi tải dữ liệu");
@@ -189,10 +197,7 @@ export default function VenuesPage() {
             location: venue.location || "Địa điểm chưa cập nhật",
             capacity: venue.capacity || null,
             status: venue.status || "active",
-            image:
-                venue.image ||
-                venue.thumbnail ||
-                "/images/placeholder.jpg",
+            image: venue.image || venue.thumbnail || "/images/placeholder.jpg",
             created_at: venue.created_at || new Date().toISOString(),
             updated_at: venue.updated_at,
             description: venue.description || "Thông tin đang được cập nhật",

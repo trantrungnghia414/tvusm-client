@@ -44,7 +44,11 @@ export default function VenueCourts({ venueId }: VenueCourtsProps) {
 
                 if (response.ok) {
                     const data = await response.json();
-                    setCourts(data);
+                    // Lọc thêm lần nữa để chắc chắn chỉ lấy sân của nhà thi đấu này
+                    const filteredCourts = data.filter(
+                        (court:Court) => court.venue_id === Number(venueId)
+                    );
+                    setCourts(filteredCourts);
                 } else {
                     throw new Error("Không thể tải danh sách sân");
                 }

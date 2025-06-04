@@ -13,9 +13,13 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import BookingSuccess from "@/app/(client)/booking/components/BookingSuccess";
 import BookingConfirm from "@/app/(client)/booking/components/BookingConfirm";
-import UserInfoForm, { UserFormData } from "@/app/(client)/booking/components/UserInfoForm";
+import UserInfoForm, {
+    UserFormData,
+} from "@/app/(client)/booking/components/UserInfoForm";
 import BookingSummary from "@/app/(client)/booking/components/BookingSummary";
-import DateTimeSelect, { DateTimeValue } from "@/app/(client)/booking/components/DateTimeSelect";
+import DateTimeSelect, {
+    DateTimeValue,
+} from "@/app/(client)/booking/components/DateTimeSelect";
 import CourtSelect from "@/app/(client)/booking/components/CourtSelect";
 
 interface BookingData {
@@ -75,29 +79,53 @@ export default function BookingPage() {
 
     // Initialize with query parameters if available
     useEffect(() => {
-        const courtId = searchParams.get("court_id");
-        const date = searchParams.get("date");
-        const startTime = searchParams.get("start_time");
-        const duration = searchParams.get("duration");
+        const initializeFromQueryParams = async () => {
+            const courtId = searchParams.get("court_id");
+            const date = searchParams.get("date");
+            const selectedTimes = searchParams.get("selected_times");
 
-        if (courtId) {
-            // Handle court id if needed
-        }
+            if (courtId && date && selectedTimes) {
+                try {
+                    // Lấy thông tin sân từ API
+                    const response = await fetchApi(`/courts/${courtId}`);
+                    if (!response.ok) {
+                        throw new Error("Không thể lấy thông tin sân");
+                    }
 
-        if (date) {
-            setDateTime((prev) => ({ ...prev, date }));
-        }
+                    const courtData = await response.json();
+                    setSelectedCourt(courtData);
 
-        if (startTime) {
-            setDateTime((prev) => ({ ...prev, startTime }));
-        }
+                    // Xử lý thông tin thời gian
+                    const firstTimeSlot = selectedTimes.split(",")[0];
+                    const [startTime, endTime] = firstTimeSlot.split("-");
 
-        if (duration) {
-            const durationNum = parseInt(duration, 10);
-            if (!isNaN(durationNum) && durationNum > 0) {
-                setDateTime((prev) => ({ ...prev, duration: durationNum }));
+                    // Tính thời lượng (giờ)
+                    const startHour = parseInt(startTime.split(":")[0]);
+                    const endHour = parseInt(endTime.split(":")[0]);
+                    const duration = endHour - startHour;
+
+                    // Cập nhật state dateTime
+                    setDateTime({
+                        date: date,
+                        startTime: startTime,
+                        endTime: endTime,
+                        duration: duration,
+                    });
+
+                    // Đánh dấu bước 1 đã hoàn thành và chuyển đến bước 2
+                    setUserFormValid(true);
+                    setCurrentStep(2);
+                } catch (error) {
+                    console.error(
+                        "Error initializing from query params:",
+                        error
+                    );
+                    toast.error("Không thể tự động điền thông tin đặt sân");
+                }
             }
-        }
+        };
+
+        initializeFromQueryParams();
     }, [searchParams]);
 
     // Handle court selection
@@ -180,8 +208,26 @@ export default function BookingPage() {
                 renter_email: userInfo.email,
                 renter_phone: userInfo.phone,
                 notes: userInfo.notes,
-                payment_method: paymentMethod,
+                // Thêm các trường bắt buộc dựa trên cấu trúc database
+                booking_code: `BK${Math.floor(Math.random() * 1000000)}`,
+                booking_type: "public", // hoặc 'student' hoặc 'staff' tùy loại người dùng
+                user_id: undefined as number | undefined, // Khai báo thuộc tính user_id
             };
+
+            // Nếu có token thì gắn user_id, nếu không thì để null
+            if (localStorage.getItem("token")) {
+                const userResponse = await fetchApi("/users/profile", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem(
+                            "token"
+                        )}`,
+                    },
+                });
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    bookingData.user_id = userData.user_id;
+                }
+            }
 
             const token = localStorage.getItem("token");
             const headers: Record<string, string> = {
@@ -267,7 +313,7 @@ export default function BookingPage() {
             {/* Hero section */}
             <div className="bg-blue-600 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-20">
-                    <div className="absolute inset-0 bg-[url('/images/pattern-bg.svg')] bg-repeat bg-center"></div>
+                    <div className="absolute inset-0 bg-[url('/images/placeholder.jpg')] bg-repeat bg-center"></div>
                 </div>
                 <div className="container mx-auto px-4 py-12 relative z-10">
                     <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">

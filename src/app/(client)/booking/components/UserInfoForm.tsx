@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Phone, Mail, FileText } from "lucide-react";
+import { User, Mail, Phone, FileText } from "lucide-react";
+import { fetchApi } from "@/lib/api";
+// import { toast } from "sonner";
 
 export interface UserFormData {
     name: string;
@@ -31,68 +33,107 @@ export default function UserInfoForm({
         phone: "",
     });
 
-    // Handle input change
-    const handleChange = (field: keyof UserFormData, val: string) => {
-        onChange({
-            ...value,
-            [field]: val,
-        });
-    };
-
-    // Validate form
+    // Validate form on value change
     useEffect(() => {
-        const newErrors = {
-            name: "",
-            email: "",
-            phone: "",
-        };
+        const isNameValid = validateName(value.name);
+        const isEmailValid = validateEmail(value.email);
+        const isPhoneValid = validatePhone(value.phone);
 
-        // Validate name
-        if (!value.name.trim()) {
-            newErrors.name = "Vui lòng nhập họ tên";
-        }
-
-        // Validate email
-        if (!value.email.trim()) {
-            newErrors.email = "Vui lòng nhập email";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email.trim())) {
-            newErrors.email = "Email không hợp lệ";
-        }
-
-        // Validate phone
-        if (!value.phone.trim()) {
-            newErrors.phone = "Vui lòng nhập số điện thoại";
-        } else if (!/^[0-9]{10}$/.test(value.phone.replace(/\s+/g, ""))) {
-            newErrors.phone = "Số điện thoại phải có 10 chữ số";
-        }
-
-        setErrors(newErrors);
-
-        // Check if form is valid
-        const isValid = !newErrors.name && !newErrors.email && !newErrors.phone;
-        onValidityChange(isValid);
+        onValidityChange(isNameValid && isEmailValid && isPhoneValid);
     }, [value, onValidityChange]);
 
-    // Get the current user data from localStorage if available
-    useEffect(() => {
-        try {
-            const userData = localStorage.getItem("userData");
-            if (userData) {
-                const user = JSON.parse(userData);
-
-                // Only prefill if the form is empty
-                if (!value.name && !value.email && !value.phone) {
-                    onChange({
-                        name: user.fullname || user.name || "",
-                        email: user.email || "",
-                        phone: user.phone || "",
-                        notes: value.notes,
-                    });
-                }
-            }
-        } catch (error) {
-            console.error("Error loading user data:", error);
+    const validateName = (name: string): boolean => {
+        if (!name.trim()) {
+            setErrors((prev) => ({ ...prev, name: "Vui lòng nhập họ tên" }));
+            return false;
         }
+        setErrors((prev) => ({ ...prev, name: "" }));
+        return true;
+    };
+
+    const validateEmail = (email: string): boolean => {
+        if (!email.trim()) {
+            setErrors((prev) => ({ ...prev, email: "Vui lòng nhập email" }));
+            return false;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setErrors((prev) => ({
+                ...prev,
+                email: "Vui lòng nhập email hợp lệ",
+            }));
+            return false;
+        }
+        setErrors((prev) => ({ ...prev, email: "" }));
+        return true;
+    };
+
+    const validatePhone = (phone: string): boolean => {
+        if (!phone.trim()) {
+            setErrors((prev) => ({
+                ...prev,
+                phone: "Vui lòng nhập số điện thoại",
+            }));
+            return false;
+        }
+        if (!/^0\d{9}$/.test(phone)) {
+            setErrors((prev) => ({
+                ...prev,
+                phone: "Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng số 0)",
+            }));
+            return false;
+        }
+        setErrors((prev) => ({ ...prev, phone: "" }));
+        return true;
+    };
+
+    const handleChange = (field: keyof UserFormData, newValue: string) => {
+        onChange({ ...value, [field]: newValue });
+    };
+
+    // Tự động điền thông tin người dùng khi component mount
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (token) {
+                    console.log("Đang lấy thông tin người dùng...");
+                    const response = await fetchApi("/users/profile", {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+
+                    if (response.ok) {
+                        const user = await response.json();
+                        console.log("Đã lấy được thông tin người dùng:", user);
+
+                        // Cập nhật form với thông tin người dùng
+                        onChange({
+                            name: user.fullname || user.name || "",
+                            email: user.email || "",
+                            phone: user.phone || "",
+                            notes: value.notes,
+                        });
+
+                        // Toast thông báo đã điền thông tin tự động
+                        // toast.success("Đã tự động điền thông tin của bạn");
+                    } else {
+                        console.warn(
+                            "Không thể lấy thông tin người dùng:",
+                            response.status
+                        );
+                    }
+                } else {
+                    console.log(
+                        "Người dùng chưa đăng nhập, không thể tự động điền thông tin"
+                    );
+                }
+            } catch (error) {
+                console.error("Lỗi khi lấy thông tin người dùng:", error);
+            }
+        };
+
+        fetchUserData();
     }, []);
 
     return (
@@ -147,7 +188,7 @@ export default function UserInfoForm({
                         )}
                     </div>
 
-                    {/* Phone */}
+                    {/* Phone Number */}
                     <div className="space-y-2">
                         <Label htmlFor="phone" className="flex items-center">
                             <Phone className="h-4 w-4 mr-2 text-blue-600" />
@@ -156,6 +197,7 @@ export default function UserInfoForm({
                         </Label>
                         <Input
                             id="phone"
+                            type="tel"
                             placeholder="0xxxxxxxxx"
                             value={value.phone}
                             onChange={(e) =>

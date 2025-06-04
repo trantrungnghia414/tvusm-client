@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchApi } from "@/lib/api";
-import CourtCard from "@/app/(client)/components/shared/CourtCard";
 import { Loader2 } from "lucide-react";
+import CourtCard from "@/app/(client)/components/shared/CourtCard";
+import { fetchApi } from "@/lib/api";
 
 interface Court {
     court_id: number;
     name: string;
     code: string;
-    type_name: string;
     type_id: number;
+    type_name: string;
     hourly_rate: number;
     status: "available" | "booked" | "maintenance";
     image?: string;
@@ -46,7 +46,7 @@ export default function VenueCourts({ venueId }: VenueCourtsProps) {
                     const data = await response.json();
                     // Lọc thêm lần nữa để chắc chắn chỉ lấy sân của nhà thi đấu này
                     const filteredCourts = data.filter(
-                        (court:Court) => court.venue_id === Number(venueId)
+                        (court: Court) => court.venue_id === Number(venueId)
                     );
                     setCourts(filteredCourts);
                 } else {
@@ -95,7 +95,8 @@ export default function VenueCourts({ venueId }: VenueCourtsProps) {
             <h3 className="text-xl font-bold mb-6">
                 Các sân thể thao ({courts.length})
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Thay đổi grid-cols-3 thành grid-cols-4 để hiển thị 4 card trên 1 hàng */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {courts.map((court) => (
                     <CourtCard
                         key={court.court_id}
@@ -105,7 +106,7 @@ export default function VenueCourts({ venueId }: VenueCourtsProps) {
                         type={court.type_name}
                         hourlyRate={court.hourly_rate}
                         status={court.status}
-                        image={court.image || "/images/placeholder.jpg"} // Đảm bảo luôn có giá trị mặc định
+                        image={court.image || "/images/placeholder.jpg"}
                         venueId={court.venue_id}
                         venueName={court.venue_name}
                         isIndoor={court.is_indoor}

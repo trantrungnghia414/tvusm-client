@@ -8,15 +8,18 @@ export async function fetchApi(endpoint: string, options?: RequestInit) {
     return response;
 }
 
-export function getImageUrl(path: string | undefined | null): string | null {
-    if (!path) return null;
+export function getImageUrl(path: string | null | undefined): string {
+    if (!path) return "/images/placeholder.jpg"; // Ảnh mặc định nếu không có path
 
-    // Nếu là URL đầy đủ, trả về nguyên dạng
+    // Xử lý URL đầy đủ
     if (path.startsWith("http://") || path.startsWith("https://")) {
         return path;
     }
 
-    // Thêm timestamp để tránh cache
-    const timestamp = new Date().getTime();
-    return `${API_URL}${path}?t=${timestamp}`;
+    // Xử lý đường dẫn tương đối tới uploads
+    if (path.startsWith("/uploads")) {
+        return `${API_URL}${path}`;
+    }
+
+    return path;
 }

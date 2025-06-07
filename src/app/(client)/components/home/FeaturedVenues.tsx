@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { fetchApi, getImageUrl } from "@/lib/api";
-import VenueCard from "../shared/VenueCard";
+import VenueCard from "@/app/(client)/components/shared/VenueCard";
 import { Button } from "@/components/ui/button";
 
 interface Venue {
@@ -27,19 +27,18 @@ export default function FeaturedVenues() {
         const fetchVenues = async () => {
             try {
                 setLoading(true);
-                // Lấy nhà thi đấu mới nhất, thêm tham số sort=latest
-                const response = await fetchApi("/venues?limit=4&sort=latest");
+                const response = await fetchApi("/venues");
 
                 if (response.ok) {
                     const data = await response.json();
-                    // Nếu API không hỗ trợ sắp xếp, thực hiện ở client
-                    const sortedVenues = [...data].sort(
-                        (a, b) =>
-                            new Date(b.created_at).getTime() -
-                            new Date(a.created_at).getTime()
-                    )
-                    .slice(0, 4);
-                    setVenues(sortedVenues);
+
+                    const displayedVenues = data.filter(
+                        (venue: Venue) =>
+                            venue.status === "active" ||
+                            venue.status === "maintenance"
+                    );
+
+                    setVenues(displayedVenues.slice(0, 4));
                 } else {
                     setError("Không thể tải dữ liệu nhà thi đấu");
                 }
@@ -94,7 +93,7 @@ export default function FeaturedVenues() {
                 </div>
             ) : venues.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {venues.map((venue) => (
+                    {venues.map((venue, index) => (
                         <VenueCard
                             key={venue.venue_id}
                             id={venue.venue_id}
@@ -105,12 +104,11 @@ export default function FeaturedVenues() {
                                 const imageUrl = venue.image
                                     ? getImageUrl(venue.image)
                                     : null;
-                                return (
-                                    imageUrl || "/images/placeholder.jpg"
-                                );
+                                return imageUrl || "/images/placeholder.jpg";
                             })()}
                             status={venue.status}
                             capacity={venue.capacity || undefined}
+                            priority={index < 4} // Chỉ set priority cho 4 ảnh đầu tiên
                         />
                     ))}
                 </div>

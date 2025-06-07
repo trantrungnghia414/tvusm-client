@@ -130,11 +130,6 @@ export default function Hero() {
                     <div className="lg:w-1/2 relative">
                         <div className="relative rounded-lg overflow-hidden shadow-2xl">
                             {/* Decorative elements */}
-                            {/* <img
-                                src="/images/sportshall.jpg"
-                                alt="TVU Sports Complex"
-                                className="w-full h-auto rounded-lg relative z-10"
-                            /> */}
                             <Image
                                 src="/images/sportshall.jpg"
                                 alt="TVU Sports Hub"

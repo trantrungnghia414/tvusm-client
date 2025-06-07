@@ -2,6 +2,8 @@ import React from "react";
 import Link from "next/link";
 import { MapPin, Users, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { getImageUrl } from "@/lib/api";
 
 interface VenueCardProps {
     id: number;
@@ -11,6 +13,7 @@ interface VenueCardProps {
     image: string;
     status: "active" | "maintenance" | "inactive";
     capacity?: number;
+    priority?: boolean;
 }
 
 export default function VenueCard({
@@ -21,6 +24,7 @@ export default function VenueCard({
     image,
     status,
     capacity,
+    priority,
 }: VenueCardProps) {
     const statusColors = {
         active: "bg-green-100 text-green-800 border-green-200",
@@ -34,20 +38,15 @@ export default function VenueCard({
         inactive: "Ngừng hoạt động",
     };
 
-    // Hàm xử lý URL ảnh
-    const getImageUrl = (path: string) => {
-        if (path.startsWith("/uploads")) {
-            return `http://localhost:3000${path}`;
-        }
-        return path;
-    };
-
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
             <div className="relative h-48 overflow-hidden">
-                <img
-                    src={getImageUrl(image)}
+                <Image
+                    src={getImageUrl(image) || "/images/placeholder.jpg"}
                     alt={name}
+                    width={400}
+                    height={300}
+                    priority={priority}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <Badge

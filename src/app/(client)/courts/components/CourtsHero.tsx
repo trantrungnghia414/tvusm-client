@@ -39,10 +39,10 @@ export default function CourtsHero({ stats }: CourtsHeroProps) {
                         {/* <span className="block text-blue-200">TVU Sports Hub</span> */}
                     </h1>
                     <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
-                        Khám phá và đặt sân thể thao hiện đại với đầy đủ tiện nghi 
-                        tại Trường Đại học Trà Vinh
+                        Khám phá và đặt sân thể thao hiện đại với đầy đủ tiện
+                        nghi tại Trường Đại học Trà Vinh
                     </p>
-                    
+
                     {/* Quick Stats */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
                         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">

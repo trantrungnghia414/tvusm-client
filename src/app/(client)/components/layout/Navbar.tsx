@@ -130,7 +130,7 @@ export default function Navbar() {
                                 ? "/images/logo-tvusm-blue.png"
                                 : "/images/logo-tvusm-white.png"
                         }
-                        alt="TVU Stadium Management"
+                        alt="TVU Sports Hub"
                         width={180}
                         height={50}
                         className="h-8 sm:h-9 lg:h-10 w-auto object-contain"

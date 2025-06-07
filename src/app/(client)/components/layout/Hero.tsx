@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchApi } from "@/lib/api";
+import Image from "next/image";
 
 // Interface cho thống kê
 interface StatsData {
@@ -28,7 +29,7 @@ export default function Hero() {
                 // Gọi API để lấy số lượng sân thể thao
                 const courtsResponse = await fetchApi("/courts");
 
-                // Gọi API để lấy số lượng người dùng - Sử dụng endpoint có sẵn
+                // Gọi API để lấy số lượng người dùng
                 const usersResponse = await fetchApi("/users");
 
                 let courtsCount = 0;
@@ -43,13 +44,10 @@ export default function Hero() {
 
                 if (usersResponse.ok) {
                     const usersData = await usersResponse.json();
-                    // Đếm số lượng người dùng từ mảng trả về
                     usersCount = Array.isArray(usersData)
                         ? usersData.length
                         : 0;
                 }
-
-                console.log("Số lượng người dùng:", usersCount);
 
                 setStats({
                     courtCount: courtsCount,
@@ -59,7 +57,7 @@ export default function Hero() {
                 console.error("Error fetching stats:", error);
                 // Giả lập dữ liệu khi có lỗi
                 setStats({
-                    courtCount: 7,
+                    courtCount: 2,
                     userCount: 50,
                 });
             } finally {
@@ -132,13 +130,18 @@ export default function Hero() {
                     <div className="lg:w-1/2 relative">
                         <div className="relative rounded-lg overflow-hidden shadow-2xl">
                             {/* Decorative elements */}
-                            <div className="absolute -top-4 -left-4 w-24 h-24 bg-yellow-400 rounded-full opacity-50 blur-lg"></div>
-                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-400 rounded-full opacity-50 blur-lg"></div>
-
-                            <img
+                            {/* <img
                                 src="/images/sportshall.jpg"
                                 alt="TVU Sports Complex"
                                 className="w-full h-auto rounded-lg relative z-10"
+                            /> */}
+                            <Image
+                                src="/images/sportshall.jpg"
+                                alt="TVU Sports Hub"
+                                width={800}
+                                height={500}
+                                className="w-full h-auto rounded-lg relative z-10"
+                                priority
                             />
                         </div>
 

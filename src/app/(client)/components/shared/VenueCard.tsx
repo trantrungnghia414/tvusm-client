@@ -74,10 +74,6 @@ export default function VenueCard({
                     </div>
                 )}
 
-                {/* <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {description}
-                </p> */}
-
                 <p className="text-gray-600 text-sm mb-4 line-clamp-1 min-h-[1.25rem]">
                     {description || "\u00A0"}
                 </p>
@@ -86,7 +82,7 @@ export default function VenueCard({
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex items-center text-gray-600">
                         <Clock className="h-4 w-4 mr-1" />
-                        <span className="text-sm">08:00 - 22:00</span>
+                        <span className="text-sm">06:00 - 22:00</span>
                     </div>
 
                     <Link href={`/venues/${id}`}>

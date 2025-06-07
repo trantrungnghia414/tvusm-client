@@ -32,13 +32,13 @@ export default function FeaturedVenues() {
                 if (response.ok) {
                     const data = await response.json();
 
-                    const displayedVenues = data.filter(
+                    data.filter(
                         (venue: Venue) =>
                             venue.status === "active" ||
                             venue.status === "maintenance"
                     );
 
-                    setVenues(displayedVenues.slice(0, 4));
+                    setVenues(data.slice(0, 4));
                 } else {
                     setError("Không thể tải dữ liệu nhà thi đấu");
                 }

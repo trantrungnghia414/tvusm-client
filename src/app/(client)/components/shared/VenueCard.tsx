@@ -24,7 +24,7 @@ export default function VenueCard({
     image,
     status,
     capacity,
-    priority,
+    priority = false,
 }: VenueCardProps) {
     const statusColors = {
         active: "bg-green-100 text-green-800 border-green-200",
@@ -76,7 +76,6 @@ export default function VenueCard({
                 <p className="text-gray-600 text-sm mb-4 line-clamp-1 min-h-[1.25rem]">
                     {description || "\u00A0"}
                 </p>
-                
 
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex items-center text-gray-600">

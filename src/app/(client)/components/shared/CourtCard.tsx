@@ -12,6 +12,9 @@ import {
     Home,
     Users,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import Image from "next/image";
+import { getImageUrl } from "@/lib/api";
 
 interface CourtCardProps {
     id: number;
@@ -24,11 +27,11 @@ interface CourtCardProps {
     venueId: number;
     venueName: string;
     isIndoor: boolean;
-    // Thêm các props bị thiếu
     description?: string;
     surfaceType?: string;
     dimensions?: string;
     bookingCount?: number;
+    priority?: boolean;
 }
 
 export default function CourtCard({
@@ -43,6 +46,7 @@ export default function CourtCard({
     isIndoor,
     description,
     bookingCount,
+    priority = false,
 }: CourtCardProps) {
     const statusColors = {
         available: "bg-green-100 text-green-800 border-green-200",
@@ -56,44 +60,16 @@ export default function CourtCard({
         maintenance: "Đang bảo trì",
     };
 
-    // Định dạng tiền tệ
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-            maximumFractionDigits: 0,
-        }).format(amount);
-    };
-
-    // Hàm xử lý URL ảnh
-    const getImageUrl = (path: string) => {
-        if (!path || path === "") {
-            return "https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Court+Image";
-        }
-
-        if (path.startsWith("http://") || path.startsWith("https://")) {
-            return path;
-        }
-
-        if (path.startsWith("/uploads")) {
-            return `http://localhost:3000${path}`;
-        }
-
-        return path;
-    };
-
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group h-full flex flex-col">
             <div className="relative h-48 overflow-hidden">
-                <img
-                    src={getImageUrl(image)}
+                <Image
+                    src={getImageUrl(image) || "/images/placeholder.jpg"}
                     alt={name}
+                    width={400}
+                    height={300}
+                    priority={priority}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                            "https://via.placeholder.com/400x300/e5e7eb/6b7280?text=Court+Image";
-                    }}
                 />
                 <div className="absolute top-3 left-3 flex gap-2">
                     <Badge

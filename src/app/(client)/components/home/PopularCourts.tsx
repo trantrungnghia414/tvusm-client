@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import CourtCard from "@/app/(client)/components/shared/CourtCard";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +19,6 @@ interface Court {
     venue_id: number;
     venue_name: string;
     is_indoor: boolean;
-    // Thêm các trường mới
     description?: string;
     booking_count?: number;
 }
@@ -33,20 +32,17 @@ export default function PopularCourts() {
         const fetchCourts = async () => {
             try {
                 setLoading(true);
-                // Tăng limit từ 4 lên 8 để lấy 8 sân
-                const response = await fetchApi("/courts?limit=8&sort=popular");
+                const response = await fetchApi("/courts");
 
-                // Sắp xếp phía client (nếu cần)
                 if (response.ok) {
                     const data = await response.json();
-                    // Giả sử API trả về booking_count
-                    const sortedCourts = [...data]
-                        .sort(
-                            (a, b) =>
-                                (b.booking_count || 0) - (a.booking_count || 0)
-                        )
-                        .slice(0, 8);
-                    setCourts(sortedCourts);
+
+                    // Sắp xếp sân theo số lượng đặt từ cao đến thấp
+                    data.sort((a: Court, b: Court) => {
+                        return (b.booking_count || 0) - (a.booking_count || 0);
+                    });
+
+                    setCourts(data.slice(0, 8)); // Lấy 8 sân thể thao phổ biến nhất
                 } else {
                     setError("Không thể tải dữ liệu sân thể thao");
                 }
@@ -102,7 +98,7 @@ export default function PopularCourts() {
                     </div>
                 ) : courts.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {courts.map((court) => (
+                        {courts.map((court, index) => (
                             <CourtCard
                                 key={court.court_id}
                                 id={court.court_id}
@@ -111,12 +107,18 @@ export default function PopularCourts() {
                                 type={court.type_name}
                                 hourlyRate={court.hourly_rate}
                                 status={court.status}
-                                image={court.image || "/images/placeholder.jpg"}
+                                image={(() => {
+                                    const imageUrl = court.image
+                                        ? getImageUrl(court.image)
+                                        : null;
+                                    return imageUrl || "/images/placeholder.jpg";
+                                })()}
                                 venueId={court.venue_id}
                                 venueName={court.venue_name}
                                 isIndoor={court.is_indoor}
                                 description={court.description}
                                 bookingCount={court.booking_count || 0}
+                                priority={index < 8} // Ưu tiên tải 4 sân đầu tiên
                             />
                         ))}
                     </div>

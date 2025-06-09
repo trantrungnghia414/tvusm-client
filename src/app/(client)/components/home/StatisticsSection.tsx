@@ -11,6 +11,17 @@ interface StatsData {
     satisfactionRate: number;
 }
 
+interface Venue {
+    venue_id: number;
+    name: string;
+    location: string;
+    description: string;
+    capacity: number | null;
+    status: "active" | "maintenance" | "inactive";
+    image: string;
+    created_at: string;
+}
+
 export default function StatisticsSection() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<StatsData>({
@@ -31,9 +42,10 @@ export default function StatisticsSection() {
 
                 if (venuesResponse.ok) {
                     const venuesData = await venuesResponse.json();
-                    // Chỉ đếm nhà thi đấu đang hoạt động
                     venueCount = venuesData.filter(
-                        (venue) => venue.status === "active"
+                        (venue: Venue) =>
+                            venue.status === "active" ||
+                            venue.status === "maintenance"
                     ).length;
                 }
 
@@ -47,12 +59,12 @@ export default function StatisticsSection() {
                 }
 
                 // Fetch dữ liệu users để đếm số người dùng
-                const usersResponse = await fetchApi("/users/stats");
+                const usersResponse = await fetchApi("/users");
                 let userCount = 0;
 
                 if (usersResponse.ok) {
-                    const userData = await usersResponse.json();
-                    userCount = userData.totalUsers || 0;
+                    const usersData = await usersResponse.json();
+                    userCount = Array.isArray(usersData) ? usersData.length : 0;
                 }
 
                 // Cập nhật state
@@ -73,13 +85,13 @@ export default function StatisticsSection() {
         fetchStats();
     }, []);
 
-    // Format số lượng lớn với dấu "+"
-    const formatNumber = (num: number): string => {
-        if (num === 0) return "0";
-        if (num < 10) return num.toString() + "+";
-        if (num < 100) return Math.floor(num / 10) * 10 + "+";
-        if (num < 1000) return Math.floor(num / 100) * 100 + "+";
-        return Math.floor(num / 1000) + "k+";
+    // Hàm định dạng số
+    const formatNumber = (count: number): string => {
+        if (count < 1000) return `${count}+`;
+        const formatted = (count / 1000).toFixed(1);
+        return formatted.endsWith(".0")
+            ? `${parseInt(formatted)}k+`
+            : `${formatted}k+`;
     };
 
     // Dữ liệu hiển thị
@@ -110,40 +122,36 @@ export default function StatisticsSection() {
         },
     ];
 
-    if (loading) {
-        return (
-            <section className="py-16 container mx-auto px-4">
-                <div className="flex justify-center items-center py-20">
-                        <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-                        <span className="ml-2 text-gray-600">
-                            Đang tải dữ liệu...
-                        </span>
-                    </div>
-            </section>
-        );
-    }
-
     return (
         <section className="py-16 container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {statsData.map((stat, index) => (
-                    <div
-                        key={index}
-                        className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
-                    >
-                        <div className="bg-blue-50 p-3 rounded-lg w-16 h-16 flex items-center justify-center mb-4">
-                            {stat.icon}
+            {loading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                    <span className="ml-2 text-gray-600">
+                        Đang tải dữ liệu...
+                    </span>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {statsData.map((stat, index) => (
+                        <div
+                            key={index}
+                            className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
+                        >
+                            <div className="bg-blue-50 p-3 rounded-lg w-16 h-16 flex items-center justify-center mb-4">
+                                {stat.icon}
+                            </div>
+                            <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                                {stat.value}
+                            </h3>
+                            <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                                {stat.label}
+                            </h4>
+                            <p className="text-gray-600">{stat.description}</p>
                         </div>
-                        <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                            {stat.value}
-                        </h3>
-                        <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                            {stat.label}
-                        </h4>
-                        <p className="text-gray-600">{stat.description}</p>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </section>
     );
 }

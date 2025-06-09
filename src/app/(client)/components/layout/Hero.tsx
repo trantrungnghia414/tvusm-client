@@ -69,11 +69,12 @@ export default function Hero() {
     }, []);
 
     // Format số lượng người dùng để hiển thị dễ đọc
-    const formatUserCount = (count: number) => {
-        if (count >= 1000) {
-            return `${(count / 1000).toFixed(1)}k+`;
-        }
-        return `${count}+`;
+    const formatUserCount = (count: number): string => {
+        if (count < 1000) return `${count}+`;
+        const formatted = (count / 1000).toFixed(1);
+        return formatted.endsWith(".0")
+            ? `${parseInt(formatted)}k+`
+            : `${formatted}k+`;
     };
 
     return (

@@ -17,7 +17,7 @@ export default function Testimonials() {
             id: 1,
             name: "Nguyễn Văn An",
             role: "Sinh viên Khoa Kỹ thuật và Công nghệ",
-            avatar: "/images/avatar-1.jpg",
+            avatar: "/images/placeholder.jpg",
             content:
                 "Tôi rất hài lòng với chất lượng sân cầu lông tại TVU Sports Hub. Hệ thống đặt sân trực tuyến rất dễ sử dụng và tiện lợi. Giá cả hợp lý cho sinh viên.",
             rating: 5,
@@ -26,7 +26,7 @@ export default function Testimonials() {
             id: 2,
             name: "Trần Thị Bình",
             role: "Giảng viên Khoa Kinh tế",
-            avatar: "/images/avatar-2.jpg",
+            avatar: "/images/placeholder.jpg",
             content:
                 "Nhà thi đấu TVU có cơ sở vật chất hiện đại, sạch sẽ và nhân viên phục vụ rất nhiệt tình. Tôi thường xuyên tổ chức các hoạt động thể thao cho sinh viên tại đây.",
             rating: 5,
@@ -35,7 +35,7 @@ export default function Testimonials() {
             id: 3,
             name: "Lê Văn Cường",
             role: "Cựu sinh viên",
-            avatar: "/images/avatar-3.jpg",
+            avatar: "/images/placeholder.jpg",
             content:
                 "Tôi đã tổ chức giải đấu bóng rổ tại TVU Sports Hub và rất hài lòng với dịch vụ. Hệ thống âm thanh, ánh sáng và các tiện nghi khác đều rất tốt.",
             rating: 4,

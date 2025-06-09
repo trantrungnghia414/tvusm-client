@@ -31,7 +31,6 @@ export default function NewsSection() {
             try {
                 setLoading(true);
 
-                // Thay vì sử dụng /news/featured, sử dụng endpoint cho tất cả tin tức công khai
                 const response = await fetchApi(
                     "/news/public?limit=12&is_published=true"
                 );

@@ -34,37 +34,75 @@ export default function UpcomingEvents() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                // Sửa thành status=upcoming,ongoing để lấy cả sự kiện sắp và đang diễn ra
-                const response = await fetchApi(
-                    "/events?status=upcoming,ongoing&is_public=1"
-                );
+                const response = await fetchApi("/events");
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("Events data:", data); // Thêm log để debug
 
-                    // Lọc bỏ sự kiện đã hủy (nếu có)
                     const filteredEvents = data.filter(
-                        (event: Event) => event.status !== "cancelled"
+                        (event: Event) =>
+                            event.status !== "cancelled"
                     );
 
-                    // Sắp xếp sự kiện theo thứ tự ưu tiên:
-                    // 1. Đang diễn ra (ongoing)
-                    // 2. Sự kiện nổi bật (featured)
-                    // 3. Ngày gần nhất
                     const sortedEvents = filteredEvents.sort(
                         (a: Event, b: Event) => {
-                            // Ưu tiên sự kiện đang diễn ra
-                            if (a.status !== b.status) {
-                                return a.status === "ongoing" ? -1 : 1;
+                            // Tạo biến để kiểm tra các điều kiện
+                            const aIsFeatured = a.is_featured;
+                            const bIsFeatured = b.is_featured;
+                            const aIsUpcoming = a.status === "upcoming";
+                            const bIsUpcoming = b.status === "upcoming";
+                            const aIsOngoing = a.status === "ongoing";
+                            const bIsOngoing = b.status === "ongoing";
+
+                            // 1. Nổi bật + sắp diễn ra (cao nhất)
+                            if (
+                                aIsFeatured &&
+                                aIsUpcoming &&
+                                !(bIsFeatured && bIsUpcoming)
+                            ) {
+                                return -1; // a lên đầu
+                            }
+                            if (
+                                bIsFeatured &&
+                                bIsUpcoming &&
+                                !(aIsFeatured && aIsUpcoming)
+                            ) {
+                                return 1; // b lên đầu
                             }
 
-                            // Tiếp theo ưu tiên sự kiện nổi bật
-                            if (a.is_featured !== b.is_featured) {
-                                return a.is_featured ? -1 : 1;
+                            // 2. Nổi bật + đang diễn ra
+                            if (
+                                aIsFeatured &&
+                                aIsOngoing &&
+                                !(bIsFeatured && bIsOngoing)
+                            ) {
+                                return -1; // a lên đầu
+                            }
+                            if (
+                                bIsFeatured &&
+                                bIsOngoing &&
+                                !(aIsFeatured && aIsOngoing)
+                            ) {
+                                return 1; // b lên đầu
                             }
 
-                            // Cuối cùng, sắp xếp theo ngày bắt đầu gần nhất
+                            // 3. Sắp diễn ra (không nổi bật)
+                            if (aIsUpcoming && !bIsUpcoming) {
+                                return -1; // a lên đầu
+                            }
+                            if (bIsUpcoming && !aIsUpcoming) {
+                                return 1; // b lên đầu
+                            }
+
+                            // 4. Đang diễn ra (không nổi bật)
+                            if (aIsOngoing && !bIsOngoing) {
+                                return -1; // a lên đầu
+                            }
+                            if (bIsOngoing && !aIsOngoing) {
+                                return 1; // b lên đầu
+                            }
+
+                            // 5. Nếu cùng mức độ ưu tiên, sắp xếp theo ngày gần nhất
                             const dateA = new Date(a.start_date);
                             const dateB = new Date(b.start_date);
                             return dateA.getTime() - dateB.getTime();
@@ -88,9 +126,9 @@ export default function UpcomingEvents() {
         fetchEvents();
     }, []);
 
-    // Hàm hiển thị tiêu đề phần trên cùng
-    const renderSectionTitle = () => {
-        return (
+    return (
+        <section className="container mx-auto px-4 py-16">
+            {/* Header section */}
             <div className="flex justify-between items-end mb-10">
                 <div>
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">
@@ -109,100 +147,69 @@ export default function UpcomingEvents() {
                     <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
             </div>
-        );
-    };
 
-    // Hàm hiển thị khi có lỗi
-    const renderError = () => {
-        if (!error) return null;
-
-        return (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p className="text-red-700">{error}</p>
-                <button
-                    className="mt-2 text-red-700 underline"
-                    onClick={() => window.location.reload()}
-                >
-                    Thử lại
-                </button>
-            </div>
-        );
-    };
-
-    // Hàm hiển thị khi đang tải
-    const renderLoading = () => {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 text-blue-600 animate-spin mr-3" />
-                <span className="text-gray-600">Đang tải sự kiện...</span>
-            </div>
-        );
-    };
-
-    // Hàm hiển thị khi không có sự kiện
-    const renderNoEvents = () => {
-        return (
-            <div className="text-center py-16 bg-gray-50 rounded-lg border border-gray-100">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg mb-2">
-                    Không có sự kiện nào sắp diễn ra
-                </p>
-                <p className="text-gray-400 mb-6">
-                    Các sự kiện mới sẽ được cập nhật sớm
-                </p>
-                <Link
-                    href="/contact"
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                    Đăng ký nhận thông báo
-                </Link>
-            </div>
-        );
-    };
-
-    // Hàm hiển thị danh sách sự kiện
-    const renderEvents = () => {
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {events.map((event) => (
-                    <EventCard
-                        key={event.event_id}
-                        id={event.event_id}
-                        title={event.title}
-                        description={event.description || ""}
-                        image={(() => {
-                            const imageUrl = event.image
-                                ? getImageUrl(event.image)
-                                : null;
-                            return imageUrl || "/images/placeholder.jpg";
-                        })()}
-                        startDate={event.start_date}
-                        endDate={event.end_date || undefined}
-                        startTime={event.start_time || undefined}
-                        endTime={event.end_time || undefined}
-                        venueName={event.venue_name}
-                        status={event.status}
-                        maxParticipants={event.max_participants || undefined}
-                        currentParticipants={event.current_participants}
-                        eventType={event.event_type}
-                        isPublic={event.is_public}
-                        isFeatured={event.is_featured}
-                    />
-                ))}
-            </div>
-        );
-    };
-
-    return (
-        <section className="container mx-auto px-4 py-16">
-            {renderSectionTitle()}
-            {error && renderError()}
-
-            {loading
-                ? renderLoading()
-                : events.length > 0
-                ? renderEvents()
-                : renderNoEvents()}
+            {/* Dynamic content based on state */}
+            {loading ? (
+                <div className="flex justify-center items-center h-64">
+                    <Loader2 className="h-8 w-8 text-blue-600 animate-spin mr-3" />
+                    <span className="text-gray-600">Đang tải sự kiện...</span>
+                </div>
+            ) : error ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <p className="text-red-700">{error}</p>
+                    <button
+                        className="mt-2 text-red-700 underline"
+                        onClick={() => window.location.reload()}
+                    >
+                        Thử lại
+                    </button>
+                </div>
+            ) : events.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {events.map((event) => (
+                        <EventCard
+                            key={event.event_id}
+                            id={event.event_id}
+                            title={event.title}
+                            description={event.description || ""}
+                            image={
+                                event.image
+                                    ? getImageUrl(event.image)
+                                    : "/images/placeholder.jpg"
+                            }
+                            startDate={event.start_date}
+                            endDate={event.end_date || undefined}
+                            startTime={event.start_time || undefined}
+                            endTime={event.end_time || undefined}
+                            venueName={event.venue_name}
+                            status={event.status}
+                            maxParticipants={
+                                event.max_participants || undefined
+                            }
+                            currentParticipants={event.current_participants}
+                            eventType={event.event_type}
+                            isPublic={event.is_public}
+                            isFeatured={event.is_featured}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-16 bg-gray-50 rounded-lg border border-gray-100">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg mb-2">
+                        Không có sự kiện nào sắp diễn ra
+                    </p>
+                    <p className="text-gray-400 mb-6">
+                        Các sự kiện mới sẽ được cập nhật sớm
+                    </p>
+                    <Link
+                        href="/contact"
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                        Đăng ký nhận thông báo
+                    </Link>
+                </div>
+            )}
         </section>
     );
 }

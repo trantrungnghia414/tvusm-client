@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
-// import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function GoogleAuthHandler() {
@@ -29,21 +28,23 @@ export default function GoogleAuthHandler() {
         ) {
             const googleToken = session.accessToken as string;
 
-            // Lưu token vào localStorage
+            // 1. Lưu token vào localStorage
             localStorage.setItem("token", googleToken);
+            
+            // 2. Phát sự kiện để thông báo Navbar cập nhật trạng thái đăng nhập
+            window.dispatchEvent(new Event('auth-state-changed'));
 
-            // Đánh dấu đã xử lý
+            // 4. Đánh dấu đã xử lý
             hasHandledLoginRef.current = true;
 
-            // Thông báo thành công
-            // toast.success("Đăng nhập Google thành công!");
-
-            // Điều hướng dựa trên vai trò
+            // 5. Chuyển hướng dựa trên vai trò
             setTimeout(() => {
-                // Xóa các tham số url
+                // Sử dụng window.location.href thay vì router.push()
                 if (session.user?.role === "admin") {
+                    // window.location.href = "/dashboard";
                     router.push("/dashboard");
                 } else {
+                    // window.location.href = "/";
                     router.push("/");
                 }
             }, 500);

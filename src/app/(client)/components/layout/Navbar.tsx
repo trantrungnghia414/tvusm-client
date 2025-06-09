@@ -30,11 +30,11 @@ interface UserProfile {
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false); // Biến này để kiểm tra trạng thái đăng nhập
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const pathname = usePathname();
+    const pathname = usePathname(); // Sử dụng usePathname để lấy đường dẫn hiện tại
 
     // Danh sách các route và tên tương ứng để kiểm tra trang hiện tại
     const routes = [
@@ -67,6 +67,15 @@ export default function Navbar() {
             setIsLoading(false);
         }
 
+        // Thêm event listener cho sự kiện auth-state-changed
+        const handleAuthChange = () => {
+            const token = localStorage.getItem("token");
+            setIsLoggedIn(!!token);
+            if (token) {
+                fetchUserProfile(token);
+            }
+        };
+
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 20);
         };
@@ -78,10 +87,13 @@ export default function Navbar() {
             }
         };
 
+        // Đăng ký các event listeners
+        window.addEventListener("auth-state-changed", handleAuthChange);
         window.addEventListener("scroll", handleScroll);
         window.addEventListener("resize", handleResize);
 
         return () => {
+            window.removeEventListener("auth-state-changed", handleAuthChange);
             window.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", handleResize);
         };
@@ -96,9 +108,21 @@ export default function Navbar() {
             if (response.ok) {
                 const data = await response.json();
                 setUserProfile(data);
+            } else {
+                // Token không hợp lệ hoặc hết hạn
+                if (response.status === 401 || response.status === 403) {
+                    // Tự động đăng xuất
+                    localStorage.removeItem("token");
+                    setIsLoggedIn(false);
+                    setUserProfile(null);
+                }
             }
         } catch (error) {
             console.error("Error fetching user profile:", error);
+            // Token không hợp lệ hoặc server lỗi, nên đăng xuất
+            localStorage.removeItem("token");
+            setIsLoggedIn(false);
+            setUserProfile(null);
         } finally {
             setIsLoading(false);
         }

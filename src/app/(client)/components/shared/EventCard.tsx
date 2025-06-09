@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Calendar, Clock, MapPin, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils";
+import Image from "next/image";
 
 interface EventCardProps {
     id: number;
@@ -53,15 +55,6 @@ export default function EventCard({
         cancelled: "Đã hủy",
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-    };
-
     const eventTypeLabels: Record<string, string> = {
         competition: "Giải đấu",
         training: "Tập luyện",
@@ -73,10 +66,13 @@ export default function EventCard({
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
             <div className="relative h-48 overflow-hidden">
-                <img
+                <Image
                     src={image}
                     alt={title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    priority={false}
                 />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
                     <Badge
@@ -104,7 +100,8 @@ export default function EventCard({
                 </h3>
                 {/* Đảm bảo mô tả luôn chiếm một dòng và có chiều cao cố định */}
                 <p className="text-gray-600 text-sm mb-4 line-clamp-1 min-h-[1.25rem]">
-                    {description || "\u00A0"}
+                    {/* {description || "\u00A0"} */}
+                    {description || "Thông tin đang được cập nhật"}
                 </p>
 
                 <div className="space-y-2 mb-4">
@@ -130,7 +127,7 @@ export default function EventCard({
 
                     <div className="flex items-center text-gray-600">
                         <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm truncate">{venueName}</span>
+                        <span className="text-sm truncate">{venueName || "Thông tin đang được cập nhật"}</span>
                     </div>
 
                     {maxParticipants && (

@@ -74,7 +74,8 @@ export default function VenueCard({
                 )}
 
                 <p className="text-gray-600 text-sm mb-4 line-clamp-1 min-h-[1.25rem]">
-                    {description || "\u00A0"}
+                    {/* {description || "\u00A0"} */}
+                    {description || "Thông tin đang được cập nhật"}
                 </p>
 
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">

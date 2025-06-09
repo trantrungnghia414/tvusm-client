@@ -81,6 +81,7 @@ export default function Testimonials() {
                                         src={testimonial.avatar}
                                         alt={testimonial.name}
                                         fill
+                                        sizes="(max-width: 768px) 48px, 48px"
                                         className="object-cover"
                                     />
                                 </div>

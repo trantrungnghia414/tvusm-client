@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "@/app/(client)/components/layout/Navbar";
 import Footer from "@/app/(client)/components/layout/Footer";
-import VenuesHero from "./components/VenuesHero";
 import VenuesStats from "@/app/(client)/venues/components/VenuesStats";
 import VenuesList from "@/app/(client)/venues/components/VenuesList";
 import VenuesFilters from "@/app/(client)/venues/components/VenuesFilters";
 import { fetchApi } from "@/lib/api";
 import { toast } from "sonner";
+import VenuesHero from "@/app/(client)/venues/components/VenuesHero";
 
 // Định nghĩa interface cho Venue
 interface Venue {
@@ -33,13 +33,43 @@ interface VenueStats {
     totalBookings: number;
 }
 
+// Interface cho dữ liệu thô từ API
+interface RawVenue {
+    venue_id?: number;
+    id?: number;
+    name?: string;
+    location?: string;
+    capacity?: number | null;
+    status?: "active" | "maintenance" | "inactive";
+    image?: string;
+    thumbnail?: string;
+    created_at?: string;
+    updated_at?: string;
+    description?: string;
+    event_count?: number;
+    booking_count?: number;
+}
+
+// Định nghĩa interface cho Event
+interface Event {
+    event_id: number;
+    status: string;
+    venue_id: number;
+    current_participants?: number;
+}
+
+// Định nghĩa interface cho các đối tượng đếm
+interface CountsMap {
+    [key: number]: number;
+}
+
 export default function VenuesPage() {
     // States cho bộ lọc
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [sortBy, setSortBy] = useState("name");
 
-    // States cho dữ liệu - chú ý các kiểu dữ liệu đã được khai báo
+    // States cho dữ liệu
     const [venues, setVenues] = useState<Venue[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -50,78 +80,90 @@ export default function VenuesPage() {
         totalBookings: 0,
     });
 
-    // Fetch dữ liệu khi component mount
+    // Fetch tất cả dữ liệu cần thiết khi component mount
     useEffect(() => {
-        const fetchVenuesData = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                setError(null);
 
-                // Thử lần lượt các endpoint có thể sử dụng được
-                let response;
-                let data = [];
+                // Fetch đồng thời cả venues, events và bookings để tối ưu thời gian
+                const [venuesResponse, eventsResponse, bookingsResponse] =
+                    await Promise.all([
+                        fetchApi("/venues"),
+                        fetchApi("/events"),
+                        fetchApi("/bookings/stats"),
+                    ]);
 
-                // Mảng các endpoint để thử
-                const endpoints = [
-                    "/venues", // API cơ bản nhất
-                    "/venues/all", // Endpoint có thể được sử dụng trong admin
-                    "/courts/venues", // Có thể lấy thông tin venues từ courts
-                    "/venues?limit=20", // Thêm query param
-                ];
+                if (!venuesResponse.ok) {
+                    throw new Error("Không thể tải danh sách nhà thi đấu");
+                }
 
-                let success = false;
+                const venuesData = await venuesResponse.json();
 
-                // Thử từng endpoint cho đến khi thành công
-                for (const endpoint of endpoints) {
-                    try {
-                        console.log(
-                            `Đang thử kết nối tới endpoint: ${endpoint}`
-                        );
-                        response = await fetchApi(endpoint);
+                // Xử lý dữ liệu events
+                let eventsData: Event[] = [];
+                if (eventsResponse.ok) {
+                    eventsData = await eventsResponse.json();
+                } else {
+                    console.warn("Không thể tải dữ liệu sự kiện");
+                }
 
-                        if (response.ok) {
-                            data = await response.json();
-                            console.log(
-                                `Kết nối thành công tới: ${endpoint}`,
-                                data
-                            );
-                            success = true;
-                            break;
-                        }
-                    } catch (endpointError) {
-                        console.warn(
-                            `Không thể kết nối tới ${endpoint}:`,
-                            endpointError
-                        );
+                // Xử lý dữ liệu bookings
+                let bookingsData = {
+                    venueCounts: {} as Record<number, number>,
+                    totalBookings: 0,
+                };
+                if (bookingsResponse.ok) {
+                    bookingsData = await bookingsResponse.json();
+                } else {
+                    console.warn("Không thể tải dữ liệu đặt sân");
+                }
+
+                // Tạo mapping venue_id -> số lượng sự kiện và booking
+                const venueEventCounts: CountsMap = {};
+                const venueBookingCounts: CountsMap =
+                    bookingsData.venueCounts || {};
+
+                // Chỉ đếm sự kiện đã hoàn thành hoặc đang diễn ra
+                eventsData.forEach((event: Event) => {
+                    if (
+                        (event.status === "completed" ||
+                            event.status === "ongoing") &&
+                        event.venue_id
+                    ) {
+                        // Tăng số đếm sự kiện cho venue tương ứng
+                        venueEventCounts[event.venue_id] =
+                            (venueEventCounts[event.venue_id] || 0) + 1;
                     }
-                }
+                });
 
-                // Nếu không có endpoint nào hoạt động, sử dụng dữ liệu mẫu
-                if (!success) {
-                    console.warn(
-                        "Tất cả các endpoint đều thất bại, sử dụng dữ liệu mẫu"
+                // Chuẩn hóa dữ liệu venue với thông tin sự kiện từ mapping
+                const normalizedData = venuesData.map((venue: RawVenue) => {
+                    const venueId = venue.venue_id || venue.id || 0;
+                    return normalizeVenueData(
+                        venue,
+                        venueEventCounts[venueId] || 0,
+                        venueBookingCounts[venueId] || 0
                     );
-                    setError(
-                        "Đang sử dụng dữ liệu mẫu - Vui lòng liên hệ quản trị viên"
-                    );
-                }
+                });
 
-                // Đảm bảo dữ liệu có định dạng đúng
-                const normalizedData = data.map(normalizeVenueData);
+                console.log("Normalized Venues Data", normalizedData);
 
-                // Lọc bỏ các nhà thi đấu ngưng hoạt động (status = "inactive")
+                // Lọc ra các venue đang active
                 const activeVenues = normalizedData.filter(
-                    (venue:Venue) =>
+                    (venue: Venue) =>
                         venue.status === "active" ||
                         venue.status === "maintenance"
                 );
 
                 setVenues(activeVenues);
-
-                // Tính toán số liệu thống kê từ dữ liệu đã lọc
-                calculateAndSetStats(activeVenues);
+                calculateAndSetStats(
+                    activeVenues,
+                    eventsData,
+                    bookingsData.totalBookings
+                );
             } catch (err) {
-                console.error("Error fetching venues:", err);
+                console.error("Error fetching data:", err);
                 setError("Đã xảy ra lỗi khi tải dữ liệu");
                 toast.error("Đã xảy ra lỗi khi tải dữ liệu");
             } finally {
@@ -129,67 +171,15 @@ export default function VenuesPage() {
             }
         };
 
-        fetchVenuesData();
+        fetchData();
     }, []);
 
-    // Define Event interface
-    interface Event {
-        status: string;
-    }
-
-    // Cập nhật useEffect để lấy thêm dữ liệu từ endpoint events
-    useEffect(() => {
-        const fetchEventStats = async () => {
-            try {
-                // Gọi API để lấy danh sách tất cả các sự kiện
-                const response = await fetchApi("/events");
-
-                if (response.ok) {
-                    const events = await response.json();
-
-                    // Lọc sự kiện đã hoàn thành và đang diễn ra
-                    const completedAndOngoingEvents = events.filter(
-                        (event: Event) =>
-                            event.status === "completed" ||
-                            event.status === "ongoing"
-                    );
-
-                    // Cập nhật stats với số lượng sự kiện thực tế
-                    setStats((prevStats) => ({
-                        ...prevStats,
-                        totalEvents: completedAndOngoingEvents.length,
-                    }));
-                }
-            } catch (error) {
-                console.error("Error fetching event stats:", error);
-            }
-        };
-
-        // Gọi fetchEventStats sau khi đã load venues
-        if (!loading) {
-            fetchEventStats();
-        }
-    }, [loading]);
-
-    // Interface cho dữ liệu thô từ API
-    interface RawVenue {
-        venue_id?: number;
-        id?: number;
-        name?: string;
-        location?: string;
-        capacity?: number | null;
-        status?: "active" | "maintenance" | "inactive";
-        image?: string;
-        thumbnail?: string;
-        created_at?: string;
-        updated_at?: string;
-        description?: string;
-        event_count?: number;
-        booking_count?: number;
-    }
-
-    // Hàm chuẩn hóa dữ liệu venue từ API
-    const normalizeVenueData = (venue: RawVenue): Venue => {
+    // Hàm chuẩn hóa dữ liệu venue từ API với thông tin sự kiện
+    const normalizeVenueData = (
+        venue: RawVenue,
+        eventCount: number = 0,
+        bookingCount: number = 0
+    ): Venue => {
         return {
             venue_id:
                 venue.venue_id || venue.id || Math.floor(Math.random() * 1000),
@@ -201,30 +191,36 @@ export default function VenuesPage() {
             created_at: venue.created_at || new Date().toISOString(),
             updated_at: venue.updated_at,
             description: venue.description || "Thông tin đang được cập nhật",
-            event_count: venue.event_count || 0,
-            booking_count: venue.booking_count || 0,
+            event_count: eventCount, // Sử dụng số sự kiện đã đếm
+            booking_count: bookingCount, // Sử dụng số booking đã đếm
         };
     };
 
     // Hàm tính toán và cập nhật số liệu thống kê
-    const calculateAndSetStats = (venues: Venue[]) => {
-        const totalCapacity = venues.reduce((total: number, venue: Venue) => {
+    const calculateAndSetStats = (
+        venues: Venue[],
+        events: Event[] = [],
+        totalBookings: number = 0
+    ) => {
+        // Tính tổng sức chứa
+        const totalCapacity = venues.reduce((total, venue) => {
             return total + (venue.capacity || 0);
         }, 0);
 
+        // Đếm tất cả sự kiện đã hoàn thành hoặc đang diễn ra
+        const completedAndOngoingEvents = events.filter(
+            (event: Event) =>
+                event.status === "completed" || event.status === "ongoing"
+        );
+
+        // Cập nhật stats với dữ liệu đã tính toán
         setStats({
             totalVenues: venues.length,
             totalCapacity,
-            totalEvents: venues.reduce(
-                (total: number, venue: Venue) =>
-                    total + (venue.event_count || 0),
-                0
-            ),
-            totalBookings: venues.reduce(
-                (total: number, venue: Venue) =>
-                    total + (venue.booking_count || 0),
-                0
-            ),
+            // Tổng số sự kiện từ API events
+            totalEvents: completedAndOngoingEvents.length,
+            // Tổng số lượt đặt từ venue
+            totalBookings: totalBookings,
         });
     };
 

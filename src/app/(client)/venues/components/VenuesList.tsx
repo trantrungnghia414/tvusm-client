@@ -138,8 +138,25 @@ export default function VenuesList({
                 </p>
             </div>
 
-            {/* Venues Grid */}
-            {paginatedVenues.length > 0 ? (
+            {loading ? (
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                    <span className="ml-2 text-gray-600">
+                        Đang tải danh sách nhà thi đấu...
+                    </span>
+                </div>
+            ) : error ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <Button
+                        variant="outline"
+                        onClick={() => window.location.reload()}
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                        Thử lại
+                    </Button>
+                </div>
+            ) : paginatedVenues.length > 0 ? (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                         {paginatedVenues.map((venue) => (

@@ -121,7 +121,8 @@ export default function CourtCard({
 
                 {/* Hiển thị mô tả với chiều cao cố định */}
                 <p className="text-gray-600 text-sm mb-4 line-clamp-1 min-h-[1.25rem]">
-                    {description || "\u00A0"}
+                    {/* {description || "\u00A0"} */}
+                    {description || "Thông tin đang được cập nhật"}
                 </p>
 
                 <div className="space-y-3 mb-4 flex-grow">

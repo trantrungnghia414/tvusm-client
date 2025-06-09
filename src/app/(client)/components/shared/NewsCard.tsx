@@ -1,11 +1,9 @@
-"use client";
-/* eslint-disable @next/next/no-img-element */
-
 import React from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
 interface NewsCardProps {
     id: number;
@@ -30,21 +28,16 @@ export default function NewsCard({
     view_count,
     is_featured,
 }: NewsCardProps) {
-    // Xử lý lỗi khi không tải được hình ảnh
-    const handleImageError = (
-        event: React.SyntheticEvent<HTMLImageElement>
-    ) => {
-        event.currentTarget.src = "/images/placeholder.jpg";
-    };
-
     return (
         <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 group h-full flex flex-col">
             <div className="relative h-48 overflow-hidden">
-                <img
-                    src={image || "/images/placeholder.jpg"}
+                <Image
+                    src={image}
                     alt={title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={handleImageError}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    priority={false}
                 />
                 <div className="absolute top-3 left-3 z-10">
                     <Badge className="bg-blue-100 text-blue-800">

@@ -32,13 +32,22 @@ export default function FeaturedVenues() {
                 if (response.ok) {
                     const data = await response.json();
 
-                    data.filter(
+                    // Lọc và lưu kết quả
+                    const activeVenues = data.filter(
                         (venue: Venue) =>
                             venue.status === "active" ||
                             venue.status === "maintenance"
                     );
 
-                    setVenues(data.slice(0, 4));
+                    // Sắp xếp theo thời gian tạo mới nhất
+                    const sortedVenues = activeVenues.sort(
+                        (a: Venue, b: Venue) =>
+                            new Date(b.created_at).getTime() -
+                            new Date(a.created_at).getTime()
+                    );
+
+                    // Lấy 4 nhà thi đấu mới nhất
+                    setVenues(sortedVenues.slice(0, 4));
                 } else {
                     setError("Không thể tải dữ liệu nhà thi đấu");
                 }

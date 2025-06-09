@@ -51,8 +51,8 @@ export default function VenuesHero({ stats }: VenuesHeroProps) {
                             <div className="flex items-center justify-center mb-3">
                                 <Clock className="h-8 w-8 text-yellow-300" />
                             </div>
-                            <h3 className="text-2xl font-bold mb-2">24/7</h3>
-                            <p className="text-blue-100">Hoạt động liên tục</p>
+                            <h3 className="text-2xl font-bold mb-2">6h - 22h</h3>
+                            <p className="text-blue-100">Hoạt động hàng ngày</p>
                         </div>
                         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
                             <div className="flex items-center justify-center mb-3">

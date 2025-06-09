@@ -41,10 +41,8 @@ export default function GoogleAuthHandler() {
             setTimeout(() => {
                 // Sử dụng window.location.href thay vì router.push()
                 if (session.user?.role === "admin") {
-                    // window.location.href = "/dashboard";
                     router.push("/dashboard");
                 } else {
-                    // window.location.href = "/";
                     router.push("/");
                 }
             }, 500);

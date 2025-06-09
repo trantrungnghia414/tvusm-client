@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Calendar, Loader2 } from "lucide-react";
-import EventCard from "@/app/(client)/components/shared/EventCard";
 import { fetchApi, getImageUrl } from "@/lib/api";
+import EventCard from "@/app/(client)/components/shared/EventCard";
 
 interface Event {
     event_id: number;

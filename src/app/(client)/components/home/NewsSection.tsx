@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchApi } from "@/lib/api";
-import NewsCard from "../shared/NewsCard";
+import { fetchApi, getImageUrl } from "@/lib/api";
+import NewsCard from "@/app/(client)/components/shared/NewsCard";
+import { formatRelativeDate } from "@/lib/utils";
 
 interface NewsArticle {
     news_id: number;
@@ -31,18 +32,15 @@ export default function NewsSection() {
             try {
                 setLoading(true);
 
-                const response = await fetchApi(
-                    "/news/public?limit=12&is_published=true"
-                );
+                const response = await fetchApi("/news/public");
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("News data:", data);
 
                     // Sắp xếp để ưu tiên hiển thị tin đa dạng
                     // Trộn tin nổi bật và tin thường để tạo sự đa dạng
-                    const sortedNews = [...data]
-                        .sort((a, b) => {
+                    const sortedNews = data
+                        .sort((a: NewsArticle, b: NewsArticle) => {
                             // Chỉ ưu tiên tin nổi bật ở vị trí đầu tiên
                             if (
                                 (a.is_featured === 1) !==
@@ -57,7 +55,7 @@ export default function NewsSection() {
                                 new Date(a.created_at).getTime()
                             );
                         })
-                        .slice(0, 3); // Lấy 3 bài viết đầu tiên
+                        .slice(0, 3);
 
                     setNews(sortedNews);
                 } else {
@@ -74,25 +72,6 @@ export default function NewsSection() {
 
         fetchNews();
     }, []);
-
-    // Định dạng ngày tháng (VD: 05/06/2025)
-    const formatDate = (dateString: string): string => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-    };
-
-    // URL ảnh
-    const getImageUrl = (path: string | null): string => {
-        if (!path) return "/images/placeholder.jpg";
-        if (path.startsWith("http://") || path.startsWith("https://")) {
-            return path;
-        }
-        return `http://localhost:3000${path}`;
-    };
 
     return (
         <section className="bg-gray-50 py-16">
@@ -144,7 +123,7 @@ export default function NewsSection() {
                                     article.summary ||
                                     article.content.substring(0, 150) + "..."
                                 }
-                                date={formatDate(article.created_at)}
+                                date={formatRelativeDate(article.created_at)}
                                 image={getImageUrl(article.thumbnail)}
                                 category={
                                     article.category_name ||

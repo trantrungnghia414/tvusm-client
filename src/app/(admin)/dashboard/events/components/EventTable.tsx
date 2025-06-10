@@ -101,6 +101,7 @@ export default function EventTable({
         return timeString.substring(0, 5); // Format: HH:MM
     };
 
+    // Hàm để lấy badge trạng thái sự kiện
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "upcoming":
@@ -148,6 +149,7 @@ export default function EventTable({
         }
     };
 
+    // Hàm để lấy badge loại sự kiện
     const getEventTypeBadge = (type: string) => {
         switch (type) {
             case "competition":
@@ -202,6 +204,7 @@ export default function EventTable({
         }
     };
 
+    // Hàm để lấy URL ảnh
     const getImageUrl = (path: string | null) => {
         if (!path) return undefined; // Thay thế null bằng undefined
         if (path.startsWith("http://") || path.startsWith("https://")) {

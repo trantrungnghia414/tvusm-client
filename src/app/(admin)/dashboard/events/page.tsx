@@ -3,14 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { fetchApi } from "@/lib/api";
-
-// import DashboardLayout from "../../components/layout/DashboardLayout";
-// import EventTable from "./components/EventTable";
-// import EventFilters from "./components/EventFilters";
-// import EventActions from "./components/EventActions";
-// import EventStats from "./components/EventStats";
-// import LoadingSpinner from "@/components/ui/loading-spinner";
+import { fetchApi } from "@/lib/api";   
 
 import { Event, EventStats as EventStatsType } from "./types/eventTypes";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
@@ -62,6 +55,7 @@ export default function EventsPage() {
             }
 
             const data = await response.json();
+            console.log("Event data:", data);
             setEvents(data);
 
             // Tính toán thống kê

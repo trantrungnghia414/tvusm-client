@@ -11,7 +11,7 @@ interface Venue {
     venue_id: number;
     name: string;
     location: string;
-    description?: string; // Thay đổi từ string thành string | undefined
+    description?: string;
     capacity: number | null;
     status: "active" | "maintenance" | "inactive";
     image?: string;

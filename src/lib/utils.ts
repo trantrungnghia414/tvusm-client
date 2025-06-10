@@ -84,3 +84,65 @@ export function formatRelativeDate(dateString: string): string {
         return formatDate(dateString);
     }
 }
+
+/**
+ * Format khoảng thời gian sự kiện thành chuỗi ngày tháng
+ * @param start Ngày bắt đầu (string date)
+ * @param end Ngày kết thúc (string date)
+ * @returns Chuỗi ngày tháng đã được định dạng theo tiếng Việt
+ */
+export const formatSEDate = (start: string, end: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const isSameDay =
+        startDate.getDate() === endDate.getDate() &&
+        startDate.getMonth() === endDate.getMonth() &&
+        startDate.getFullYear() === endDate.getFullYear();
+
+    const startStr = startDate.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+
+    if (isSameDay) {
+        return startStr;
+    } else {
+        const endStr = endDate.toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
+        return `${startStr} - ${endStr}`;
+    }
+};
+
+/**
+ * Format thời gian sự kiện
+ * @param date Chuỗi ngày giờ
+ * @returns Chuỗi giờ phút đã được định dạng theo tiếng Việt
+ */
+export const formatTime = (date: string) => {
+    return new Date(date).toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
+/**
+ * Format đầy đủ ngày giờ
+ * @param date Chuỗi ngày giờ
+ * @returns Chuỗi ngày giờ đã được định dạng đầy đủ theo tiếng Việt
+ */
+export const formatFullDateTime = (date: string) => {
+    const dateObj = new Date(date);
+    return `${dateObj.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    })} ${dateObj.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+    })}`;
+};

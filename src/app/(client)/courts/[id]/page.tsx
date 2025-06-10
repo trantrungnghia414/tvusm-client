@@ -250,7 +250,7 @@ export default function CourtDetailPage() {
                             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70"></div>
 
                             {/* Breadcrumbs */}
-                            <div className="absolute top-6 pt-16 left-0 w-full">
+                            <div className="absolute top-6 pt-16 left-0 w-full z-10">
                                 <div className="container mx-auto px-4">
                                     <div className="flex items-center text-white/80 text-sm">
                                         <Link

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { fetchApi, getImageUrl } from "@/lib/api";
 import EventCard from "@/app/(client)/components/shared/EventCard";
+import { Button } from "@/components/ui/button";
 
 interface Event {
     event_id: number;
@@ -40,8 +41,7 @@ export default function UpcomingEvents() {
                     const data = await response.json();
 
                     const filteredEvents = data.filter(
-                        (event: Event) =>
-                            event.status !== "cancelled"
+                        (event: Event) => event.status !== "cancelled"
                     );
 
                     const sortedEvents = filteredEvents.sort(
@@ -155,14 +155,15 @@ export default function UpcomingEvents() {
                     <span className="text-gray-600">Đang tải sự kiện...</span>
                 </div>
             ) : error ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                    <p className="text-red-700">{error}</p>
-                    <button
-                        className="mt-2 text-red-700 underline"
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <Button
+                        variant="outline"
                         onClick={() => window.location.reload()}
+                        className="border-red-300 text-red-600 hover:bg-red-50"
                     >
                         Thử lại
-                    </button>
+                    </Button>
                 </div>
             ) : events.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

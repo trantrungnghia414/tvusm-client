@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchApi } from "@/lib/api";
-import { Calendar, Loader2, MapPin, Clock } from "lucide-react";
+import { fetchApi, getImageUrl } from "@/lib/api";
+import { Calendar, Loader2, MapPin, Clock, Users } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { formatSEDate } from "@/lib/utils";
 
 interface Event {
     event_id: number;
@@ -15,11 +17,13 @@ interface Event {
     venue_id: number;
     venue_name: string;
     image?: string;
+    current_participants?: number;
+    max_participants?: number;
 }
 
 interface VenueEventsProps {
     venueId: number;
-    onEventCountChange?: (count: number) => void; // Thêm prop callback
+    onEventCountChange?: (count: number) => void;
 }
 
 export default function VenueEvents({
@@ -38,12 +42,28 @@ export default function VenueEvents({
 
                 // Chỉ lấy sự kiện đã hoàn thành và đang diễn ra từ API
                 const response = await fetchApi(
-                    `/events?venue_id=${venueId}&status=completed,ongoing`
+                    `/events?venue_id=${venueId}&status=upcoming,ongoing`
                 );
 
                 if (response.ok) {
                     const data = await response.json();
-                    setEvents(data);
+
+                    // Sắp xếp sự kiện: "upcoming" trước, "ongoing" sau, và theo ngày bắt đầu
+                    const sortedEvents = data.sort((a: Event, b: Event) => {
+                        // Ưu tiên theo trạng thái: upcoming trước, ongoing sau
+                        if (a.status === "upcoming" && b.status !== "upcoming")
+                            return -1;
+                        if (a.status !== "upcoming" && b.status === "upcoming")
+                            return 1;
+
+                        // Nếu cùng trạng thái, sắp xếp theo ngày gần nhất
+                        return (
+                            new Date(a.start_date).getTime() -
+                            new Date(b.start_date).getTime()
+                        );
+                    });
+
+                    setEvents(sortedEvents);
 
                     // Gọi callback để cập nhật số lượng sự kiện ở component cha
                     if (onEventCountChange) {
@@ -63,79 +83,36 @@ export default function VenueEvents({
         fetchEvents();
     }, [venueId, onEventCountChange]);
 
-    // Hàm xử lý URL ảnh
-    const getImageUrl = (path: string): string => {
-        if (!path) return "/images/placeholder.jpg";
-
-        if (path.startsWith("http://") || path.startsWith("https://")) {
-            return path;
-        }
-
-        if (path.startsWith("/uploads")) {
-            return `http://localhost:3000${path}`;
-        }
-
-        return path;
-    };
-
-    // Format date for display
-    const formatEventDate = (start: string, end: string) => {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-
-        const isSameDay =
-            startDate.getDate() === endDate.getDate() &&
-            startDate.getMonth() === endDate.getMonth() &&
-            startDate.getFullYear() === endDate.getFullYear();
-
-        const startStr = startDate.toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-
-        if (isSameDay) {
-            return startStr;
-        } else {
-            const endStr = endDate.toLocaleDateString("vi-VN", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-            });
-            return `${startStr} - ${endStr}`;
-        }
-    };
-
-    // Get event status display
+    // Lấy trạng thái sự kiện và hiển thị dưới dạng badge
     const getEventStatus = (status: string) => {
         switch (status) {
             case "upcoming":
                 return (
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full">
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-medium">
                         Sắp diễn ra
                     </span>
                 );
             case "ongoing":
                 return (
-                    <span className="bg-green-100 text-green-800 text-xs px-2.5 py-0.5 rounded-full">
+                    <span className="bg-green-100 text-green-800 text-xs px-2.5 py-0.5 rounded-full font-medium">
                         Đang diễn ra
                     </span>
                 );
             case "completed":
                 return (
-                    <span className="bg-gray-100 text-gray-800 text-xs px-2.5 py-0.5 rounded-full">
+                    <span className="bg-gray-100 text-gray-800 text-xs px-2.5 py-0.5 rounded-full font-medium">
                         Đã kết thúc
                     </span>
                 );
             case "cancelled":
                 return (
-                    <span className="bg-red-100 text-red-800 text-xs px-2.5 py-0.5 rounded-full">
+                    <span className="bg-red-100 text-red-800 text-xs px-2.5 py-0.5 rounded-full font-medium">
                         Đã hủy
                     </span>
                 );
             default:
                 return (
-                    <span className="bg-gray-100 text-gray-800 text-xs px-2.5 py-0.5 rounded-full">
+                    <span className="bg-gray-100 text-gray-800 text-xs px-2.5 py-0.5 rounded-full font-medium">
                         Không xác định
                     </span>
                 );
@@ -161,9 +138,15 @@ export default function VenueEvents({
 
     if (events.length === 0) {
         return (
-            <div className="text-center py-10 bg-gray-50 rounded-xl">
-                <p className="text-gray-500">
-                    Không có sự kiện nào trong nhà thi đấu này
+            <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Calendar className="h-8 w-8 text-gray-400" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-700 mb-2">
+                    Chưa có sự kiện nào
+                </h4>
+                <p className="text-gray-500 max-w-md mx-auto">
+                    Hiện tại chưa có sự kiện nào diễn ra tại nhà thi đấu này.
                 </p>
             </div>
         );
@@ -174,43 +157,31 @@ export default function VenueEvents({
             <h3 className="text-xl font-bold mb-6">
                 Các sự kiện ({events.length})
             </h3>
-            <div className="space-y-6">
+
+            <div className="space-y-8">
                 {events.map((event) => (
                     <Link
                         href={`/events/${event.event_id}`}
                         key={event.event_id}
+                        className="block group"
                     >
-                        <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden flex flex-col md:flex-row">
-                            <div className="relative h-48 md:h-auto md:w-1/3">
-                                <img
+                        <div className="bg-white rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col md:flex-row transform">
+                            <div className="relative h-60 md:h-56 md:w-2/5 overflow-hidden">
+                                <Image
                                     src={getImageUrl(event.image || "")}
                                     alt={event.title}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 40vw"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                                    priority={false}
                                 />
-                                <div className="absolute top-3 right-3">
+                                <div className="absolute top-0 inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                                <div className="absolute top-3 right-3 z-10">
                                     {getEventStatus(event.status)}
                                 </div>
-                            </div>
-                            <div className="p-6 md:w-2/3">
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                    {event.title}
-                                </h3>
-                                <div className="flex flex-wrap gap-4 mb-3 text-gray-600">
-                                    <div className="flex items-center">
-                                        <Calendar className="h-4 w-4 mr-1.5 text-blue-600" />
-                                        <span>
-                                            {formatEventDate(
-                                                event.start_date,
-                                                event.end_date
-                                            )}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <MapPin className="h-4 w-4 mr-1.5 text-blue-600" />
-                                        <span>{event.venue_name}</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <Clock className="h-4 w-4 mr-1.5 text-blue-600" />
+                                <div className="absolute bottom-3 left-3 right-3">
+                                    <div className="flex items-center bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm">
+                                        <Clock className="h-3.5 w-3.5 text-blue-600 mr-1.5" />
                                         <span>
                                             {new Date(
                                                 event.start_date
@@ -221,9 +192,59 @@ export default function VenueEvents({
                                         </span>
                                     </div>
                                 </div>
-                                <p className="text-gray-600 line-clamp-2">
-                                    {event.description}
+                            </div>
+                            <div className="p-6 md:w-3/5 flex flex-col h-full">
+                                <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                                    {event.title}
+                                </h3>
+                                <div className="flex flex-wrap gap-4 mb-4 text-gray-600">
+                                    <div className="flex items-center">
+                                        <Calendar className="h-4 w-4 mr-1.5 text-blue-600" />
+                                        <span>
+                                            {formatSEDate(
+                                                event.start_date,
+                                                event.end_date
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <MapPin className="h-4 w-4 mr-1.5 text-blue-600" />
+                                        <span>{event.venue_name}</span>
+                                    </div>
+                                    {event.max_participants && (
+                                        <div className="flex items-center">
+                                            <Users className="h-4 w-4 mr-1.5 text-blue-600" />
+                                            <span>
+                                                {event.current_participants ||
+                                                    0}
+                                                /{event.max_participants}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-gray-600 line-clamp-3 mb-4 flex-grow">
+                                    {event.description ||
+                                        "Không có mô tả cho sự kiện này."}
                                 </p>
+                                <div className="pt-2 border-t border-gray-100 flex justify-end">
+                                    <div className="text-blue-600 text-sm font-medium inline-flex items-center group-hover:underline">
+                                        Xem chi tiết
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M9 5l7 7-7 7"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </Link>

@@ -103,7 +103,6 @@ export default function VenueGallery({ images }: VenueGalleryProps) {
                     </button>
 
                     <div className="relative w-full max-w-5xl max-h-[90vh] flex items-center justify-center">
-                        {/* Lightbox sử dụng img thông thường vì đây là modal động */}
                         <img
                             src={getImageUrl(images[currentImage])}
                             alt={`Hình ảnh nhà thi đấu ${currentImage + 1}`}

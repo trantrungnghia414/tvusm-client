@@ -10,7 +10,7 @@ import { fetchApi } from "@/lib/api";
 import { toast } from "sonner";
 import VenuesHero from "@/app/(client)/venues/components/VenuesHero";
 
-// Định nghĩa interface cho Venue
+// Định nghĩa interface cho Venue 
 interface Venue {
     venue_id: number;
     name: string;

@@ -19,8 +19,8 @@ export default function HomePage() {
             <Navbar />
             <main>
                 <Hero />
-                <FeaturedVenues />
                 <PopularCourts />
+                <FeaturedVenues />
                 <StatisticsSection />
                 <UpcomingEvents />
                 <NewsSection />

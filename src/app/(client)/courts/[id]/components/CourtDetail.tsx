@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import {
     Clock,
     Calendar,
-    Ruler,
     Hash,
     Users,
 } from "lucide-react";
@@ -51,50 +50,6 @@ export default function CourtDetail({ court }: CourtDetailProps) {
                         </p>
                     </div>
                 </div>
-
-                {court.surface_type && (
-                    <div className="flex items-start space-x-3">
-                        <div className="p-2 bg-purple-50 rounded-md">
-                            <div className="h-5 w-5 text-purple-600">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9 5l7 7-7 7"
-                                    />
-                                </svg>
-                            </div>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">Bề mặt</p>
-                            <p className="font-medium">{court.surface_type}</p>
-                        </div>
-                    </div>
-                )}
-
-                {(court.length || court.width) && (
-                    <div className="flex items-start space-x-3">
-                        <div className="p-2 bg-orange-50 rounded-md">
-                            <Ruler className="h-5 w-5 text-orange-600" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">
-                                Kích thước
-                            </p>
-                            <p className="font-medium">
-                                {court.length && court.width
-                                    ? `${court.length}m x ${court.width}m`
-                                    : "Không xác định"}
-                            </p>
-                        </div>
-                    </div>
-                )}
 
                 <div className="flex items-start space-x-3">
                     <div className="p-2 bg-red-50 rounded-md">

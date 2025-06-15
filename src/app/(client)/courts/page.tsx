@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import Navbar from "@/app/(client)/components/layout/Navbar";
 import Footer from "@/app/(client)/components/layout/Footer";
 import { fetchApi } from "@/lib/api";
-import { toast } from "sonner";
 import CourtsHero from "@/app/(client)/courts/components/CourtsHero";
 import CourtsStats from "@/app/(client)/courts/components/CourtsStats";
 import CourtsFilters from "@/app/(client)/courts/components/CourtsFilters";
@@ -95,50 +94,26 @@ export default function CourtsPage() {
                 setLoading(true);
                 setError(null);
 
-                // Thử lần lượt các endpoint có thể sử dụng được
-                let response;
-                let data = [];
+                // Sử dụng endpoint chính
+                const response = await fetchApi("/courts");
 
-                const endpoints = [
-                    "/courts",
-                    "/courts/all",
-                    "/courts?limit=50",
-                ];
+                if (response.ok) {
+                    const data = await response.json();
 
-                let success = false;
+                    console.log("Fetched courts data:", data);
 
-                for (const endpoint of endpoints) {
-                    try {
-                        console.log(`Đang thử kết nối tới endpoint: ${endpoint}`);
-                        response = await fetchApi(endpoint);
+                    // Đảm bảo dữ liệu có định dạng đúng
+                    const normalizedData = data.map(normalizeCourtData);
+                    setCourts(normalizedData);
 
-                        if (response.ok) {
-                            data = await response.json();
-                            console.log(`Kết nối thành công tới: ${endpoint}`, data);
-                            success = true;
-                            break;
-                        }
-                    } catch (endpointError) {
-                        console.warn(`Không thể kết nối tới ${endpoint}:`, endpointError);
-                    }
+                    // Tính toán số liệu thống kê từ dữ liệu đã chuẩn hóa
+                    calculateAndSetStats(normalizedData);
+                } else {
+                    throw new Error("Không thể tải danh sách sân thể thao");
                 }
-
-                // Nếu không có endpoint nào hoạt động, sử dụng dữ liệu mẫu
-                if (!success) {
-                    console.warn("Tất cả các endpoint đều thất bại, sử dụng dữ liệu mẫu");
-                    setError("Đang sử dụng dữ liệu mẫu - Vui lòng liên hệ quản trị viên");
-                }
-
-                // Đảm bảo dữ liệu có định dạng đúng
-                const normalizedData = data.map(normalizeCourtData);
-                setCourts(normalizedData);
-
-                // Tính toán số liệu thống kê từ dữ liệu đã chuẩn hóa
-                calculateAndSetStats(normalizedData);
             } catch (err) {
                 console.error("Error fetching courts:", err);
-                setError("Đã xảy ra lỗi khi tải dữ liệu");
-                toast.error("Đã xảy ra lỗi khi tải dữ liệu");
+                setError("Đã xảy ra lỗi khi tải dữ liệu sân thể thao");
             } finally {
                 setLoading(false);
             }
@@ -150,7 +125,8 @@ export default function CourtsPage() {
     // Hàm chuẩn hóa dữ liệu court từ API
     const normalizeCourtData = (court: RawCourt): Court => {
         return {
-            court_id: court.court_id || court.id || Math.floor(Math.random() * 1000),
+            court_id:
+                court.court_id || court.id || Math.floor(Math.random() * 1000),
             name: court.name || "Sân thể thao không xác định",
             code: court.code || `C${Math.floor(Math.random() * 1000)}`,
             type_id: court.type_id || 1,
@@ -178,15 +154,22 @@ export default function CourtsPage() {
             0
         );
 
-        const averageRate = courts.length > 0 
-            ? courts.reduce((total: number, court: Court) => total + court.hourly_rate, 0) / courts.length
-            : 0;
+        const averageRate =
+            courts.length > 0
+                ? courts.reduce(
+                      (total: number, court: Court) =>
+                          total + court.hourly_rate,
+                      0
+                  ) / courts.length
+                : 0;
 
         setStats({
             totalCourts: courts.length,
-            availableCourts: courts.filter(court => court.status === "available").length,
-            indoorCourts: courts.filter(court => court.is_indoor).length,
-            outdoorCourts: courts.filter(court => !court.is_indoor).length,
+            availableCourts: courts.filter(
+                (court) => court.status === "available"
+            ).length,
+            indoorCourts: courts.filter((court) => court.is_indoor).length,
+            outdoorCourts: courts.filter((court) => !court.is_indoor).length,
             totalBookings,
             averageRate,
         });

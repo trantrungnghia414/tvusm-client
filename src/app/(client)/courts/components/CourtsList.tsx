@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import { Loader2, Search } from "lucide-react";
 import CourtCard from "@/app/(client)/components/shared/CourtCard";
-// import CourtCard from "@/app/(client)/courts/components/CourtsCard";
 
 interface Court {
     court_id: number;

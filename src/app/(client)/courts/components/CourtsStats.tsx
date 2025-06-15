@@ -16,7 +16,6 @@ interface CourtsStats {
     indoorCourts: number;
     outdoorCourts: number;
     totalBookings: number;
-    // averageRate: number;
 }
 
 interface CourtsStatsProps {

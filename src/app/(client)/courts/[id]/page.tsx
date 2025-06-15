@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronRight, ChevronUp } from "lucide-react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import Link from "next/link";
 
 import Navbar from "@/app/(client)/components/layout/Navbar";
@@ -86,6 +86,8 @@ export default function CourtDetailPage() {
 
                 const data = await response.json();
 
+                console.log("Court Data:", data);
+
                 // Chuẩn hóa dữ liệu court
                 const normalizedCourt: CourtDetailType = {
                     court_id: data.court_id || data.id || Number(courtId),
@@ -123,6 +125,8 @@ export default function CourtDetailPage() {
                     average_rating: data.average_rating || 4.5,
                 };
 
+                // console.log("Normalized Court Data:", normalizedCourt);
+
                 setCourt(normalizedCourt);
 
                 // Thêm tiêu đề trang động
@@ -148,28 +152,6 @@ export default function CourtDetailPage() {
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
-
-    // Hàm xử lý URL ảnh
-    const getImageUrl = (path: string): string => {
-        if (!path || typeof path !== "string") {
-            return "/images/placeholder.jpg";
-        }
-
-        try {
-            if (path.startsWith("http://") || path.startsWith("https://")) {
-                return path;
-            }
-
-            if (path.startsWith("/uploads")) {
-                return `http://localhost:3000${path}`;
-            }
-
-            return path;
-        } catch (error) {
-            console.error("Error processing image URL:", error);
-            return "/images/placeholder.jpg";
-        }
-    };
 
     // Hàm chia đoạn cho mô tả
     const formatDescription = (text: string) => {

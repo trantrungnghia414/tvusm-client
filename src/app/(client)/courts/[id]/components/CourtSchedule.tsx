@@ -1,18 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Loader2, AlertCircle, RefreshCcw } from "lucide-react";
+import { format, addDays } from "date-fns";
+import { vi } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { fetchApi } from "@/lib/api";
-import { vi } from "date-fns/locale";
-import { format, addDays } from "date-fns";
-import { AlertCircle, Loader2, Clock, RefreshCcw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
-interface AvailabilitySlot {
+interface TimeSlot {
     start_time: string;
     end_time: string;
     is_available: boolean;
@@ -20,56 +18,32 @@ interface AvailabilitySlot {
 
 interface DayAvailability {
     date: string;
-    slots: AvailabilitySlot[];
+    slots: TimeSlot[];
 }
 
-interface CourtScheduleProps {
-    courtId: number;
-}
-
-export default function CourtSchedule({ courtId }: CourtScheduleProps) {
-    const router = useRouter();
+export default function CourtSchedule({ courtId }: { courtId: number }) {
+    const [date, setDate] = useState<Date>(new Date());
     const [availability, setAvailability] = useState<DayAvailability[]>([]);
+    const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-    // Thêm state để lưu các mốc thời gian đã chọn
-    const [selectedSlots, setSelectedSlots] = useState<AvailabilitySlot[]>([]);
-
-    // Giờ mở cửa và đóng cửa mặc định (sẽ được thay thế bởi dữ liệu từ API)
-    // const openingHour = 6; // 6 AM
-    // const closingHour = 22; // 10 PM
-
-    // Fetch lịch đặt sân từ API
+    // Fetch available slots when date changes
     useEffect(() => {
-        const fetchAvailability = async () => {
+        const fetchAvailableSlots = async () => {
             setLoading(true);
             setError(null);
-
-            // Reset selected slots when date changes
-            setSelectedSlots([]);
+            setSelectedSlots([]); // Reset selected slots when date changes
 
             try {
-                // Format date as YYYY-MM-DD for API call
-                const formattedDate = format(selectedDate, "yyyy-MM-dd");
-
-                console.log(
-                    `Đang lấy thông tin lịch đặt sân: /courts/${courtId}/availability?date=${formattedDate}`
-                );
-
-                // Gọi API để lấy thông tin lịch đặt sân theo ngày
+                const formattedDate = format(date, "yyyy-MM-dd");
                 const response = await fetchApi(
                     `/courts/${courtId}/availability?date=${formattedDate}`
                 );
 
-                console.log("API response status:", response.status);
-
                 if (!response.ok) {
                     if (response.status === 404) {
-                        throw new Error(
-                            `Không tìm thấy thông tin sân với ID ${courtId}`
-                        );
+                        throw new Error("Không tìm thấy dữ liệu lịch đặt sân");
                     } else if (response.status === 500) {
                         throw new Error(
                             "Lỗi server khi tải dữ liệu lịch đặt sân"
@@ -82,55 +56,39 @@ export default function CourtSchedule({ courtId }: CourtScheduleProps) {
                 }
 
                 const data = await response.json();
-                console.log("API data received:", data);
 
-                // Kiểm tra cấu trúc dữ liệu từ API
                 if (!Array.isArray(data)) {
-                    console.warn(
-                        "Dữ liệu lịch đặt sân không đúng định dạng:",
-                        data
+                    throw new Error(
+                        "Dữ liệu lịch đặt sân không đúng định dạng"
                     );
-
-                    // Nếu không có dữ liệu, tạo dữ liệu mẫu để khắc phục tạm thời
-                    const mockData = generateMockAvailability(formattedDate);
-                    console.log("Using mock data:", mockData);
-                    setAvailability(mockData);
-                    return;
                 }
 
                 setAvailability(data);
-            } catch (error) {
-                console.error("Error fetching court availability:", error);
+            } catch (err) {
+                console.error("Error fetching availability:", err);
                 setError(
-                    error instanceof Error
-                        ? error.message
-                        : "Không thể tải dữ liệu lịch đặt sân"
+                    err instanceof Error
+                        ? err.message
+                        : "Không thể tải thông tin khung giờ"
                 );
-
-                // Sử dụng dữ liệu mẫu khi gặp lỗi
-                const formattedDate = format(selectedDate, "yyyy-MM-dd");
-                const mockData = generateMockAvailability(formattedDate);
-                console.log("Using mock data due to error:", mockData);
-                setAvailability(mockData);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchAvailability();
-    }, [courtId, selectedDate]);
+        fetchAvailableSlots();
+    }, [date, courtId]);
 
-    const handleDateChange = (date: Date | undefined) => {
-        if (date) {
-            setSelectedDate(date);
+    const handleDateChange = (newDate: Date | undefined) => {
+        if (newDate) {
+            setDate(newDate);
         }
     };
 
     // Xử lý khi người dùng chọn một mốc thời gian
-    const handleSlotToggle = (slot: AvailabilitySlot) => {
+    const handleSlotToggle = (slot: TimeSlot) => {
         if (!slot.is_available) {
-            toast.error("Khung giờ này đã được đặt");
-            return;
+            return; // Không thể chọn slot đã được đặt
         }
 
         // Kiểm tra xem slot đã được chọn chưa
@@ -151,247 +109,249 @@ export default function CourtSchedule({ courtId }: CourtScheduleProps) {
                 )
             );
         } else {
-            // Sắp xếp lại các slot theo thứ tự thời gian
-            const newSelectedSlots = [...selectedSlots, slot].sort((a, b) =>
-                a.start_time.localeCompare(b.start_time)
-            );
-
+            const newSelectedSlots = [...selectedSlots, slot];
             setSelectedSlots(newSelectedSlots);
         }
-    };
-
-    // Xử lý khi người dùng nhấn nút đặt sân
-    const handleBookMultipleSlots = () => {
-        if (selectedSlots.length === 0) {
-            toast.error("Vui lòng chọn ít nhất một khung giờ");
-            return;
-        }
-
-        const formattedDate = format(selectedDate, "yyyy-MM-dd");
-
-        // Thay vì chỉ lấy giờ bắt đầu và duration, chúng ta sẽ truyền tất cả các slot được chọn
-        const selectedTimesParam = selectedSlots
-            .map((slot) => `${slot.start_time}-${slot.end_time}`)
-            .join(",");
-
-        router.push(
-            `/booking?court_id=${courtId}&date=${formattedDate}&selected_times=${selectedTimesParam}`
-        );
     };
 
     // Thử lại khi gặp lỗi
     const handleRetry = () => {
         setError(null);
-        // const formattedDate = format(selectedDate, "yyyy-MM-dd");
-        router.refresh();
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const formattedDate = format(date, "yyyy-MM-dd");
+                const response = await fetchApi(
+                    `/courts/${courtId}/availability?date=${formattedDate}`
+                );
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+                const data = await response.json();
+                setAvailability(data);
+            } catch (err) {
+                setError("Không thể tải dữ liệu lịch đặt sân");
+                console.error("Error fetching availability:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     };
 
     // Tìm dữ liệu có sẵn cho ngày đã chọn
     const selectedDayAvailability = availability.find(
-        (day) => day.date === format(selectedDate, "yyyy-MM-dd")
+        (day) => day.date === format(date, "yyyy-MM-dd")
     );
 
-    // Kiểm tra slot có trong danh sách đã chọn không
-    const isSlotSelected = (slot: AvailabilitySlot): boolean => {
-        return selectedSlots.some(
-            (s) =>
-                s.start_time === slot.start_time && s.end_time === slot.end_time
-        );
-    };
-
     return (
-        <div className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="text-lg font-semibold mb-4">Chọn ngày</h3>
-                    <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={handleDateChange}
-                        locale={vi}
-                        disabled={(date) =>
-                            date < new Date(new Date().setHours(0, 0, 0, 0)) ||
-                            date > addDays(new Date(), 30)
-                        }
-                        initialFocus
-                    />
-                </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-xl font-bold mb-5">Lịch đặt sân</h2>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold">
-                            Lịch đặt sân -{" "}
-                            {format(selectedDate, "EEEE, dd/MM/yyyy", {
-                                locale: vi,
-                            })}
-                        </h3>
-
-                        {selectedSlots.length > 0 && (
-                            <Badge
-                                variant="outline"
-                                className="flex items-center gap-1 bg-blue-50 text-blue-700 border-blue-200"
-                            >
-                                <Clock className="h-3.5 w-3.5" />
-                                Đã chọn {selectedSlots.length} giờ
-                            </Badge>
-                        )}
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* Phần bên trái: Hiển thị lịch luôn */}
+                <div className="md:w-1/3">
+                    <div>
+                        {/* Calendar hiển thị luôn */}
+                        <div className="border border-gray-200 rounded-md p-3 bg-white">
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={handleDateChange}
+                                className="mx-auto"
+                                locale={vi}
+                                disabled={(date) =>
+                                    date <
+                                        new Date(
+                                            new Date().setHours(0, 0, 0, 0)
+                                        ) || date > addDays(new Date(), 30)
+                                }
+                            />
+                        </div>
                     </div>
 
+                    {/* Nút đặt sân - Chỉ disable khi chưa chọn khung giờ */}
+                    <div className="mt-4">
+                        <Link
+                            href={`/booking?court_id=${courtId}&date=${format(
+                                date,
+                                "yyyy-MM-dd"
+                            )}&selected_times=${selectedSlots
+                                .map(
+                                    (slot) =>
+                                        `${slot.start_time}-${slot.end_time}`
+                                )
+                                .join(",")}`}
+                            onClick={(e) => {
+                                if (selectedSlots.length === 0) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            className={
+                                selectedSlots.length === 0
+                                    ? "pointer-events-none"
+                                    : ""
+                            }
+                        >
+                            <Button
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                disabled={selectedSlots.length === 0}
+                            >
+                                Đặt sân ngay
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Phần bên phải: Lịch đặt sân */}
+                <div className="md:w-2/3">
                     {loading ? (
                         <div className="flex justify-center items-center py-10">
-                            <Loader2 className="h-8 w-8 text-blue-600 animate-spin mr-3" />
-                            <span>Đang tải lịch đặt sân...</span>
+                            <Loader2 className="h-8 w-8 text-blue-600 animate-spin mr-2" />
+                            <span className="text-gray-600">
+                                Đang tải lịch sân...
+                            </span>
                         </div>
                     ) : error ? (
-                        <div className="text-center py-8">
-                            <Alert variant="destructive" className="mb-4">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Không thể tải dữ liệu</AlertTitle>
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
+                        <Alert variant="destructive" className="mb-3">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Lỗi</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
                             <Button
                                 onClick={handleRetry}
                                 variant="outline"
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 mt-2"
+                                size="sm"
                             >
                                 <RefreshCcw className="h-4 w-4" />
                                 Thử lại
                             </Button>
-                        </div>
-                    ) : selectedDayAvailability &&
-                      selectedDayAvailability.slots &&
-                      selectedDayAvailability.slots.length > 0 ? (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                {selectedDayAvailability.slots.map(
-                                    (slot, index) => {
-                                        const selected = isSlotSelected(slot);
+                        </Alert>
+                    ) : (
+                        <>
+                            {selectedDayAvailability &&
+                            selectedDayAvailability.slots.length > 0 ? (
+                                <div>
+                                    <div className="mb-3 border-b pb-2 flex justify-between items-center">
+                                        {/* Ngày đã chọn - bên trái */}
+                                        <h3 className="font-medium text-gray-800">
+                                            {format(date, "EEEE, dd/MM/yyyy", {
+                                                locale: vi,
+                                            })}
+                                        </h3>
 
-                                        return (
-                                            <div
-                                                key={index}
-                                                className={`p-4 rounded-md border text-center cursor-pointer transition-all ${
-                                                    !slot.is_available
-                                                        ? "bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed"
-                                                        : selected
-                                                        ? "bg-blue-100 border-blue-400 shadow-sm"
-                                                        : "bg-white border-blue-200 hover:bg-blue-50"
-                                                }`}
-                                                onClick={() =>
-                                                    handleSlotToggle(slot)
-                                                }
-                                            >
-                                                <div className="font-medium">
-                                                    {slot.start_time} -{" "}
-                                                    {slot.end_time}
-                                                </div>
-                                                <div
-                                                    className={`text-xs mt-1 ${
-                                                        !slot.is_available
-                                                            ? "text-red-500"
-                                                            : selected
-                                                            ? "text-blue-700 font-medium"
-                                                            : "text-green-600"
-                                                    }`}
-                                                >
-                                                    {!slot.is_available
-                                                        ? "Đã được đặt"
-                                                        : selected
-                                                        ? "Đã chọn"
-                                                        : "Có thể đặt"}
-                                                </div>
+                                        {/* Chú thích màu sắc - bên phải */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-green-100 border border-green-200 rounded-sm"></div>
+                                                <span className="text-xs text-gray-600">
+                                                    Còn trống
+                                                </span>
                                             </div>
-                                        );
-                                    }
-                                )}
-                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded-sm"></div>
+                                                <span className="text-xs text-gray-600">
+                                                    Đang chọn
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-red-100 border border-red-200 rounded-sm"></div>
+                                                <span className="text-xs text-gray-600">
+                                                    Đã đặt
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            {selectedSlots.length > 0 && (
-                                <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100">
-                                    <div className="mb-3 sm:mb-0">
-                                        <p className="text-blue-700 font-medium">
-                                            {selectedSlots.length} khung giờ đã
-                                            chọn
-                                        </p>
-                                        <div className="text-sm text-blue-600 flex flex-wrap gap-1 mt-1">
-                                            {selectedSlots.map(
-                                                (slot, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="bg-white px-2 py-0.5 rounded border border-blue-200"
-                                                    >
-                                                        {slot.start_time} -{" "}
-                                                        {slot.end_time}
-                                                    </span>
-                                                )
+                                    {/* Khu vực đặt sân kiểu rạp chiếu phim */}
+                                    <div className="bg-gray-50 py-4 pb-6 px-4 rounded-md border border-gray-200 mb-4">
+                                        <div className="text-center mb-5">
+                                            <div className="text-sm text-gray-500">
+                                                Chọn khung giờ bạn muốn đặt sân
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-6 gap-2 max-w-3xl mx-auto">
+                                            {selectedDayAvailability.slots.map(
+                                                (slot, index) => {
+                                                    const isSelected =
+                                                        selectedSlots.some(
+                                                            (s) =>
+                                                                s.start_time ===
+                                                                    slot.start_time &&
+                                                                s.end_time ===
+                                                                    slot.end_time
+                                                        );
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className={`
+                                                            text-center py-3 px-1 rounded-md cursor-pointer transition-all transform hover:scale-105
+                                                            ${
+                                                                !slot.is_available
+                                                                    ? "bg-red-100 border border-red-200 text-red-800"
+                                                                    : isSelected
+                                                                    ? "bg-blue-100 border border-blue-300 text-blue-800 shadow-md"
+                                                                    : "bg-green-100 border border-green-200 text-green-800 hover:bg-green-200"
+                                                            }
+                                                        `}
+                                                            onClick={() =>
+                                                                handleSlotToggle(
+                                                                    slot
+                                                                )
+                                                            }
+                                                        >
+                                                            <div className="text-xs font-semibold">
+                                                                {
+                                                                    slot.start_time
+                                                                }
+                                                            </div>
+                                                            <div className="text-xs">
+                                                                {slot.end_time}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
                                             )}
                                         </div>
                                     </div>
-                                    <Button
-                                        onClick={handleBookMultipleSlots}
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        Đặt sân ngay
-                                    </Button>
+
+                                    {/* Khung giờ đã chọn - đã dời sang bên phải */}
+                                    {selectedSlots.length > 0 && (
+                                        <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mb-4">
+                                            <h4 className="font-medium text-blue-800 mb-2">
+                                                Khung giờ đã chọn:
+                                            </h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedSlots.map(
+                                                    (slot, index) => (
+                                                        <span
+                                                            key={index}
+                                                            className="bg-white text-blue-600 border border-blue-200 px-2 py-1 rounded-md text-xs font-medium"
+                                                        >
+                                                            {slot.start_time} -{" "}
+                                                            {slot.end_time}
+                                                        </span>
+                                                    )
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 bg-gray-50 rounded-md border border-gray-100">
+                                    <p className="text-gray-500">
+                                        Không có khung giờ nào cho ngày này
+                                    </p>
+                                    <p className="text-sm text-gray-400 mt-2">
+                                        Hãy chọn một ngày khác
+                                    </p>
                                 </div>
                             )}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8">
-                            <p className="text-gray-500">
-                                {selectedDayAvailability
-                                    ? "Không có khung giờ nào cho ngày này"
-                                    : "Không có dữ liệu lịch cho ngày này"}
-                            </p>
-                        </div>
+                        </>
                     )}
-                </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
-                <div className="flex flex-col md:flex-row items-center justify-between">
-                    <div className="mb-4 md:mb-0">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                            Đặt sân trọn ngày hoặc theo sự kiện?
-                        </h3>
-                        <p className="text-blue-700">
-                            Liên hệ với chúng tôi để được tư vấn và hỗ trợ đặt
-                            sân cho sự kiện hoặc sử dụng dài hạn
-                        </p>
-                    </div>
-                    <Button onClick={() => window.open("/contact", "_blank")}>
-                        Liên hệ ngay
-                    </Button>
                 </div>
             </div>
         </div>
     );
 }
-
-// Hàm tạo dữ liệu mẫu cho frontend
-const generateMockAvailability = (date: string): DayAvailability[] => {
-    const openingHour = 6; // 6 AM
-    const closingHour = 22; // 10 PM
-    const slots: AvailabilitySlot[] = [];
-
-    for (let hour = openingHour; hour < closingHour; hour++) {
-        const startTime = `${hour.toString().padStart(2, "0")}:00`;
-        const endTime = `${(hour + 1).toString().padStart(2, "0")}:00`;
-
-        // 80% khả năng slot sẽ trống
-        const isAvailable = Math.random() > 0.2;
-
-        slots.push({
-            start_time: startTime,
-            end_time: endTime,
-            is_available: isAvailable,
-        });
-    }
-
-    return [
-        {
-            date: date,
-            slots: slots,
-        },
-    ];
-};

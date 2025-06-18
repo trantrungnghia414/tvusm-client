@@ -64,7 +64,7 @@ export default function BookingPage() {
     });
     const [paymentMethod, setPaymentMethod] = useState<string>("cash");
 
-    // Animation variants
+    // Animation variant
     const pageVariants = {
         initial: { opacity: 0, x: 100 },
         in: { opacity: 1, x: 0 },

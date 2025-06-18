@@ -10,12 +10,12 @@ import Link from "next/link";
 import Navbar from "@/app/(client)/components/layout/Navbar";
 import Footer from "@/app/(client)/components/layout/Footer";
 import CourtDetail from "./components/CourtDetail";
-import CourtBookingForm from "@/app/(client)/courts/[id]/components/CourtBookingForm";
 import CourtFeatures from "@/app/(client)/courts/[id]/components/CourtFeatures";
 import CourtSchedule from "@/app/(client)/courts/[id]/components/CourtSchedule";
 import CourtRatings from "@/app/(client)/courts/[id]/components/CourtRatings";
 import CourtGallery from "@/app/(client)/courts/[id]/components/CourtGallery";
 import RelatedCourts from "@/app/(client)/courts/[id]/components/RelatedCourts";
+import { Calendar, Info, Star, Image } from "lucide-react";
 
 // Interface cho Court chi tiết
 interface CourtDetailType {
@@ -66,7 +66,7 @@ export default function CourtDetailPage() {
     const [court, setCourt] = useState<CourtDetailType | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState("thông tin");
+    const [activeTab, setActiveTab] = useState("lịch đặt sân");
     const [showBackToTop, setShowBackToTop] = useState(false);
 
     // Lấy thông tin chi tiết sân
@@ -218,7 +218,7 @@ export default function CourtDetailPage() {
                 ) : court ? (
                     <>
                         {/* Hero section */}
-                        <div className="relative h-[50vh] md:h-[60vh] w-full overflow-hidden">
+                        <div className="relative h-[30vh] w-full overflow-hidden">
                             <div
                                 className="absolute inset-0"
                                 style={{
@@ -257,8 +257,8 @@ export default function CourtDetailPage() {
                             </div>
 
                             <div className="absolute inset-0 flex items-end">
-                                <div className="container mx-auto px-4 pb-16 md:pb-20">
-                                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                                <div className="container mx-auto px-4 pb-8">
+                                    <div className="flex flex-wrap items-center gap-3 mb-2">
                                         {/* Status badge */}
                                         {court.status === "available" && (
                                             <span className="bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full font-medium">
@@ -289,11 +289,11 @@ export default function CourtDetailPage() {
                                         </span>
                                     </div>
 
-                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-md">
+                                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-md">
                                         {court.name}
                                     </h1>
 
-                                    <div className="flex items-center text-white mb-6">
+                                    <div className="flex items-center text-white mb-3">
                                         <svg
                                             className="h-5 w-5 mr-2"
                                             xmlns="http://www.w3.org/2000/svg"
@@ -314,120 +314,167 @@ export default function CourtDetailPage() {
                                                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                                             />
                                         </svg>
-                                        <p className="text-lg md:text-xl">
+                                        <p className="text-lg">
                                             {court.venue_name}
                                         </p>
                                     </div>
-
-                                    <button
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-md text-lg font-medium transition-colors shadow-lg"
-                                        onClick={() =>
-                                            router.push(
-                                                `/booking?court_id=${court.court_id}`
-                                            )
-                                        }
-                                    >
-                                        Đặt sân ngay
-                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="container mx-auto px-4 py-10">
-                            {/* Court info cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                                <CourtDetail court={court} />
-                                <CourtBookingForm
-                                    courtId={court.court_id}
-                                    hourlyRate={court.hourly_rate}
-                                />
-                            </div>
+                        <div className="container mx-auto px-4 py-6">
+                            {/* Layout mới: thông tin sân bên trái, tab content bên phải */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* Cột bên trái: Thông tin sân và nút đặt sân */}
+                                <div className="lg:col-span-1">
+                                    {/* Container sticky chứa cả thông tin chi tiết sân và nút đặt sân */}
+                                    <div className="sticky top-24 space-y-6 pb-10">
+                                        {/* Thông tin chi tiết sân */}
+                                        <CourtDetail
+                                            court={court}
+                                            className="w-full"
+                                        />
 
-                            {/* Tabs navigation */}
-                            <div className="mb-8">
-                                <div className="border-b border-gray-200 flex overflow-x-auto no-scrollbar">
-                                    <div className="flex space-x-2 md:space-x-8">
-                                        {[
-                                            "Thông tin",
-                                            "Lịch đặt sân",
-                                            "Đánh giá",
-                                            "Hình ảnh",
-                                        ].map((tab) => (
+                                        {/* Nút đặt sân */}
+                                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                                             <button
-                                                key={tab}
+                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-md text-lg font-medium transition-colors shadow-md"
                                                 onClick={() =>
-                                                    setActiveTab(
-                                                        tab.toLowerCase()
+                                                    router.push(
+                                                        `/booking?court_id=${court.court_id}`
                                                     )
                                                 }
-                                                className={`
-                          relative py-4 px-2 whitespace-nowrap font-medium text-base transition-colors
-                          ${
-                              activeTab === tab.toLowerCase()
-                                  ? "text-blue-600"
-                                  : "text-gray-600 hover:text-gray-900"
-                          }
-                        `}
                                             >
-                                                {tab}
-                                                {activeTab ===
-                                                    tab.toLowerCase() && (
-                                                    <span className="absolute h-1 bg-blue-600 bottom-0 left-0 right-0 rounded-t-md"></span>
-                                                )}
+                                                Đặt sân ngay
                                             </button>
-                                        ))}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Tab content */}
-                            <div className="mb-16">
-                                {activeTab === "thông tin" && (
-                                    <div className="space-y-8">
-                                        {/* Description */}
-                                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                                            <h2 className="text-2xl font-bold mb-4">
-                                                Giới thiệu về sân
-                                            </h2>
-                                            <div className="prose max-w-none text-gray-700">
-                                                {formatDescription(
-                                                    court.description || ""
-                                                ).map((paragraph, idx) => (
-                                                    <p
-                                                        key={idx}
-                                                        className="mb-4"
-                                                    >
-                                                        {paragraph}
-                                                    </p>
-                                                ))}
+                                {/* Cột bên phải: Tab content */}
+                                <div className="lg:col-span-2">
+                                    {/* Tabs navigation - Đã cải thiện */}
+                                    <div className="mb-6">
+                                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                            <div className="flex overflow-x-auto no-scrollbar">
+                                                <div className="flex w-full">
+                                                    {[
+                                                        {
+                                                            id: "lịch đặt sân",
+                                                            label: "Lịch đặt sân",
+                                                            icon: (
+                                                                <Calendar className="h-4 w-4 mr-1" />
+                                                            ),
+                                                        },
+                                                        {
+                                                            id: "thông tin",
+                                                            label: "Thông tin",
+                                                            icon: (
+                                                                <Info className="h-4 w-4 mr-1" />
+                                                            ),
+                                                        },
+                                                        {
+                                                            id: "đánh giá",
+                                                            label: "Đánh giá",
+                                                            icon: (
+                                                                <Star className="h-4 w-4 mr-1" />
+                                                            ),
+                                                        },
+                                                        {
+                                                            id: "hình ảnh",
+                                                            label: "Hình ảnh",
+                                                            icon: (
+                                                                <Image className="h-4 w-4 mr-1" />
+                                                            ),
+                                                        },
+                                                    ].map((tab) => (
+                                                        <button
+                                                            key={tab.id}
+                                                            onClick={() =>
+                                                                setActiveTab(
+                                                                    tab.id
+                                                                )
+                                                            }
+                                                            className={`
+                                                                flex items-center justify-center whitespace-nowrap font-medium transition-colors
+                                                                py-3 px-6 text-sm flex-1
+                                                                ${
+                                                                    activeTab ===
+                                                                    tab.id
+                                                                        ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
+                                                                        : "text-gray-600 hover:bg-gray-50 border-b-2 border-transparent hover:text-blue-600"
+                                                                }
+                                                            `}
+                                                        >
+                                                            {tab.icon}
+                                                            {tab.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* Features */}
-                                        <CourtFeatures
-                                            features={court.features || []}
-                                        />
                                     </div>
-                                )}
 
-                                {activeTab === "lịch đặt sân" && (
-                                    <CourtSchedule courtId={court.court_id} />
-                                )}
+                                    {/* Tab content */}
+                                    <div className="mb-10">
+                                        {activeTab === "thông tin" && (
+                                            <div className="space-y-6">
+                                                {/* Description */}
+                                                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                                                    <h2 className="text-xl font-bold mb-4">
+                                                        Giới thiệu về sân
+                                                    </h2>
+                                                    <div className="prose max-w-none text-gray-700">
+                                                        {formatDescription(
+                                                            court.description ||
+                                                                ""
+                                                        ).map(
+                                                            (
+                                                                paragraph,
+                                                                idx
+                                                            ) => (
+                                                                <p
+                                                                    key={idx}
+                                                                    className="mb-4"
+                                                                >
+                                                                    {paragraph}
+                                                                </p>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
 
-                                {activeTab === "đánh giá" && (
-                                    <CourtRatings
-                                        ratings={court.ratings || []}
-                                        averageRating={
-                                            court.average_rating || 0
-                                        }
-                                    />
-                                )}
+                                                {/* Features */}
+                                                <CourtFeatures
+                                                    features={
+                                                        court.features || []
+                                                    }
+                                                />
+                                            </div>
+                                        )}
 
-                                {activeTab === "hình ảnh" && (
-                                    <CourtGallery
-                                        images={court.gallery || []}
-                                    />
-                                )}
+                                        {activeTab === "lịch đặt sân" && (
+                                            <CourtSchedule
+                                                courtId={court.court_id}
+                                            />
+                                        )}
+
+                                        {activeTab === "đánh giá" && (
+                                            <CourtRatings
+                                                ratings={court.ratings || []}
+                                                averageRating={
+                                                    court.average_rating || 0
+                                                }
+                                            />
+                                        )}
+
+                                        {activeTab === "hình ảnh" && (
+                                            <CourtGallery
+                                                images={court.gallery || []}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Related courts */}

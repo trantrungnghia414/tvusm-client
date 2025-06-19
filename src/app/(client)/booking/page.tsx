@@ -16,11 +16,11 @@ import BookingConfirm from "@/app/(client)/booking/components/BookingConfirm";
 import UserInfoForm, {
     UserFormData,
 } from "@/app/(client)/booking/components/UserInfoForm";
-import BookingSummary from "@/app/(client)/booking/components/BookingSummary";
 import DateTimeSelect, {
     DateTimeValue,
 } from "@/app/(client)/booking/components/DateTimeSelect";
 import CourtSelect from "@/app/(client)/booking/components/CourtSelect";
+import { Calendar, MapPin } from "lucide-react";
 
 interface BookingData {
     court_id: number;
@@ -39,6 +39,13 @@ interface BookingData {
     booking_id?: string;
 }
 
+interface TabItem {
+    id: string;
+    label: string;
+    icon: React.ReactNode;
+    disabled?: boolean;
+}
+
 export default function BookingPage() {
     const searchParams = useSearchParams();
     const [currentStep, setCurrentStep] = useState(1);
@@ -47,6 +54,8 @@ export default function BookingPage() {
     const [bookingComplete, setBookingComplete] = useState<BookingData | null>(
         null
     );
+    const [activeTab, setActiveTab] = useState("court");
+    const [allowAutoSwitch, setAllowAutoSwitch] = useState(true);
 
     // Data states
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
@@ -64,7 +73,7 @@ export default function BookingPage() {
     });
     const [paymentMethod, setPaymentMethod] = useState<string>("cash");
 
-    // Animation variant
+    // Animation variants
     const pageVariants = {
         initial: { opacity: 0, x: 100 },
         in: { opacity: 1, x: 0 },
@@ -77,6 +86,22 @@ export default function BookingPage() {
         duration: 0.5,
     };
 
+    // Tab configuration - ALWAYS disable datetime tab when no court selected
+    const tabs: TabItem[] = [
+        {
+            id: "court",
+            label: "Chọn Sân",
+            icon: <MapPin className="h-4 w-4 mr-1" />,
+            disabled: false, // Always enabled
+        },
+        {
+            id: "datetime",
+            label: "Chọn Thời Gian",
+            icon: <Calendar className="h-4 w-4 mr-1" />,
+            disabled: !selectedCourt, // ✅ Disabled when no court selected
+        },
+    ];
+
     // Initialize with query parameters if available
     useEffect(() => {
         const initializeFromQueryParams = async () => {
@@ -86,7 +111,6 @@ export default function BookingPage() {
 
             if (courtId && date && selectedTimes) {
                 try {
-                    // Lấy thông tin sân từ API
                     const response = await fetchApi(`/courts/${courtId}`);
                     if (!response.ok) {
                         throw new Error("Không thể lấy thông tin sân");
@@ -95,16 +119,13 @@ export default function BookingPage() {
                     const courtData = await response.json();
                     setSelectedCourt(courtData);
 
-                    // Xử lý thông tin thời gian
                     const firstTimeSlot = selectedTimes.split(",")[0];
                     const [startTime, endTime] = firstTimeSlot.split("-");
 
-                    // Tính thời lượng (giờ)
                     const startHour = parseInt(startTime.split(":")[0]);
                     const endHour = parseInt(endTime.split(":")[0]);
                     const duration = endHour - startHour;
 
-                    // Cập nhật state dateTime
                     setDateTime({
                         date: date,
                         startTime: startTime,
@@ -112,7 +133,6 @@ export default function BookingPage() {
                         duration: duration,
                     });
 
-                    // Đánh dấu bước 1 đã hoàn thành và chuyển đến bước 2
                     setUserFormValid(true);
                     setCurrentStep(2);
                 } catch (error) {
@@ -128,9 +148,56 @@ export default function BookingPage() {
         initializeFromQueryParams();
     }, [searchParams]);
 
+    // Modified auto-switch logic with control flag
+    useEffect(() => {
+        if (selectedCourt && activeTab === "court" && allowAutoSwitch) {
+            console.log("Auto-switching to datetime tab...");
+            setActiveTab("datetime");
+        }
+    }, [selectedCourt, activeTab, allowAutoSwitch]);
+
+    // ✅ Optimized handleSwitchToCourt - Single state update batch
+    const handleSwitchToCourt = () => {
+        console.log("Switching to court tab and clearing selection...");
+
+        // ✅ Prevent auto-switch during manual operation
+        setAllowAutoSwitch(false);
+
+        // ✅ Single batched state update to prevent multiple re-renders
+        Promise.resolve()
+            .then(() => {
+                setSelectedCourt(null);
+                setDateTime({
+                    date: "",
+                    startTime: "",
+                    endTime: "",
+                    duration: 1,
+                });
+                setActiveTab("court");
+            })
+            .then(() => {
+                // ✅ Re-enable auto-switch after state updates complete
+                setTimeout(() => {
+                    setAllowAutoSwitch(true);
+                }, 50); // Minimal delay
+            });
+    };
+
     // Handle court selection
     const handleCourtSelect = (court: Court | null) => {
         setSelectedCourt(court);
+
+        // If deselecting a court, clear the date/time and switch back to court tab
+        if (!court) {
+            setDateTime({
+                date: "",
+                startTime: "",
+                endTime: "",
+                duration: 1,
+            });
+            setActiveTab("court");
+            setAllowAutoSwitch(true);
+        }
     };
 
     // Handle date time selection
@@ -208,13 +275,11 @@ export default function BookingPage() {
                 renter_email: userInfo.email,
                 renter_phone: userInfo.phone,
                 notes: userInfo.notes,
-                // Thêm các trường bắt buộc dựa trên cấu trúc database
                 booking_code: `BK${Math.floor(Math.random() * 1000000)}`,
-                booking_type: "public", // hoặc 'student' hoặc 'staff' tùy loại người dùng
-                user_id: undefined as number | undefined, // Khai báo thuộc tính user_id
+                booking_type: "public",
+                user_id: undefined as number | undefined,
             };
 
-            // Nếu có token thì gắn user_id, nếu không thì để null
             if (localStorage.getItem("token")) {
                 const userResponse = await fetchApi("/users/profile", {
                     headers: {
@@ -253,10 +318,8 @@ export default function BookingPage() {
 
             const responseData = await response.json();
 
-            // Đặt sân thành công
             toast.success("Đặt sân thành công!");
 
-            // Tạo dữ liệu booking hoàn chỉnh để hiển thị
             const completeBookingData: BookingData = {
                 booking_id:
                     responseData.booking_id ||
@@ -277,7 +340,7 @@ export default function BookingPage() {
             };
 
             setBookingComplete(completeBookingData);
-            setCurrentStep(4); // Move to success step
+            setCurrentStep(4);
         } catch (error) {
             console.error("Error booking court:", error);
             toast.error(
@@ -310,27 +373,27 @@ export default function BookingPage() {
         <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
             <Navbar />
 
-            {/* Hero section */}
+            {/* Compact Hero section */}
             <div className="bg-blue-600 relative overflow-hidden">
                 <div className="absolute inset-0 opacity-20">
                     <div className="absolute inset-0 bg-[url('/images/placeholder.jpg')] bg-repeat bg-center"></div>
                 </div>
-                <div className="container mx-auto px-4 py-12 relative z-10">
-                    <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-4">
+                <div className="container mx-auto px-4 py-6 relative z-10">
+                    <h1 className="text-2xl md:text-3xl font-bold text-center text-white mb-2">
                         Đặt Sân Thể Thao
                     </h1>
-                    <p className="text-center text-blue-100 max-w-2xl mx-auto">
-                        Đặt sân nhanh chóng, tiện lợi và dễ dàng. Chỉ với vài
-                        bước đơn giản, bạn sẽ có một sân chơi hoàn hảo cho buổi
-                        tập luyện hoặc thi đấu của mình.
+                    <p className="text-center text-blue-100 max-w-xl mx-auto text-sm">
+                        Đặt sân nhanh chóng, tiện lợi và dễ dàng
                     </p>
                 </div>
             </div>
 
-            <main className="container mx-auto px-4 py-10">
-                <div className="max-w-5xl mx-auto">
-                    {/* Booking steps */}
-                    <BookingSteps currentStep={currentStep} />
+            <main className="container mx-auto px-4 py-4">
+                <div className="max-w-7xl mx-auto">
+                    {/* Compact Booking steps */}
+                    <div className="mb-4">
+                        <BookingSteps currentStep={currentStep} />
+                    </div>
 
                     {/* Step heading */}
                     <motion.h2
@@ -338,7 +401,7 @@ export default function BookingPage() {
                         initial={{ y: -20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.5 }}
-                        className="text-3xl font-bold text-center mt-10 mb-8 text-gray-800"
+                        className="text-xl font-bold text-center mb-4 text-gray-800"
                     >
                         {getStepHeading()}
                     </motion.h2>
@@ -352,90 +415,198 @@ export default function BookingPage() {
                         variants={pageVariants}
                         transition={pageTransition}
                     >
-                        {/* Step 1: Select court and time */}
+                        {/* Step 1: Select court and time - FULL WIDTH */}
                         {currentStep === 1 && (
-                            <div className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <CourtSelect
-                                        selectedCourtId={
-                                            selectedCourt?.court_id || 0
-                                        }
-                                        onCourtSelect={handleCourtSelect}
-                                        initialCourtId={parseInt(
-                                            searchParams.get("court_id") || "0",
-                                            10
-                                        )}
-                                        initialVenueId={parseInt(
-                                            searchParams.get("venue_id") || "0",
-                                            10
-                                        )}
-                                    />
-
-                                    <DateTimeSelect
-                                        value={dateTime}
-                                        onChange={handleDateTimeChange}
-                                        courtId={selectedCourt?.court_id || 0}
-                                    />
+                            <div className="max-w-6xl mx-auto">
+                                {/* Tabs navigation */}
+                                <div className="mb-4">
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                        <div className="flex overflow-x-auto no-scrollbar">
+                                            <div className="flex w-full">
+                                                {tabs.map((tab) => (
+                                                    <div
+                                                        key={tab.id}
+                                                        className={`
+                                                            flex items-center justify-center whitespace-nowrap font-medium transition-colors
+                                                            py-3 px-6 text-sm flex-1
+                                                            ${
+                                                                activeTab ===
+                                                                tab.id
+                                                                    ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
+                                                                    : tab.disabled
+                                                                    ? "text-gray-400 border-b-2 border-transparent"
+                                                                    : "text-gray-600 border-b-2 border-transparent"
+                                                            }
+                                                        `}
+                                                        style={{
+                                                            cursor: "default", // ✅ Cursor bình thường cho tất cả tabs
+                                                        }}
+                                                    >
+                                                        {tab.icon}
+                                                        {tab.label}
+                                                        {/* Status indicators */}
+                                                        {tab.id === "court" &&
+                                                            selectedCourt && (
+                                                                <span className="ml-2 h-1.5 w-1.5 bg-green-400 rounded-full"></span>
+                                                            )}
+                                                        {tab.id ===
+                                                            "datetime" &&
+                                                            dateTime.date &&
+                                                            dateTime.startTime && (
+                                                                <span className="ml-2 h-1.5 w-1.5 bg-green-400 rounded-full"></span>
+                                                            )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {selectedCourt &&
-                                    dateTime.date &&
-                                    dateTime.startTime && (
-                                        <div className="mt-8 animate-fadeIn">
-                                            <BookingSummary
-                                                courtName={selectedCourt.name}
-                                                venueName={
-                                                    selectedCourt.venue_name
+                                {/* Tab Contents - Full Width */}
+                                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                                    {activeTab === "court" && (
+                                        <div>
+                                            <CourtSelect
+                                                selectedCourtId={
+                                                    selectedCourt?.court_id || 0
                                                 }
-                                                date={dateTime.date}
-                                                startTime={dateTime.startTime}
-                                                endTime={dateTime.endTime}
-                                                duration={dateTime.duration}
-                                                hourlyRate={
-                                                    selectedCourt.hourly_rate
+                                                onCourtSelect={
+                                                    handleCourtSelect
                                                 }
+                                                initialCourtId={parseInt(
+                                                    searchParams.get(
+                                                        "court_id"
+                                                    ) || "0",
+                                                    10
+                                                )}
+                                                initialVenueId={parseInt(
+                                                    searchParams.get(
+                                                        "venue_id"
+                                                    ) || "0",
+                                                    10
+                                                )}
                                             />
+
+                                            {selectedCourt && (
+                                                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded text-center">
+                                                    <Button
+                                                        onClick={() => {
+                                                            setAllowAutoSwitch(
+                                                                false
+                                                            );
+                                                            setActiveTab(
+                                                                "datetime"
+                                                            );
+                                                            setTimeout(() => {
+                                                                setAllowAutoSwitch(
+                                                                    true
+                                                                );
+                                                            }, 500);
+                                                        }}
+                                                        className="bg-green-600 hover:bg-green-700"
+                                                        size="sm"
+                                                    >
+                                                        Tiếp theo: Chọn thời
+                                                        gian
+                                                        <ChevronRight className="ml-2 h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
-                                <div className="flex justify-end mt-8">
-                                    <Button
-                                        onClick={handleNextStep}
-                                        disabled={!isStep1Complete()}
-                                        className="px-6 py-6 text-base bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        Tiếp Theo{" "}
-                                        <ChevronRight className="ml-2 h-5 w-5" />
-                                    </Button>
+                                    {activeTab === "datetime" && (
+                                        <div>
+                                            {selectedCourt && (
+                                                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <span className="text-blue-600 text-sm">
+                                                                Sân đã chọn:{" "}
+                                                            </span>
+                                                            <span className="font-medium text-blue-800">
+                                                                {
+                                                                    selectedCourt.name
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm text-blue-600">
+                                                                {selectedCourt.hourly_rate.toLocaleString(
+                                                                    "vi-VN"
+                                                                )}
+                                                                đ/giờ
+                                                            </span>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={
+                                                                    handleSwitchToCourt
+                                                                }
+                                                                className="text-xs px-2 py-1 h-6"
+                                                            >
+                                                                Đổi sân
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <DateTimeSelect
+                                                value={dateTime}
+                                                onChange={handleDateTimeChange}
+                                                courtId={
+                                                    selectedCourt?.court_id || 0
+                                                }
+                                            />
+
+                                            {dateTime.date &&
+                                                dateTime.startTime && (
+                                                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded text-center">
+                                                        <Button
+                                                            onClick={
+                                                                handleNextStep
+                                                            }
+                                                            className="bg-blue-600 hover:bg-blue-700"
+                                                            size="sm"
+                                                        >
+                                                            Tiếp theo: Điền
+                                                            thông tin liên hệ
+                                                            <ChevronRight className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {/* Step 2: User info form */}
+                        {/* Step 2: User info form - Full Width */}
                         {currentStep === 2 && (
-                            <div className="space-y-8">
+                            <div className="max-w-4xl mx-auto">
                                 <UserInfoForm
                                     value={userInfo}
                                     onChange={handleUserInfoChange}
                                     onValidityChange={setUserFormValid}
                                 />
 
-                                <div className="flex justify-between mt-8">
+                                <div className="flex justify-between mt-6">
                                     <Button
                                         variant="outline"
                                         onClick={handleBack}
-                                        className="px-6 py-6 text-base"
+                                        className="px-6 py-2"
                                     >
-                                        <ChevronLeft className="mr-2 h-5 w-5" />{" "}
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
                                         Quay Lại
                                     </Button>
                                     <Button
                                         onClick={handleNextStep}
                                         disabled={!userFormValid}
-                                        className="px-6 py-6 text-base bg-blue-600 hover:bg-blue-700"
+                                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700"
                                     >
-                                        Tiếp Theo{" "}
-                                        <ChevronRight className="ml-2 h-5 w-5" />
+                                        Tiếp Theo
+                                        <ChevronRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 </div>
                             </div>
@@ -443,7 +614,7 @@ export default function BookingPage() {
 
                         {/* Step 3: Booking confirmation */}
                         {currentStep === 3 && selectedCourt && (
-                            <div className="space-y-8">
+                            <div className="max-w-5xl mx-auto">
                                 <BookingConfirm
                                     bookingData={{
                                         court_id: selectedCourt.court_id,
@@ -475,7 +646,7 @@ export default function BookingPage() {
 
                         {/* Step 4: Booking success */}
                         {currentStep === 4 && bookingComplete && (
-                            <div className="space-y-8">
+                            <div className="max-w-5xl mx-auto">
                                 <BookingSuccess
                                     bookingData={{
                                         booking_id:
@@ -505,96 +676,6 @@ export default function BookingPage() {
                     </motion.div>
                 </div>
             </main>
-
-            {/* Benefits section */}
-            {currentStep !== 4 && (
-                <div className="bg-gray-50 py-16 mt-10 border-t border-gray-100">
-                    <div className="container mx-auto px-4">
-                        <h3 className="text-2xl font-bold text-center mb-10">
-                            Lợi Ích Khi Đặt Sân Trực Tuyến
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                                <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-6 w-6 text-blue-600"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                </div>
-                                <h4 className="text-lg font-semibold mb-2">
-                                    Tiết Kiệm Thời Gian
-                                </h4>
-                                <p className="text-gray-600">
-                                    Đặt sân nhanh chóng chỉ trong vài phút,
-                                    không cần gọi điện hoặc đến tận nơi.
-                                </p>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                                <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-6 w-6 text-green-600"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                </div>
-                                <h4 className="text-lg font-semibold mb-2">
-                                    Đảm Bảo Sân Trống
-                                </h4>
-                                <p className="text-gray-600">
-                                    Đặt trước để chắc chắn có sân vào đúng thời
-                                    gian bạn mong muốn.
-                                </p>
-                            </div>
-
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                                <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-6 w-6 text-purple-600"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                                        />
-                                    </svg>
-                                </div>
-                                <h4 className="text-lg font-semibold mb-2">
-                                    Thanh Toán Linh Hoạt
-                                </h4>
-                                <p className="text-gray-600">
-                                    Nhiều phương thức thanh toán khác nhau, đơn
-                                    giản và an toàn.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <Footer />
         </div>

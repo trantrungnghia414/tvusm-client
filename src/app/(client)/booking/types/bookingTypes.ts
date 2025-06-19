@@ -2,14 +2,21 @@ export interface Court {
     court_id: number;
     name: string;
     code: string;
-    type_name: string;
     type_id: number;
+    type_name: string;
     venue_id: number;
     venue_name: string;
     hourly_rate: number;
     status: "available" | "booked" | "maintenance";
     image?: string;
     description?: string;
+    is_indoor: boolean; // Thêm thuộc tính này
+    surface_type?: string;
+    length?: number;
+    width?: number;
+    created_at: string;
+    updated_at?: string;
+    booking_count?: number;
 }
 
 export interface BookingFormData {
@@ -41,4 +48,18 @@ export interface BookingSuccessData {
     renter_phone: string;
     payment_method: string;
     total_price: number;
+}
+
+export interface DateTimeValue {
+    date: string;
+    startTime: string;
+    endTime: string;
+    duration: number;
+}
+
+export interface UserFormData {
+    name: string;
+    email: string;
+    phone: string;
+    notes: string;
 }

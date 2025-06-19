@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -10,11 +9,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { fetchApi } from "@/lib/api";
 import { Court } from "../types/bookingTypes";
-import { Search, Map, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Search, CheckCircle2, Filter, X } from "lucide-react";
 
 interface CourtSelectProps {
     selectedCourtId: number;
@@ -23,66 +22,102 @@ interface CourtSelectProps {
     initialVenueId?: number;
 }
 
+interface CourtType {
+    type_id: number;
+    name: string;
+}
+
+// Interface cho dữ liệu raw từ API
+interface ApiCourtData {
+    court_id: number;
+    name: string;
+    code: string;
+    type_id: number;
+    type_name?: string;
+    venue_id: number;
+    venue_name?: string;
+    hourly_rate: number | string;
+    status: string;
+    image?: string;
+    description?: string;
+    is_indoor?: boolean | number | string;
+    surface_type?: string;
+    length?: number;
+    width?: number;
+    created_at: string;
+    updated_at?: string;
+    booking_count?: number;
+}
+
 export default function CourtSelect({
     selectedCourtId,
     onCourtSelect,
     initialCourtId = 0,
-    initialVenueId = 0,
 }: CourtSelectProps) {
-    const [venues, setVenues] = useState<{ id: number; name: string }[]>([]);
     const [courts, setCourts] = useState<Court[]>([]);
+    const [courtTypes, setCourtTypes] = useState<CourtType[]>([]);
     const [filteredCourts, setFilteredCourts] = useState<Court[]>([]);
-    const [selectedVenue, setSelectedVenue] = useState<number>(initialVenueId);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("all");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    // Fetch venues
+    // Fetch court types
     useEffect(() => {
-        const fetchVenues = async () => {
+        const fetchCourtTypes = async () => {
             try {
-                const response = await fetchApi("/venues");
-                if (!response.ok) {
-                    throw new Error("Không thể tải danh sách cơ sở");
-                }
+                const response = await fetchApi("/court-types");
+                if (!response.ok) return;
                 const data = await response.json();
-                interface VenueData {
-                    venue_id: number;
-                    name: string;
-                }
-
-                setVenues(
-                    data.map((venue: VenueData) => ({
-                        id: venue.venue_id,
-                        name: venue.name,
-                    }))
-                );
+                setCourtTypes(data);
             } catch (error) {
-                setError("Không thể tải danh sách cơ sở");
-                console.error("Error fetching venues:", error);
+                console.error("Error fetching court types:", error);
             }
         };
 
-        fetchVenues();
+        fetchCourtTypes();
     }, []);
 
     // Fetch courts
     useEffect(() => {
         const fetchCourts = async () => {
             setLoading(true);
-            setError(null);
 
             try {
                 const response = await fetchApi("/courts");
-                if (!response.ok) {
-                    throw new Error("Không thể tải danh sách sân");
-                }
-                const data = await response.json();
+                if (!response.ok) return;
 
-                // Filter out unavailable courts
-                const availableCourts = data.filter(
-                    (court: Court) => court.status === "available"
-                );
+                const data: ApiCourtData[] = await response.json();
+
+                // Filter out unavailable courts and normalize data
+                const availableCourts: Court[] = data
+                    .filter(
+                        (court: ApiCourtData) => court.status === "available"
+                    )
+                    .map(
+                        (court: ApiCourtData): Court => ({
+                            court_id: court.court_id,
+                            name: court.name,
+                            code: court.code,
+                            type_id: court.type_id,
+                            type_name: court.type_name || "Chưa xác định",
+                            venue_id: court.venue_id,
+                            venue_name: court.venue_name || "Chưa xác định",
+                            hourly_rate: Number(court.hourly_rate) || 0,
+                            status: court.status as
+                                | "available"
+                                | "booked"
+                                | "maintenance",
+                            image: court.image,
+                            description: court.description,
+                            is_indoor: Boolean(court.is_indoor),
+                            surface_type: court.surface_type,
+                            length: court.length,
+                            width: court.width,
+                            created_at: court.created_at,
+                            updated_at: court.updated_at,
+                            booking_count: court.booking_count,
+                        })
+                    );
 
                 setCourts(availableCourts);
                 setFilteredCourts(availableCourts);
@@ -94,11 +129,9 @@ export default function CourtSelect({
                     );
                     if (selectedCourt) {
                         onCourtSelect(selectedCourt);
-                        setSelectedVenue(selectedCourt.venue_id);
                     }
                 }
             } catch (error) {
-                setError("Không thể tải danh sách sân");
                 console.error("Error fetching courts:", error);
             } finally {
                 setLoading(false);
@@ -108,16 +141,9 @@ export default function CourtSelect({
         fetchCourts();
     }, [initialCourtId, onCourtSelect]);
 
-    // Filter courts when venue or search changes
+    // Filter courts when search or type filter changes
     useEffect(() => {
         let filtered = [...courts];
-
-        // Filter by venue
-        if (selectedVenue > 0) {
-            filtered = filtered.filter(
-                (court) => court.venue_id === selectedVenue
-            );
-        }
 
         // Filter by search term
         if (searchQuery.trim()) {
@@ -126,174 +152,176 @@ export default function CourtSelect({
                 (court) =>
                     court.name.toLowerCase().includes(searchLower) ||
                     court.type_name.toLowerCase().includes(searchLower) ||
-                    court.code.toLowerCase().includes(searchLower)
+                    court.code.toLowerCase().includes(searchLower) ||
+                    court.venue_name.toLowerCase().includes(searchLower)
+            );
+        }
+
+        // Filter by court type
+        if (selectedTypeFilter !== "all") {
+            filtered = filtered.filter(
+                (court) => court.type_id.toString() === selectedTypeFilter
             );
         }
 
         setFilteredCourts(filtered);
-    }, [courts, selectedVenue, searchQuery]);
-
-    // Handle venue change
-    const handleVenueChange = (venueId: string) => {
-        const venueIdNum = parseInt(venueId, 10);
-        setSelectedVenue(venueIdNum);
-        onCourtSelect(null); // Reset selected court when venue changes
-    };
+    }, [courts, searchQuery, selectedTypeFilter]);
 
     // Handle court selection
-    const handleCourtChange = (courtId: string) => {
-        const courtIdNum = parseInt(courtId, 10);
-        const selectedCourt = courts.find(
-            (court) => court.court_id === courtIdNum
-        );
-        if (selectedCourt) {
-            onCourtSelect(selectedCourt);
+    const handleCourtSelect = (court: Court) => {
+        if (selectedCourtId === court.court_id) {
+            onCourtSelect(null);
+        } else {
+            onCourtSelect(court);
         }
     };
 
+    // Clear filters
+    const clearFilters = () => {
+        setSearchQuery("");
+        setSelectedTypeFilter("all");
+    };
+
+    const hasActiveFilters = searchQuery || selectedTypeFilter !== "all";
+
     return (
-        <Card className="border-blue-100">
-            <CardHeader className="pb-3">
-                <CardTitle className="flex items-center">
-                    <Map className="h-5 w-5 text-blue-600 mr-2" />
-                    Chọn Sân
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {/* Venue select */}
-                    <div>
-                        <Label htmlFor="venue">Chọn cơ sở</Label>
-                        <Select
-                            value={selectedVenue.toString()}
-                            onValueChange={handleVenueChange}
-                        >
-                            <SelectTrigger id="venue" className="w-full">
-                                <SelectValue placeholder="Chọn cơ sở" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="0">Tất cả cơ sở</SelectItem>
-                                {venues.map((venue) => (
-                                    <SelectItem
-                                        key={venue.id}
-                                        value={venue.id.toString()}
-                                    >
-                                        {venue.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+        <div className="space-y-3">
+            {/* Compact Search and Filters */}
+            <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                        <Input
+                            type="text"
+                            placeholder="Tìm kiếm sân..."
+                            className="pl-8 h-8 text-sm"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
                     </div>
+                </div>
 
-                    {/* Search court */}
-                    <div>
-                        <Label htmlFor="search-court">Tìm kiếm sân</Label>
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                            <Input
-                                id="search-court"
-                                type="text"
-                                placeholder="Tìm theo tên sân hoặc loại sân"
-                                className="pl-9"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                <div className="w-36">
+                    <Select
+                        value={selectedTypeFilter}
+                        onValueChange={setSelectedTypeFilter}
+                    >
+                        <SelectTrigger className="h-8 text-sm">
+                            <div className="flex items-center">
+                                <Filter className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                <SelectValue placeholder="Loại" />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả</SelectItem>
+                            {courtTypes.map((type) => (
+                                <SelectItem
+                                    key={type.type_id}
+                                    value={type.type_id.toString()}
+                                >
+                                    {type.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {hasActiveFilters && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="h-8 px-2"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                    </Button>
+                )}
+            </div>
+
+            {/* Courts Grid - 5 per row */}
+            {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {[...Array(10)].map((_, index) => (
+                        <div key={index} className="animate-pulse">
+                            <div className="h-20 bg-gray-200 rounded border"></div>
                         </div>
-                    </div>
-
-                    {/* Error message */}
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* Court select */}
-                    <div>
-                        <Label htmlFor="court">Chọn sân</Label>
-                        <Select
-                            value={
-                                selectedCourtId
-                                    ? selectedCourtId.toString()
-                                    : ""
-                            }
-                            onValueChange={handleCourtChange}
-                            disabled={loading}
+                    ))}
+                </div>
+            ) : filteredCourts.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                    <p className="text-sm">Không tìm thấy sân phù hợp</p>
+                    {hasActiveFilters && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearFilters}
+                            className="mt-2"
                         >
-                            <SelectTrigger id="court" className="w-full">
-                                <SelectValue
-                                    placeholder={
-                                        loading ? "Đang tải..." : "Chọn sân"
-                                    }
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {loading ? (
-                                    <div className="p-2 text-center">
-                                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent text-blue-600 mr-2"></div>
-                                        Đang tải...
-                                    </div>
-                                ) : filteredCourts.length === 0 ? (
-                                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                                        Không có sân phù hợp
-                                    </div>
-                                ) : (
-                                    filteredCourts.map((court) => (
-                                        <SelectItem
-                                            key={court.court_id}
-                                            value={court.court_id.toString()}
-                                        >
-                                            {court.name} -{" "}
-                                            {court.hourly_rate.toLocaleString(
-                                                "vi-VN"
-                                            )}
-                                            đ/giờ
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Selected court info */}
-                    {selectedCourtId > 0 && (
-                        <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-                            <p className="font-medium text-blue-800">
-                                Đã chọn:{" "}
-                                {
-                                    courts.find(
-                                        (c) => c.court_id === selectedCourtId
-                                    )?.name
-                                }
-                            </p>
-                            <p className="text-blue-700 text-sm mt-1">
-                                Cơ sở:{" "}
-                                {
-                                    courts.find(
-                                        (c) => c.court_id === selectedCourtId
-                                    )?.venue_name
-                                }
-                            </p>
-                            <p className="text-blue-700 text-sm mt-1">
-                                Loại sân:{" "}
-                                {
-                                    courts.find(
-                                        (c) => c.court_id === selectedCourtId
-                                    )?.type_name
-                                }
-                            </p>
-                            <p className="text-blue-700 font-medium mt-2">
-                                Giá thuê:{" "}
-                                {courts
-                                    .find((c) => c.court_id === selectedCourtId)
-                                    ?.hourly_rate.toLocaleString("vi-VN")}
-                                đ/giờ
-                            </p>
-                        </div>
+                            Xóa bộ lọc
+                        </Button>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+            ) : (
+                <div className="max-h-[45vh] overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                        {filteredCourts.map((court) => (
+                            <div
+                                key={court.court_id}
+                                className={`
+                                    cursor-pointer transition-all duration-200 
+                                    border rounded-lg p-3 hover:shadow-sm relative
+                                    ${
+                                        selectedCourtId === court.court_id
+                                            ? "ring-2 ring-blue-500 border-blue-300 bg-blue-50"
+                                            : "border-gray-200 hover:border-blue-200 bg-white"
+                                    }
+                                `}
+                                onClick={() => handleCourtSelect(court)}
+                            >
+                                {/* Selected indicator */}
+                                {selectedCourtId === court.court_id && (
+                                    <div className="absolute top-2 right-2">
+                                        <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    {/* Court name */}
+                                    <h4 className="font-medium text-sm text-gray-900 leading-tight pr-6">
+                                        {court.name}
+                                    </h4>
+
+                                    {/* Court type badge */}
+                                    <Badge
+                                        variant="outline"
+                                        className="text-xs px-1.5 py-0 text-gray-600"
+                                    >
+                                        {court.type_name}
+                                    </Badge>
+
+                                    {/* Venue name */}
+                                    <p className="text-xs text-gray-500 leading-tight">
+                                        {court.venue_name}
+                                    </p>
+
+                                    {/* Price */}
+                                    <div className="text-sm font-medium text-blue-600">
+                                        {court.hourly_rate.toLocaleString(
+                                            "vi-VN"
+                                        )}
+                                        đ/h
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Results count */}
+            <div className="text-xs text-gray-500 text-center">
+                {filteredCourts.length} sân có sẵn
+            </div>
+        </div>
     );
 }

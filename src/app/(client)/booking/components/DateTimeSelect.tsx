@@ -200,16 +200,14 @@ export default function DateTimeSelect({
             const startTime = sortedSlots[0].start_time;
             const endTime = sortedSlots[sortedSlots.length - 1].end_time;
 
-            // Calculate duration in hours
-            const startHour = parseInt(startTime.split(":")[0]);
-            const endHour = parseInt(endTime.split(":")[0]);
-            const duration = endHour - startHour;
+            // ✅ SỬA: Tính duration dựa trên số slot đã chọn, không phải khoảng cách thời gian
+            const duration = newSelectedSlots.length; // Mỗi slot = 1 giờ
 
             onChange({
                 date: format(date, "yyyy-MM-dd"),
                 startTime: startTime,
                 endTime: endTime,
-                duration: duration,
+                duration: duration, // ✅ Đây là số giờ thực tế đã chọn
             });
         } else {
             // Clear selection
@@ -217,7 +215,7 @@ export default function DateTimeSelect({
                 date: format(date, "yyyy-MM-dd"),
                 startTime: "",
                 endTime: "",
-                duration: value.duration,
+                duration: 0, // ✅ Reset về 0 khi không chọn gì
             });
         }
     };

@@ -54,10 +54,11 @@ export default function PaymentMethods({
                 </Label>
             </div>
 
-            <div className="flex items-center space-x-2 border border-gray-200 rounded-md p-3 hover:bg-gray-50 cursor-pointer transition-colors">
-                <RadioGroupItem value="transfer" id="transfer" />
+            {/* ✅ Chuyển khoản ngân hàng - Disabled giống VNPay */}
+            <div className="flex items-center space-x-2 border border-gray-200 rounded-md p-3 opacity-60">
+                <RadioGroupItem value="transfer" id="transfer" disabled />
                 <Label
-                    className="flex flex-1 cursor-pointer"
+                    className="flex flex-1 cursor-not-allowed"
                     htmlFor="transfer"
                 >
                     <div className="flex items-center gap-3">
@@ -87,16 +88,19 @@ export default function PaymentMethods({
                                 Chuyển khoản ngân hàng
                             </p>
                             <p className="text-gray-600 text-sm">
-                                Chuyển khoản trước hoặc sau khi đặt sân
+                                Chuyển khoản qua QR Code (Đang phát triển)
                             </p>
                         </div>
                     </div>
                 </Label>
             </div>
 
-            <div className="flex items-center space-x-2 border border-gray-200 rounded-md p-3 hover:bg-gray-50 cursor-pointer transition-colors opacity-60">
+            <div className="flex items-center space-x-2 border border-gray-200 rounded-md p-3 opacity-60">
                 <RadioGroupItem value="vnpay" id="vnpay" disabled />
-                <Label className="flex flex-1 cursor-pointer" htmlFor="vnpay">
+                <Label
+                    className="flex flex-1 cursor-not-allowed"
+                    htmlFor="vnpay"
+                >
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                             <svg

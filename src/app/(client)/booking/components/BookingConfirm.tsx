@@ -249,7 +249,7 @@ export default function BookingConfirm({
                             className="w-full flex items-center justify-center gap-2"
                         >
                             <ChevronLeft className="h-4 w-4" />
-                            Quay lại chỉnh sửa
+                            Quay lại
                         </Button>
                     </div>
                 </div>

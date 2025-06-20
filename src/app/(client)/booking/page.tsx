@@ -12,7 +12,7 @@ import {
     CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Navbar from "@/app/(client)/components/layout/Navbar";
+import Navbar from "@/app/(client)/components/layout/FixedNavbar";
 import Footer from "@/app/(client)/components/layout/Footer";
 import { Court } from "./types/bookingTypes";
 import { fetchApi } from "@/lib/api";
@@ -146,9 +146,33 @@ export default function BookingPage() {
     // Handle court selection
     const handleCourtSelect = (court: Court | null) => {
         setSelectedCourt(court);
+
+        // ✅ Clear datetime selection khi chọn sân mới
         if (court) {
+            setDateTime({
+                date: "",
+                startTime: "",
+                endTime: "",
+                duration: 1, // Reset về default duration
+            });
             setCurrentStep(2);
         }
+    };
+
+    // ✅ Handle switch back to court selection (từ nút "Đổi sân")
+    const handleSwitchToCourt = () => {
+        // Clear tất cả selections
+        setSelectedCourt(null);
+        setDateTime({
+            date: "",
+            startTime: "",
+            endTime: "",
+            duration: 1,
+        });
+
+        // Quay về step 1
+        setCurrentStep(1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     // Handle date time selection
@@ -324,23 +348,8 @@ export default function BookingPage() {
         <div className="min-h-screen bg-gray-50">
             <Navbar />
 
-            {/* Header Section */}
-            <div className="bg-blue-400 shadow-sm border-b">
-                <div className="container mx-auto px-4 py-8">
-                    <div className="text-center bg-amber-400">
-                        {/* <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                            Đặt sân thể thao
-                        </h1>
-                        <p className="text-gray-600">
-                            Đặt sân nhanh chóng, tiện lợi trong vài bước đơn
-                            giản
-                        </p> */}
-                    </div>
-                </div>
-            </div>
-
             {/* Steps Progress */}
-            <div className="bg-white py-6 border-b">
+            <div className="bg-white py-6 border-b mt-16">
                 <div className="container mx-auto px-4">
                     <div className="flex justify-center">
                         <div className="flex items-center space-x-8 max-w-4xl w-full">
@@ -474,7 +483,7 @@ export default function BookingPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setCurrentStep(1)}
+                                            onClick={handleSwitchToCourt} // ✅ Sử dụng function mới
                                             className="text-blue-600 border-blue-300"
                                         >
                                             Đổi sân
@@ -569,19 +578,18 @@ export default function BookingPage() {
                     </motion.div>
 
                     {/* Navigation Buttons */}
-                    {currentStep < 5 && currentStep !== 2 && (
+                    {currentStep === 3 && (
                         <div className="flex justify-between mt-8">
                             <Button
                                 variant="outline"
                                 onClick={handleBack}
-                                disabled={currentStep === 1}
                                 className="px-6"
                             >
                                 <ChevronLeft className="mr-2 h-4 w-4" />
                                 Quay lại
                             </Button>
 
-                            {currentStep < 4 && (
+                            {currentStep === 3 && (
                                 <Button
                                     onClick={handleNextStep}
                                     disabled={!isStepComplete(currentStep)}

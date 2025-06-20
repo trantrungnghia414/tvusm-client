@@ -28,8 +28,7 @@ interface UserProfile {
     role: string;
 }
 
-export default function Navbar() {
-    const [isScrolled, setIsScrolled] = useState(false);
+export default function FixedNavbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -54,7 +53,7 @@ export default function Navbar() {
         return path !== "/" && pathname.startsWith(path);
     };
 
-    // Kiểm tra đăng nhập và xử lý scroll
+    // Kiểm tra đăng nhập
     useEffect(() => {
         const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
@@ -65,7 +64,7 @@ export default function Navbar() {
             setIsLoading(false);
         }
 
-        // Thêm event listener cho sự kiện auth-state-changed
+        // Event listener cho auth-state-changed
         const handleAuthChange = () => {
             const token = localStorage.getItem("token");
             setIsLoggedIn(!!token);
@@ -74,27 +73,21 @@ export default function Navbar() {
             }
         };
 
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
-        };
-
+        // Đóng menu khi thay đổi kích thước màn hình
         const handleResize = () => {
             if (window.innerWidth >= 1024 && isMobileMenuOpen) {
                 setIsMobileMenuOpen(false);
             }
         };
 
-        // Đăng ký các event listeners
         window.addEventListener("auth-state-changed", handleAuthChange);
-        window.addEventListener("scroll", handleScroll);
         window.addEventListener("resize", handleResize);
 
         return () => {
             window.removeEventListener("auth-state-changed", handleAuthChange);
-            window.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", handleResize);
         };
-    }, [isMobileMenuOpen, pathname]);
+    }, [isMobileMenuOpen]);
 
     const fetchUserProfile = async (token: string) => {
         try {
@@ -106,9 +99,7 @@ export default function Navbar() {
                 const data = await response.json();
                 setUserProfile(data);
             } else {
-                // Token không hợp lệ hoặc hết hạn
                 if (response.status === 401 || response.status === 403) {
-                    // Tự động đăng xuất
                     localStorage.removeItem("token");
                     setIsLoggedIn(false);
                     setUserProfile(null);
@@ -116,7 +107,6 @@ export default function Navbar() {
             }
         } catch (error) {
             console.error("Error fetching user profile:", error);
-            // Token không hợp lệ hoặc server lỗi, nên đăng xuất
             localStorage.removeItem("token");
             setIsLoggedIn(false);
             setUserProfile(null);
@@ -135,22 +125,12 @@ export default function Navbar() {
     };
 
     return (
-        <header
-            className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-                isScrolled || isMobileMenuOpen
-                    ? "bg-white shadow-md py-2"
-                    : "bg-transparent py-4"
-            }`}
-        >
+        <header className="fixed top-0 w-full z-50 bg-white shadow-md py-2">
             <div className="container mx-auto flex justify-between items-center px-4">
                 {/* Logo */}
                 <Link href="/" className="flex items-center">
                     <Image
-                        src={
-                            isScrolled || isMobileMenuOpen
-                                ? "/images/logo-tvusm-blue.png"
-                                : "/images/logo-tvusm-white.png"
-                        }
+                        src="/images/logo-tvusm-blue.png"
                         alt="TVU Sports Hub"
                         width={180}
                         height={50}
@@ -165,15 +145,12 @@ export default function Navbar() {
                         <Link
                             key={route.path}
                             href={route.path}
-                            className={`font-medium text-sm xl:text-base transition-colors relative group 
-                                ${isScrolled ? "text-gray-800" : "text-white"} 
+                            className={`font-medium text-sm xl:text-base transition-colors relative group text-gray-800
                                 ${isActive(route.path) ? "font-bold" : ""}`}
                         >
                             {route.label}
                             <span
-                                className={`absolute inset-x-0 bottom-0 h-0.5 ${
-                                    isScrolled ? "bg-blue-600" : "bg-white"
-                                } transform origin-left transition-transform ${
+                                className={`absolute inset-x-0 bottom-0 h-0.5 bg-blue-600 transform origin-left transition-transform ${
                                     isActive(route.path)
                                         ? "scale-x-100"
                                         : "scale-x-0 group-hover:scale-x-100"
@@ -188,11 +165,7 @@ export default function Navbar() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className={
-                            isScrolled
-                                ? "text-gray-800 hover:text-blue-600"
-                                : "text-white hover:text-blue-600"
-                        }
+                        className="text-gray-800 hover:text-blue-600"
                     >
                         <Search className="h-5 w-5" />
                     </Button>
@@ -203,11 +176,7 @@ export default function Navbar() {
                                 <Link href="/profile">
                                     <Button
                                         variant="ghost"
-                                        className={`flex items-center text-sm xl:text-base ${
-                                            isScrolled
-                                                ? "text-gray-800 hover:text-blue-600"
-                                                : "text-white hover:text-blue-600"
-                                        } ${
+                                        className={`flex items-center text-sm xl:text-base text-gray-800 hover:text-blue-600 ${
                                             isActive("/profile")
                                                 ? "font-bold"
                                                 : ""
@@ -223,11 +192,7 @@ export default function Navbar() {
                                 </Link>
                                 <Button
                                     onClick={handleLogout}
-                                    className={`text-sm xl:text-base ${
-                                        isScrolled
-                                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                                            : "bg-white text-blue-600 hover:bg-blue-50"
-                                    }`}
+                                    className="text-sm xl:text-base bg-blue-600 text-white hover:bg-blue-700"
                                     size="sm"
                                 >
                                     <LogOut className="mr-1.5 h-4 w-4" />
@@ -241,11 +206,7 @@ export default function Navbar() {
                                 <Link href="/login">
                                     <Button
                                         variant="ghost"
-                                        className={`flex items-center text-sm xl:text-base ${
-                                            isScrolled
-                                                ? "text-gray-800 hover:text-blue-600"
-                                                : "text-white hover:text-blue-600"
-                                        } ${
+                                        className={`flex items-center text-sm xl:text-base text-gray-800 hover:text-blue-600 ${
                                             isActive("/login")
                                                 ? "font-bold"
                                                 : ""
@@ -260,11 +221,7 @@ export default function Navbar() {
                                 </Link>
                                 <Link href="/register">
                                     <Button
-                                        className={`text-sm xl:text-base ${
-                                            isScrolled
-                                                ? "bg-blue-600 text-white hover:bg-blue-700"
-                                                : "bg-white text-blue-600 hover:bg-blue-50"
-                                        } ${
+                                        className={`text-sm xl:text-base bg-blue-600 text-white hover:bg-blue-700 ${
                                             isActive("/register")
                                                 ? "font-bold"
                                                 : ""
@@ -287,12 +244,7 @@ export default function Navbar() {
                     {isMobileMenuOpen ? (
                         <X className="text-gray-800" size={24} />
                     ) : (
-                        <Menu
-                            className={
-                                isScrolled ? "text-gray-800" : "text-white"
-                            }
-                            size={24}
-                        />
+                        <Menu className="text-gray-800" size={24} />
                     )}
                 </button>
             </div>
@@ -301,7 +253,7 @@ export default function Navbar() {
             {isMobileMenuOpen && (
                 <div className="lg:hidden fixed inset-0 top-[55px] bg-white z-50 overflow-y-auto animate-in slide-in-from-top">
                     <div className="container mx-auto px-4 py-6 flex flex-col space-y-4">
-                        {/* Các menu item cho mobile */}
+                        {/* Navigation Links */}
                         <Link
                             href="/"
                             onClick={() => setIsMobileMenuOpen(false)}

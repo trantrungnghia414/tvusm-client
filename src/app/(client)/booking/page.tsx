@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import {
+    ChevronRight,
+    ChevronLeft,
+    CheckCircle,
+    MapPin,
+    Clock,
+    User,
+    CreditCard,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/app/(client)/components/layout/Navbar";
 import Footer from "@/app/(client)/components/layout/Footer";
-import BookingSteps from "./components/BookingSteps";
 import { Court } from "./types/bookingTypes";
 import { fetchApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -20,7 +27,6 @@ import DateTimeSelect, {
     DateTimeValue,
 } from "@/app/(client)/booking/components/DateTimeSelect";
 import CourtSelect from "@/app/(client)/booking/components/CourtSelect";
-import { Calendar, MapPin } from "lucide-react";
 
 interface BookingData {
     court_id: number;
@@ -39,13 +45,6 @@ interface BookingData {
     booking_id?: string;
 }
 
-interface TabItem {
-    id: string;
-    label: string;
-    icon: React.ReactNode;
-    disabled?: boolean;
-}
-
 export default function BookingPage() {
     const searchParams = useSearchParams();
     const [currentStep, setCurrentStep] = useState(1);
@@ -54,8 +53,6 @@ export default function BookingPage() {
     const [bookingComplete, setBookingComplete] = useState<BookingData | null>(
         null
     );
-    const [activeTab, setActiveTab] = useState("court");
-    const [allowAutoSwitch, setAllowAutoSwitch] = useState(true);
 
     // Data states
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
@@ -73,32 +70,31 @@ export default function BookingPage() {
     });
     const [paymentMethod, setPaymentMethod] = useState<string>("cash");
 
-    // Animation variants
-    const pageVariants = {
-        initial: { opacity: 0, x: 100 },
-        in: { opacity: 1, x: 0 },
-        out: { opacity: 0, x: -100 },
-    };
-
-    const pageTransition = {
-        type: "tween",
-        ease: "anticipate",
-        duration: 0.5,
-    };
-
-    // Tab configuration - ALWAYS disable datetime tab when no court selected
-    const tabs: TabItem[] = [
+    // Steps configuration
+    const steps = [
         {
-            id: "court",
-            label: "Chọn Sân",
-            icon: <MapPin className="h-4 w-4 mr-1" />,
-            disabled: false, // Always enabled
+            number: 1,
+            title: "Chọn sân",
+            icon: <MapPin className="h-5 w-5" />,
+            description: "Chọn sân thể thao",
         },
         {
-            id: "datetime",
-            label: "Chọn Thời Gian",
-            icon: <Calendar className="h-4 w-4 mr-1" />,
-            disabled: !selectedCourt, // ✅ Disabled when no court selected
+            number: 2,
+            title: "Chọn thời gian",
+            icon: <Clock className="h-5 w-5" />,
+            description: "Chọn ngày & giờ",
+        },
+        {
+            number: 3,
+            title: "Thông tin",
+            icon: <User className="h-5 w-5" />,
+            description: "Điền thông tin liên hệ",
+        },
+        {
+            number: 4,
+            title: "Thanh toán",
+            icon: <CreditCard className="h-5 w-5" />,
+            description: "Xác nhận & thanh toán",
         },
     ];
 
@@ -133,8 +129,7 @@ export default function BookingPage() {
                         duration: duration,
                     });
 
-                    setUserFormValid(true);
-                    setCurrentStep(2);
+                    setCurrentStep(3);
                 } catch (error) {
                     console.error(
                         "Error initializing from query params:",
@@ -148,55 +143,11 @@ export default function BookingPage() {
         initializeFromQueryParams();
     }, [searchParams]);
 
-    // Modified auto-switch logic with control flag
-    useEffect(() => {
-        if (selectedCourt && activeTab === "court" && allowAutoSwitch) {
-            console.log("Auto-switching to datetime tab...");
-            setActiveTab("datetime");
-        }
-    }, [selectedCourt, activeTab, allowAutoSwitch]);
-
-    // ✅ Optimized handleSwitchToCourt - Single state update batch
-    const handleSwitchToCourt = () => {
-        console.log("Switching to court tab and clearing selection...");
-
-        // ✅ Prevent auto-switch during manual operation
-        setAllowAutoSwitch(false);
-
-        // ✅ Single batched state update to prevent multiple re-renders
-        Promise.resolve()
-            .then(() => {
-                setSelectedCourt(null);
-                setDateTime({
-                    date: "",
-                    startTime: "",
-                    endTime: "",
-                    duration: 1,
-                });
-                setActiveTab("court");
-            })
-            .then(() => {
-                // ✅ Re-enable auto-switch after state updates complete
-                setTimeout(() => {
-                    setAllowAutoSwitch(true);
-                }, 50); // Minimal delay
-            });
-    };
-
     // Handle court selection
     const handleCourtSelect = (court: Court | null) => {
         setSelectedCourt(court);
-
-        // If deselecting a court, clear the date/time and switch back to court tab
-        if (!court) {
-            setDateTime({
-                date: "",
-                startTime: "",
-                endTime: "",
-                duration: 1,
-            });
-            setActiveTab("court");
-            setAllowAutoSwitch(true);
+        if (court) {
+            setCurrentStep(2);
         }
     };
 
@@ -215,29 +166,45 @@ export default function BookingPage() {
         setPaymentMethod(method);
     };
 
-    // Check if step 1 is complete
-    const isStep1Complete = () => {
-        return (
-            selectedCourt &&
-            dateTime.date &&
-            dateTime.startTime &&
-            dateTime.endTime
-        );
+    // Check if step is complete
+    const isStepComplete = (step: number) => {
+        switch (step) {
+            case 1:
+                return !!selectedCourt;
+            case 2:
+                return (
+                    selectedCourt &&
+                    dateTime.date &&
+                    dateTime.startTime &&
+                    dateTime.endTime
+                );
+            case 3:
+                return userFormValid;
+            case 4:
+                return true;
+            default:
+                return false;
+        }
     };
 
     // Handle next step
     const handleNextStep = () => {
-        if (currentStep === 1 && !isStep1Complete()) {
-            toast.error("Vui lòng chọn đầy đủ thông tin sân và thời gian");
+        if (currentStep === 1 && !selectedCourt) {
+            toast.error("Vui lòng chọn sân");
             return;
         }
 
-        if (currentStep === 2 && !userFormValid) {
+        if (currentStep === 2 && (!dateTime.date || !dateTime.startTime)) {
+            toast.error("Vui lòng chọn thời gian");
+            return;
+        }
+
+        if (currentStep === 3 && !userFormValid) {
             toast.error("Vui lòng điền đầy đủ thông tin liên hệ");
             return;
         }
 
-        if (currentStep < 3) {
+        if (currentStep < 4) {
             setCurrentStep(currentStep + 1);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
@@ -340,7 +307,7 @@ export default function BookingPage() {
             };
 
             setBookingComplete(completeBookingData);
-            setCurrentStep(4);
+            setCurrentStep(5);
         } catch (error) {
             console.error("Error booking court:", error);
             toast.error(
@@ -353,329 +320,281 @@ export default function BookingPage() {
         }
     };
 
-    // Get step heading
-    const getStepHeading = () => {
-        switch (currentStep) {
-            case 1:
-                return "Chọn Sân & Thời Gian";
-            case 2:
-                return "Thông Tin Liên Hệ";
-            case 3:
-                return "Xác Nhận Đặt Sân";
-            case 4:
-                return "Đặt Sân Thành Công";
-            default:
-                return "Đặt Sân Thể Thao";
-        }
-    };
-
     return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
 
-            {/* Compact Hero section */}
-            <div className="bg-blue-600 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20">
-                    <div className="absolute inset-0 bg-[url('/images/placeholder.jpg')] bg-repeat bg-center"></div>
-                </div>
-                <div className="container mx-auto px-4 py-6 relative z-10">
-                    <h1 className="text-2xl md:text-3xl font-bold text-center text-white mb-2">
-                        Đặt Sân Thể Thao
-                    </h1>
-                    <p className="text-center text-blue-100 max-w-xl mx-auto text-sm">
-                        Đặt sân nhanh chóng, tiện lợi và dễ dàng
-                    </p>
+            {/* Header Section */}
+            <div className="bg-blue-400 shadow-sm border-b">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="text-center bg-amber-400">
+                        {/* <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                            Đặt sân thể thao
+                        </h1>
+                        <p className="text-gray-600">
+                            Đặt sân nhanh chóng, tiện lợi trong vài bước đơn
+                            giản
+                        </p> */}
+                    </div>
                 </div>
             </div>
 
-            <main className="container mx-auto px-4 py-4">
-                <div className="max-w-7xl mx-auto">
-                    {/* Compact Booking steps */}
-                    <div className="mb-4">
-                        <BookingSteps currentStep={currentStep} />
-                    </div>
-
-                    {/* Step heading */}
-                    <motion.h2
-                        key={currentStep}
-                        initial={{ y: -20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-xl font-bold text-center mb-4 text-gray-800"
-                    >
-                        {getStepHeading()}
-                    </motion.h2>
-
-                    {/* Steps content */}
-                    <motion.div
-                        key={`step-${currentStep}`}
-                        initial="initial"
-                        animate="in"
-                        exit="out"
-                        variants={pageVariants}
-                        transition={pageTransition}
-                    >
-                        {/* Step 1: Select court and time - FULL WIDTH */}
-                        {currentStep === 1 && (
-                            <div className="max-w-6xl mx-auto">
-                                {/* Tabs navigation */}
-                                <div className="mb-4">
-                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                        <div className="flex overflow-x-auto no-scrollbar">
-                                            <div className="flex w-full">
-                                                {tabs.map((tab) => (
-                                                    <div
-                                                        key={tab.id}
-                                                        className={`
-                                                            flex items-center justify-center whitespace-nowrap font-medium transition-colors
-                                                            py-3 px-6 text-sm flex-1
-                                                            ${
-                                                                activeTab ===
-                                                                tab.id
-                                                                    ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
-                                                                    : tab.disabled
-                                                                    ? "text-gray-400 border-b-2 border-transparent"
-                                                                    : "text-gray-600 border-b-2 border-transparent"
-                                                            }
-                                                        `}
-                                                        style={{
-                                                            cursor: "default", // ✅ Cursor bình thường cho tất cả tabs
-                                                        }}
-                                                    >
-                                                        {tab.icon}
-                                                        {tab.label}
-                                                        {/* Status indicators */}
-                                                        {tab.id === "court" &&
-                                                            selectedCourt && (
-                                                                <span className="ml-2 h-1.5 w-1.5 bg-green-400 rounded-full"></span>
-                                                            )}
-                                                        {tab.id ===
-                                                            "datetime" &&
-                                                            dateTime.date &&
-                                                            dateTime.startTime && (
-                                                                <span className="ml-2 h-1.5 w-1.5 bg-green-400 rounded-full"></span>
-                                                            )}
-                                                    </div>
-                                                ))}
+            {/* Steps Progress */}
+            <div className="bg-white py-6 border-b">
+                <div className="container mx-auto px-4">
+                    <div className="flex justify-center">
+                        <div className="flex items-center space-x-8 max-w-4xl w-full">
+                            {steps.map((step, index) => (
+                                <div
+                                    key={step.number}
+                                    className="flex items-center flex-1"
+                                >
+                                    <div className="flex flex-col items-center">
+                                        <div
+                                            className={`
+                                                w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all
+                                                ${
+                                                    currentStep > step.number
+                                                        ? "bg-green-500 border-green-500 text-white"
+                                                        : currentStep ===
+                                                          step.number
+                                                        ? "bg-blue-500 border-blue-500 text-white"
+                                                        : isStepComplete(
+                                                              step.number
+                                                          )
+                                                        ? "bg-green-500 border-green-500 text-white"
+                                                        : "bg-gray-100 border-gray-300 text-gray-400"
+                                                }
+                                            `}
+                                        >
+                                            {currentStep > step.number ||
+                                            isStepComplete(step.number) ? (
+                                                <CheckCircle className="h-6 w-6" />
+                                            ) : (
+                                                step.icon
+                                            )}
+                                        </div>
+                                        <div className="mt-2 text-center">
+                                            <div
+                                                className={`text-sm font-medium ${
+                                                    currentStep >= step.number
+                                                        ? "text-gray-900"
+                                                        : "text-gray-400"
+                                                }`}
+                                            >
+                                                {step.title}
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                {step.description}
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Tab Contents - Full Width */}
-                                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                                    {activeTab === "court" && (
-                                        <div>
-                                            <CourtSelect
-                                                selectedCourtId={
-                                                    selectedCourt?.court_id || 0
-                                                }
-                                                onCourtSelect={
-                                                    handleCourtSelect
-                                                }
-                                                initialCourtId={parseInt(
-                                                    searchParams.get(
-                                                        "court_id"
-                                                    ) || "0",
-                                                    10
-                                                )}
-                                                initialVenueId={parseInt(
-                                                    searchParams.get(
-                                                        "venue_id"
-                                                    ) || "0",
-                                                    10
-                                                )}
+                                    {/* Connector line */}
+                                    {index < steps.length - 1 && (
+                                        <div className="flex-1 h-0.5 mx-4 mt-6">
+                                            <div
+                                                className={`h-full transition-all ${
+                                                    currentStep > step.number
+                                                        ? "bg-green-500"
+                                                        : "bg-gray-200"
+                                                }`}
                                             />
-
-                                            {selectedCourt && (
-                                                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded text-center">
-                                                    <Button
-                                                        onClick={() => {
-                                                            setAllowAutoSwitch(
-                                                                false
-                                                            );
-                                                            setActiveTab(
-                                                                "datetime"
-                                                            );
-                                                            setTimeout(() => {
-                                                                setAllowAutoSwitch(
-                                                                    true
-                                                                );
-                                                            }, 500);
-                                                        }}
-                                                        className="bg-green-600 hover:bg-green-700"
-                                                        size="sm"
-                                                    >
-                                                        Tiếp theo: Chọn thời
-                                                        gian
-                                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {activeTab === "datetime" && (
-                                        <div>
-                                            {selectedCourt && (
-                                                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <span className="text-blue-600 text-sm">
-                                                                Sân đã chọn:{" "}
-                                                            </span>
-                                                            <span className="font-medium text-blue-800">
-                                                                {
-                                                                    selectedCourt.name
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm text-blue-600">
-                                                                {selectedCourt.hourly_rate.toLocaleString(
-                                                                    "vi-VN"
-                                                                )}
-                                                                đ/giờ
-                                                            </span>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={
-                                                                    handleSwitchToCourt
-                                                                }
-                                                                className="text-xs px-2 py-1 h-6"
-                                                            >
-                                                                Đổi sân
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <DateTimeSelect
-                                                value={dateTime}
-                                                onChange={handleDateTimeChange}
-                                                courtId={
-                                                    selectedCourt?.court_id || 0
-                                                }
-                                            />
-
-                                            {dateTime.date &&
-                                                dateTime.startTime && (
-                                                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded text-center">
-                                                        <Button
-                                                            onClick={
-                                                                handleNextStep
-                                                            }
-                                                            className="bg-blue-600 hover:bg-blue-700"
-                                                            size="sm"
-                                                        >
-                                                            Tiếp theo: Điền
-                                                            thông tin liên hệ
-                                                            <ChevronRight className="ml-2 h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                )}
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        )}
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        {/* Step 2: User info form - Full Width */}
-                        {currentStep === 2 && (
-                            <div className="max-w-4xl mx-auto">
-                                <UserInfoForm
-                                    value={userInfo}
-                                    onChange={handleUserInfoChange}
-                                    onValidityChange={setUserFormValid}
-                                />
-
-                                <div className="flex justify-between mt-6">
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleBack}
-                                        className="px-6 py-2"
-                                    >
-                                        <ChevronLeft className="mr-2 h-4 w-4" />
-                                        Quay Lại
-                                    </Button>
-                                    <Button
-                                        onClick={handleNextStep}
-                                        disabled={!userFormValid}
-                                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        Tiếp Theo
-                                        <ChevronRight className="ml-2 h-4 w-4" />
-                                    </Button>
+            {/* Main Content */}
+            <div className="container mx-auto px-4 py-8">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        key={`step-${currentStep}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {/* Step 1: Select Court */}
+                        {currentStep === 1 && (
+                            <div className="bg-white rounded-lg shadow-sm border">
+                                <div className="p-6 border-b">
+                                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                                        Chọn sân thể thao
+                                    </h2>
+                                    <p className="text-gray-600">
+                                        Chọn sân phù hợp với nhu cầu của bạn
+                                    </p>
+                                </div>
+                                <div className="p-6">
+                                    <CourtSelect
+                                        selectedCourtId={
+                                            selectedCourt?.court_id || 0
+                                        }
+                                        onCourtSelect={handleCourtSelect}
+                                        initialCourtId={parseInt(
+                                            searchParams.get("court_id") || "0",
+                                            10
+                                        )}
+                                        initialVenueId={parseInt(
+                                            searchParams.get("venue_id") || "0",
+                                            10
+                                        )}
+                                    />
                                 </div>
                             </div>
                         )}
 
-                        {/* Step 3: Booking confirmation */}
-                        {currentStep === 3 && selectedCourt && (
-                            <div className="max-w-5xl mx-auto">
-                                <BookingConfirm
-                                    bookingData={{
-                                        court_id: selectedCourt.court_id,
-                                        court_name: selectedCourt.name,
-                                        venue_name: selectedCourt.venue_name,
-                                        date: dateTime.date,
-                                        start_time: dateTime.startTime,
-                                        end_time: dateTime.endTime,
-                                        duration: dateTime.duration,
-                                        renter_name: userInfo.name,
-                                        renter_email: userInfo.email,
-                                        renter_phone: userInfo.phone,
-                                        notes: userInfo.notes || "",
-                                        payment_method: paymentMethod,
-                                        total_price:
-                                            selectedCourt.hourly_rate *
-                                            dateTime.duration,
-                                    }}
-                                    onBack={handleBack}
-                                    onConfirm={handleConfirmBooking}
-                                    isSubmitting={submitting}
-                                    onPaymentMethodChange={
-                                        handlePaymentMethodChange
-                                    }
-                                    selectedPaymentMethod={paymentMethod}
+                        {/* Step 2: Select Time */}
+                        {currentStep === 2 && selectedCourt && (
+                            <div className="space-y-6">
+                                {/* Selected Court Info */}
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <MapPin className="h-6 w-6 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-blue-900">
+                                                    {selectedCourt.name}
+                                                </h3>
+                                                <p className="text-blue-700 text-sm">
+                                                    {selectedCourt.venue_name} •{" "}
+                                                    {selectedCourt.hourly_rate.toLocaleString(
+                                                        "vi-VN"
+                                                    )}
+                                                    đ/giờ
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentStep(1)}
+                                            className="text-blue-600 border-blue-300"
+                                        >
+                                            Đổi sân
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* DateTime Selection */}
+                                <DateTimeSelect
+                                    value={dateTime}
+                                    onChange={handleDateTimeChange}
+                                    courtId={selectedCourt.court_id}
+                                    onNext={handleNextStep}
                                 />
                             </div>
                         )}
 
-                        {/* Step 4: Booking success */}
-                        {currentStep === 4 && bookingComplete && (
-                            <div className="max-w-5xl mx-auto">
-                                <BookingSuccess
-                                    bookingData={{
-                                        booking_id:
-                                            bookingComplete.booking_id ||
-                                            `BK${Math.floor(
-                                                Math.random() * 10000
-                                            )}`,
-                                        court_name: bookingComplete.court_name,
-                                        venue_name: bookingComplete.venue_name,
-                                        date: bookingComplete.date,
-                                        start_time: bookingComplete.start_time,
-                                        end_time: bookingComplete.end_time,
-                                        renter_name:
-                                            bookingComplete.renter_name,
-                                        renter_email:
-                                            bookingComplete.renter_email,
-                                        renter_phone:
-                                            bookingComplete.renter_phone,
-                                        payment_method:
-                                            bookingComplete.payment_method,
-                                        total_price:
-                                            bookingComplete.total_price,
-                                    }}
-                                />
+                        {/* Step 3: User Info */}
+                        {currentStep === 3 && (
+                            <div className="bg-white rounded-lg shadow-sm border">
+                                <div className="p-6 border-b">
+                                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                                        Thông tin liên hệ
+                                    </h2>
+                                    <p className="text-gray-600">
+                                        Điền thông tin để hoàn tất đặt sân
+                                    </p>
+                                </div>
+                                <div className="p-6">
+                                    <UserInfoForm
+                                        value={userInfo}
+                                        onChange={handleUserInfoChange}
+                                        onValidityChange={setUserFormValid}
+                                    />
+                                </div>
                             </div>
+                        )}
+
+                        {/* Step 4: Confirmation */}
+                        {currentStep === 4 && selectedCourt && (
+                            <BookingConfirm
+                                bookingData={{
+                                    court_id: selectedCourt.court_id,
+                                    court_name: selectedCourt.name,
+                                    venue_name: selectedCourt.venue_name,
+                                    date: dateTime.date,
+                                    start_time: dateTime.startTime,
+                                    end_time: dateTime.endTime,
+                                    duration: dateTime.duration,
+                                    renter_name: userInfo.name,
+                                    renter_email: userInfo.email,
+                                    renter_phone: userInfo.phone,
+                                    notes: userInfo.notes || "",
+                                    payment_method: paymentMethod,
+                                    total_price:
+                                        selectedCourt.hourly_rate *
+                                        dateTime.duration,
+                                }}
+                                onBack={handleBack}
+                                onConfirm={handleConfirmBooking}
+                                isSubmitting={submitting}
+                                onPaymentMethodChange={
+                                    handlePaymentMethodChange
+                                }
+                                selectedPaymentMethod={paymentMethod}
+                            />
+                        )}
+
+                        {/* Step 5: Success */}
+                        {currentStep === 5 && bookingComplete && (
+                            <BookingSuccess
+                                bookingData={{
+                                    booking_id:
+                                        bookingComplete.booking_id ||
+                                        `BK${Math.floor(
+                                            Math.random() * 10000
+                                        )}`,
+                                    court_name: bookingComplete.court_name,
+                                    venue_name: bookingComplete.venue_name,
+                                    date: bookingComplete.date,
+                                    start_time: bookingComplete.start_time,
+                                    end_time: bookingComplete.end_time,
+                                    renter_name: bookingComplete.renter_name,
+                                    renter_email: bookingComplete.renter_email,
+                                    renter_phone: bookingComplete.renter_phone,
+                                    payment_method:
+                                        bookingComplete.payment_method,
+                                    total_price: bookingComplete.total_price,
+                                }}
+                            />
                         )}
                     </motion.div>
+
+                    {/* Navigation Buttons */}
+                    {currentStep < 5 && currentStep !== 2 && (
+                        <div className="flex justify-between mt-8">
+                            <Button
+                                variant="outline"
+                                onClick={handleBack}
+                                disabled={currentStep === 1}
+                                className="px-6"
+                            >
+                                <ChevronLeft className="mr-2 h-4 w-4" />
+                                Quay lại
+                            </Button>
+
+                            {currentStep < 4 && (
+                                <Button
+                                    onClick={handleNextStep}
+                                    disabled={!isStepComplete(currentStep)}
+                                    className="px-6 bg-blue-600 hover:bg-blue-700"
+                                >
+                                    Tiếp theo
+                                    <ChevronRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
-            </main>
+            </div>
 
             <Footer />
         </div>

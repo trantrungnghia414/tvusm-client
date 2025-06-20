@@ -2,40 +2,22 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchApi } from "@/lib/api";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import {
-    format,
-    addDays,
-    parse,
-    addHours,
-    isBefore,
-    startOfHour,
-    isAfter,
-} from "date-fns";
+import { Button } from "@/components/ui/button";
+import { format, addDays, parse } from "date-fns";
 import { vi } from "date-fns/locale";
-import { AlertCircle, Clock, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 
 interface TimeSlot {
-    id: string;
-    start: string;
-    end: string;
-    available: boolean;
-}
-
-interface ApiTimeSlot {
     start_time: string;
     end_time: string;
     is_available: boolean;
+}
+
+interface DayAvailability {
+    date: string;
+    slots: TimeSlot[];
 }
 
 export interface DateTimeValue {
@@ -49,21 +31,24 @@ interface DateTimeSelectProps {
     value: DateTimeValue;
     onChange: (value: DateTimeValue) => void;
     courtId: number;
+    onNext?: () => void; // ✅ Thêm prop onNext
 }
 
 export default function DateTimeSelect({
     value,
     onChange,
     courtId,
+    onNext, // ✅ Destructure onNext prop
 }: DateTimeSelectProps) {
-    const [date, setDate] = useState<Date | undefined>(
-        value.date ? parse(value.date, "yyyy-MM-dd", new Date()) : undefined
+    const [date, setDate] = useState<Date>(
+        value.date ? parse(value.date, "yyyy-MM-dd", new Date()) : new Date()
     );
-    const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+    const [availability, setAvailability] = useState<DayAvailability[]>([]);
+    const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Generate default time slots
+    // Generate default time slots for fallback
     const generateDefaultTimeSlots = useCallback(() => {
         const slots: TimeSlot[] = [];
         const now = new Date();
@@ -85,8 +70,8 @@ export default function DateTimeSelect({
                 available = false;
             }
 
-            const start = `${hour.toString().padStart(2, "0")}:00`;
-            const end = `${(hour + 1).toString().padStart(2, "0")}:00`;
+            const start_time = `${hour.toString().padStart(2, "0")}:00`;
+            const end_time = `${(hour + 1).toString().padStart(2, "0")}:00`;
 
             // Random availability for demo
             if (available) {
@@ -94,73 +79,80 @@ export default function DateTimeSelect({
             }
 
             slots.push({
-                id: `slot-${hour}`,
-                start,
-                end,
-                available,
+                start_time,
+                end_time,
+                is_available: available,
             });
         }
 
-        setTimeSlots(slots);
+        return [{ date: format(date, "yyyy-MM-dd"), slots }];
     }, [date]);
 
-    // Fetch available time slots
-    const fetchTimeSlots = useCallback(async () => {
-        if (!date || !courtId) return;
+    // Fetch available slots when date changes - exactly like CourtSchedule
+    useEffect(() => {
+        const fetchAvailableSlots = async () => {
+            setLoading(true);
+            setError(null);
+            setSelectedSlots([]); // Reset selected slots when date changes
 
-        setLoading(true);
-        setError(null);
+            try {
+                const formattedDate = format(date, "yyyy-MM-dd");
+                const response = await fetchApi(
+                    `/courts/${courtId}/availability?date=${formattedDate}`
+                );
 
-        try {
-            const formattedDate = format(date, "yyyy-MM-dd");
-            const response = await fetchApi(
-                `/courts/${courtId}/availability?date=${formattedDate}`
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.slots && data.slots.length > 0) {
-                    // Process API data
-                    const formattedSlots = data.slots.map(
-                        (slot: ApiTimeSlot) => ({
-                            id: `slot-${slot.start_time}`,
-                            start: slot.start_time,
-                            end: slot.end_time,
-                            available: slot.is_available,
-                        })
-                    );
-
-                    setTimeSlots(formattedSlots);
-                } else {
-                    // Generate default slots if API returns no data
-                    generateDefaultTimeSlots();
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error("Không tìm thấy dữ liệu lịch đặt sân");
+                    } else if (response.status === 500) {
+                        throw new Error(
+                            "Lỗi server khi tải dữ liệu lịch đặt sân"
+                        );
+                    } else {
+                        throw new Error(
+                            `Không thể tải dữ liệu lịch đặt sân (${response.status})`
+                        );
+                    }
                 }
-            } else {
-                // Generate default slots if API is not available
-                generateDefaultTimeSlots();
-            }
-        } catch (error) {
-            setError("Không thể tải danh sách khung giờ");
-            console.error("Error fetching time slots:", error);
 
-            // Generate default slots on error
-            generateDefaultTimeSlots();
-        } finally {
-            setLoading(false);
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error(
+                        "Dữ liệu lịch đặt sân không đúng định dạng"
+                    );
+                }
+
+                setAvailability(data);
+            } catch (err) {
+                console.error("Error fetching availability:", err);
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : "Không thể tải thông tin khung giờ"
+                );
+
+                // Use default slots on error
+                setAvailability(generateDefaultTimeSlots());
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (courtId) {
+            fetchAvailableSlots();
         }
     }, [date, courtId, generateDefaultTimeSlots]);
 
-    // Handle date change
+    // Handle date change - exactly like CourtSchedule
     const handleDateChange = (newDate: Date | undefined) => {
         if (newDate) {
             setDate(newDate);
 
-            // Update date in form
-            const dateStr = format(newDate, "yyyy-MM-dd");
-
-            // Reset start_time and end_time when date changes
+            // Clear existing selections when date changes
+            setSelectedSlots([]);
             onChange({
-                date: dateStr,
+                date: format(newDate, "yyyy-MM-dd"),
                 startTime: "",
                 endTime: "",
                 duration: value.duration,
@@ -168,245 +160,306 @@ export default function DateTimeSelect({
         }
     };
 
-    // Handle start time selection
-    const handleStartTimeChange = (startTime: string) => {
-        if (!startTime) {
-            onChange({
-                ...value,
-                startTime: "",
-                endTime: "",
-                duration: value.duration,
-            });
-            return;
+    // Handle slot selection - exactly like CourtSchedule
+    const handleSlotToggle = (slot: TimeSlot) => {
+        if (!slot.is_available) {
+            return; // Cannot select unavailable slots
         }
 
-        // Check if there are enough consecutive slots
-        const consecutiveCount = getConsecutiveSlots(startTime, value.duration);
-
-        if (consecutiveCount >= value.duration) {
-            // Calculate end time
-            const [hours, minutes] = startTime.split(":").map(Number);
-            const startDate = new Date();
-            startDate.setHours(hours, minutes, 0, 0);
-            const endDate = addHours(startDate, value.duration);
-            const endTime = format(endDate, "HH:mm");
-
-            onChange({
-                ...value,
-                startTime,
-                endTime,
-            });
-        } else {
-            // Not enough consecutive slots
-            onChange({
-                ...value,
-                startTime,
-                endTime: "",
-            });
-            setError(
-                `Không đủ ${value.duration} giờ liên tiếp từ ${startTime}`
-            );
-        }
-    };
-
-    // Handle duration change
-    const handleDurationChange = (duration: string) => {
-        const newDuration = parseInt(duration, 10);
-
-        // If start time is selected, check if there are enough consecutive slots
-        if (value.startTime) {
-            const consecutiveCount = getConsecutiveSlots(
-                value.startTime,
-                newDuration
-            );
-
-            if (consecutiveCount >= newDuration) {
-                // Calculate new end time
-                const [hours, minutes] = value.startTime.split(":").map(Number);
-                const startDate = new Date();
-                startDate.setHours(hours, minutes, 0, 0);
-                const endDate = addHours(startDate, newDuration);
-                const endTime = format(endDate, "HH:mm");
-
-                onChange({
-                    ...value,
-                    endTime,
-                    duration: newDuration,
-                });
-            } else {
-                // Not enough consecutive slots, reset start time
-                onChange({
-                    ...value,
-                    startTime: "",
-                    endTime: "",
-                    duration: newDuration,
-                });
-                setError(
-                    `Không thể đặt ${newDuration} giờ liên tiếp từ giờ bắt đầu đã chọn.`
-                );
-            }
-        } else {
-            // If no start time is selected, just update duration
-            onChange({
-                ...value,
-                duration: newDuration,
-            });
-        }
-    };
-
-    // Check if there are enough consecutive available slots
-    const getConsecutiveSlots = (
-        startTime: string,
-        hoursNeeded: number
-    ): number => {
-        const startIndex = timeSlots.findIndex(
-            (slot) => slot.start === startTime
+        // Check if slot is already selected
+        const isSlotSelected = selectedSlots.some(
+            (s) =>
+                s.start_time === slot.start_time && s.end_time === slot.end_time
         );
-        if (startIndex === -1) return 0;
 
-        let consecutive = 1;
-        for (let i = startIndex + 1; i < timeSlots.length; i++) {
-            if (timeSlots[i].available) {
-                consecutive++;
-                if (consecutive >= hoursNeeded) {
-                    return consecutive;
-                }
-            } else {
-                break;
-            }
+        let newSelectedSlots: TimeSlot[];
+
+        if (isSlotSelected) {
+            // Remove slot if already selected
+            newSelectedSlots = selectedSlots.filter(
+                (s) =>
+                    !(
+                        s.start_time === slot.start_time &&
+                        s.end_time === slot.end_time
+                    )
+            );
+        } else {
+            // Add slot to selection
+            newSelectedSlots = [...selectedSlots, slot];
         }
 
-        return consecutive;
+        setSelectedSlots(newSelectedSlots);
+
+        // Update form values based on selected slots
+        if (newSelectedSlots.length > 0) {
+            // Sort slots by start time
+            const sortedSlots = [...newSelectedSlots].sort((a, b) =>
+                a.start_time.localeCompare(b.start_time)
+            );
+
+            const startTime = sortedSlots[0].start_time;
+            const endTime = sortedSlots[sortedSlots.length - 1].end_time;
+
+            // Calculate duration in hours
+            const startHour = parseInt(startTime.split(":")[0]);
+            const endHour = parseInt(endTime.split(":")[0]);
+            const duration = endHour - startHour;
+
+            onChange({
+                date: format(date, "yyyy-MM-dd"),
+                startTime: startTime,
+                endTime: endTime,
+                duration: duration,
+            });
+        } else {
+            // Clear selection
+            onChange({
+                date: format(date, "yyyy-MM-dd"),
+                startTime: "",
+                endTime: "",
+                duration: value.duration,
+            });
+        }
     };
 
-    // Filter available start times
-    const availableStartTimes = timeSlots.filter((slot) => slot.available);
+    // Retry function - exactly like CourtSchedule
+    const handleRetry = () => {
+        setError(null);
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const formattedDate = format(date, "yyyy-MM-dd");
+                const response = await fetchApi(
+                    `/courts/${courtId}/availability?date=${formattedDate}`
+                );
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+                const data = await response.json();
+                setAvailability(data);
+            } catch (err) {
+                setError("Không thể tải dữ liệu lịch đặt sân");
+                console.error("Error fetching availability:", err);
 
-    // Duration options
-    const durationOptions = [1, 2, 3, 4];
+                // Use default slots on error
+                setAvailability(generateDefaultTimeSlots());
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    };
 
-    // Fetch time slots when court or date changes
-    useEffect(() => {
-        if (courtId && date) {
-            fetchTimeSlots();
-        }
-    }, [courtId, date, fetchTimeSlots]);
+    // Find availability for selected date
+    const selectedDayAvailability = availability.find(
+        (day) => day.date === format(date, "yyyy-MM-dd")
+    );
 
     return (
-        <Card className="border-blue-100">
-            <CardHeader className="pb-3">
-                <CardTitle className="flex items-center">
-                    <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                    Chọn Ngày & Giờ
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-6">
-                    {/* Date selection */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex flex-col md:flex-row gap-6">
+                {/* Left side: Calendar display */}
+                <div className="md:w-1/3">
                     <div>
-                        <Label className="mb-2 block">Ngày đặt sân</Label>
-                        <Calendar
-                            mode="single"
-                            selected={date}
-                            onSelect={handleDateChange}
-                            locale={vi}
-                            disabled={(date) => {
-                                // Disable past dates
-                                return (
-                                    isBefore(date, startOfHour(new Date())) ||
-                                    isAfter(date, addDays(new Date(), 30))
-                                ); // Allow booking up to 30 days ahead
-                            }}
-                            className="border rounded-md bg-white"
-                        />
-                    </div>
-
-                    {/* Error alert */}
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* Start time selection */}
-                    <div>
-                        <Label className="mb-2 block">Giờ bắt đầu</Label>
-                        <Select
-                            value={value.startTime}
-                            onValueChange={handleStartTimeChange}
-                            disabled={loading || courtId === 0}
-                        >
-                            <SelectTrigger>
-                                <SelectValue
-                                    placeholder={
-                                        loading
-                                            ? "Đang tải..."
-                                            : courtId === 0
-                                            ? "Vui lòng chọn sân trước"
-                                            : "Chọn giờ bắt đầu"
-                                    }
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {loading ? (
-                                    <div className="flex items-center justify-center py-2">
-                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        <span>Đang tải...</span>
-                                    </div>
-                                ) : availableStartTimes.length > 0 ? (
-                                    availableStartTimes.map((slot) => (
-                                        <SelectItem
-                                            key={slot.id}
-                                            value={slot.start}
-                                        >
-                                            {slot.start} - {slot.end}
-                                        </SelectItem>
-                                    ))
-                                ) : (
-                                    <div className="px-2 py-4 text-center text-sm text-muted-foreground">
-                                        Không có khung giờ nào khả dụng
-                                    </div>
-                                )}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Duration selection */}
-                    <div>
-                        <Label className="mb-2 block">Thời lượng</Label>
-                        <Select
-                            value={value.duration.toString()}
-                            onValueChange={handleDurationChange}
-                            disabled={!date || courtId === 0}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Chọn thời lượng" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {durationOptions.map((duration) => (
-                                    <SelectItem
-                                        key={duration}
-                                        value={duration.toString()}
-                                    >
-                                        {duration} giờ
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Display selected time */}
-                    {value.startTime && value.endTime && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                            <p className="font-medium text-blue-800">
-                                Thời gian đã chọn: {value.startTime} -{" "}
-                                {value.endTime}
-                            </p>
+                        {/* Calendar display */}
+                        <div className="border border-gray-200 rounded-md p-3 bg-white">
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={handleDateChange}
+                                className="mx-auto"
+                                locale={vi}
+                                disabled={(date) =>
+                                    date <
+                                        new Date(
+                                            new Date().setHours(0, 0, 0, 0)
+                                        ) || date > addDays(new Date(), 30)
+                                }
+                            />
                         </div>
+                    </div>
+
+                    {/* ✅ Nút tiếp theo - sửa lại logic */}
+                    <div className="mt-4">
+                        <Button
+                            className="w-full bg-blue-600 hover:bg-blue-700"
+                            disabled={selectedSlots.length === 0}
+                            onClick={() => {
+                                console.log("Button clicked!", {
+                                    selectedSlots: selectedSlots.length,
+                                    hasOnNext: !!onNext,
+                                    value: value,
+                                }); // ✅ Debug log
+
+                                if (selectedSlots.length > 0 && onNext) {
+                                    console.log("Calling onNext..."); // ✅ Debug log
+                                    onNext();
+                                } else {
+                                    console.log("Conditions not met:", {
+                                        slotsSelected: selectedSlots.length > 0,
+                                        onNextExists: !!onNext,
+                                    }); // ✅ Debug log
+                                }
+                            }}
+                        >
+                            Tiếp theo
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Right side: Time slots booking */}
+                <div className="md:w-2/3">
+                    {loading ? (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 text-blue-600 animate-spin mr-2" />
+                            <span className="text-gray-600">
+                                Đang tải lịch sân...
+                            </span>
+                        </div>
+                    ) : error ? (
+                        <Alert variant="destructive" className="mb-3">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Lỗi</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                            <Button
+                                onClick={handleRetry}
+                                variant="outline"
+                                className="flex items-center gap-2 mt-2"
+                                size="sm"
+                            >
+                                <RefreshCcw className="h-4 w-4" />
+                                Thử lại
+                            </Button>
+                        </Alert>
+                    ) : (
+                        <>
+                            {selectedDayAvailability &&
+                            selectedDayAvailability.slots.length > 0 ? (
+                                <div>
+                                    <div className="mb-3 border-b pb-2 flex justify-between items-center">
+                                        {/* Selected date - left */}
+                                        <h3 className="font-medium text-gray-800">
+                                            {format(date, "EEEE, dd/MM/yyyy", {
+                                                locale: vi,
+                                            })}
+                                        </h3>
+
+                                        {/* Color legend - right */}
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-green-100 border border-green-200 rounded-sm"></div>
+                                                <span className="text-xs text-gray-600">
+                                                    Còn trống
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded-sm"></div>
+                                                <span className="text-xs text-gray-600">
+                                                    Đang chọn
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-red-100 border border-red-200 rounded-sm"></div>
+                                                <span className="text-xs text-gray-600">
+                                                    Đã đặt
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Time slots grid - cinema-style booking */}
+                                    <div className="bg-gray-50 py-4 pb-6 px-4 rounded-md border border-gray-200 mb-4">
+                                        <div className="text-center mb-5">
+                                            <div className="text-sm text-gray-500">
+                                                Chọn khung giờ bạn muốn đặt sân
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-6 gap-2 max-w-3xl mx-auto">
+                                            {selectedDayAvailability.slots.map(
+                                                (slot, index) => {
+                                                    const isSelected =
+                                                        selectedSlots.some(
+                                                            (s) =>
+                                                                s.start_time ===
+                                                                    slot.start_time &&
+                                                                s.end_time ===
+                                                                    slot.end_time
+                                                        );
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className={`
+                                                            text-center py-3 px-1 rounded-md cursor-pointer transition-all transform hover:scale-105
+                                                            ${
+                                                                !slot.is_available
+                                                                    ? "bg-red-100 border border-red-200 text-red-800"
+                                                                    : isSelected
+                                                                    ? "bg-blue-100 border border-blue-300 text-blue-800 shadow-md"
+                                                                    : "bg-green-100 border border-green-200 text-green-800 hover:bg-green-200"
+                                                            }
+                                                        `}
+                                                            onClick={() =>
+                                                                handleSlotToggle(
+                                                                    slot
+                                                                )
+                                                            }
+                                                        >
+                                                            <div className="text-xs font-semibold">
+                                                                {
+                                                                    slot.start_time
+                                                                }
+                                                            </div>
+                                                            <div className="text-xs">
+                                                                {slot.end_time}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* ✅ Selected slots display - Giữ lại nhưng BỎ nút tiếp theo */}
+                                    {selectedSlots.length > 0 && (
+                                        <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
+                                            <h4 className="font-medium text-blue-800 mb-2">
+                                                Khung giờ đã chọn:
+                                            </h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedSlots
+                                                    .sort((a, b) =>
+                                                        a.start_time.localeCompare(
+                                                            b.start_time
+                                                        )
+                                                    )
+                                                    .map((slot, index) => (
+                                                        <span
+                                                            key={index}
+                                                            className="bg-white text-blue-600 border border-blue-200 px-2 py-1 rounded-md text-xs font-medium"
+                                                        >
+                                                            {slot.start_time} -{" "}
+                                                            {slot.end_time}
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 bg-gray-50 rounded-md border border-gray-100">
+                                    <p className="text-gray-500">
+                                        Không có khung giờ nào cho ngày này
+                                    </p>
+                                    <p className="text-sm text-gray-400 mt-2">
+                                        Hãy chọn một ngày khác
+                                    </p>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

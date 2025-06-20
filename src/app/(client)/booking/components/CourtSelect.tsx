@@ -9,11 +9,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { fetchApi } from "@/lib/api";
 import { Court } from "../types/bookingTypes";
-import { Search, CheckCircle2, Filter, X } from "lucide-react";
+import { Search, CheckCircle2, Filter } from "lucide-react";
 
 interface CourtSelectProps {
     selectedCourtId: number;
@@ -88,7 +86,7 @@ export default function CourtSelect({
 
                 const data: ApiCourtData[] = await response.json();
 
-                // Filter out unavailable courts and normalize data
+                // Lọc và chuyển đổi dữ liệu từ API
                 const availableCourts: Court[] = data
                     .filter(
                         (court: ApiCourtData) => court.status === "available"
@@ -122,7 +120,7 @@ export default function CourtSelect({
                 setCourts(availableCourts);
                 setFilteredCourts(availableCourts);
 
-                // Handle initial court selection
+                // Xử lý court đã chọn ban đầu
                 if (initialCourtId > 0) {
                     const selectedCourt = availableCourts.find(
                         (court: Court) => court.court_id === initialCourtId
@@ -141,7 +139,7 @@ export default function CourtSelect({
         fetchCourts();
     }, [initialCourtId, onCourtSelect]);
 
-    // Filter courts when search or type filter changes
+    // Lọc khi tìm kiếm hoặc thay đổi bộ lọc
     useEffect(() => {
         let filtered = [...courts];
 
@@ -167,7 +165,7 @@ export default function CourtSelect({
         setFilteredCourts(filtered);
     }, [courts, searchQuery, selectedTypeFilter]);
 
-    // Handle court selection
+    // Xử lý khi chọn sân
     const handleCourtSelect = (court: Court) => {
         if (selectedCourtId === court.court_id) {
             onCourtSelect(null);
@@ -175,14 +173,6 @@ export default function CourtSelect({
             onCourtSelect(court);
         }
     };
-
-    // Clear filters
-    const clearFilters = () => {
-        setSearchQuery("");
-        setSelectedTypeFilter("all");
-    };
-
-    const hasActiveFilters = searchQuery || selectedTypeFilter !== "all";
 
     return (
         <div className="space-y-3">
@@ -194,14 +184,14 @@ export default function CourtSelect({
                         <Input
                             type="text"
                             placeholder="Tìm kiếm sân..."
-                            className="pl-8 h-8 text-sm"
+                            className="pl-8 h-9 text-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </div>
 
-                <div className="w-36">
+                <div>
                     <Select
                         value={selectedTypeFilter}
                         onValueChange={setSelectedTypeFilter}
@@ -225,51 +215,30 @@ export default function CourtSelect({
                         </SelectContent>
                     </Select>
                 </div>
-
-                {hasActiveFilters && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={clearFilters}
-                        className="h-8 px-2"
-                    >
-                        <X className="h-3.5 w-3.5" />
-                    </Button>
-                )}
             </div>
 
-            {/* Courts Grid - 5 per row */}
+            {/* Courts Grid - 6 per row, max 18 courts */}
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                    {[...Array(10)].map((_, index) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    {[...Array(18)].map((_, index) => (
                         <div key={index} className="animate-pulse">
-                            <div className="h-20 bg-gray-200 rounded border"></div>
+                            <div className="h-16 bg-gray-200 rounded border"></div>
                         </div>
                     ))}
                 </div>
             ) : filteredCourts.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">
                     <p className="text-sm">Không tìm thấy sân phù hợp</p>
-                    {hasActiveFilters && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={clearFilters}
-                            className="mt-2"
-                        >
-                            Xóa bộ lọc
-                        </Button>
-                    )}
                 </div>
             ) : (
-                <div className="max-h-[45vh] overflow-y-auto">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                        {filteredCourts.map((court) => (
+                <div className="max-h-[40vh] overflow-y-auto">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                        {filteredCourts.slice(0, 18).map((court) => (
                             <div
                                 key={court.court_id}
                                 className={`
                                     cursor-pointer transition-all duration-200 
-                                    border rounded-lg p-3 hover:shadow-sm relative
+                                    border rounded-lg p-2.5 hover:shadow-sm relative
                                     ${
                                         selectedCourtId === court.court_id
                                             ? "ring-2 ring-blue-500 border-blue-300 bg-blue-50"
@@ -280,32 +249,29 @@ export default function CourtSelect({
                             >
                                 {/* Selected indicator */}
                                 {selectedCourtId === court.court_id && (
-                                    <div className="absolute top-2 right-2">
-                                        <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                                    <div className="absolute top-1.5 right-1.5">
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     {/* Court name */}
-                                    <h4 className="font-medium text-sm text-gray-900 leading-tight pr-6">
+                                    <h4 className="font-medium text-xs text-gray-900 leading-tight pr-5 line-clamp-2">
                                         {court.name}
                                     </h4>
 
-                                    {/* Court type badge */}
-                                    <Badge
-                                        variant="outline"
-                                        className="text-xs px-1.5 py-0 text-gray-600"
-                                    >
-                                        {court.type_name}
-                                    </Badge>
+                                    {/* Court code */}
+                                    <p className="text-xs text-blue-600 font-mono">
+                                        {court.code}
+                                    </p>
 
-                                    {/* Venue name */}
-                                    <p className="text-xs text-gray-500 leading-tight">
-                                        {court.venue_name}
+                                    {/* Court type */}
+                                    <p className="text-xs text-gray-500">
+                                        {court.type_name}
                                     </p>
 
                                     {/* Price */}
-                                    <div className="text-sm font-medium text-blue-600">
+                                    <div className="text-xs font-medium text-green-600">
                                         {court.hourly_rate.toLocaleString(
                                             "vi-VN"
                                         )}
@@ -320,7 +286,8 @@ export default function CourtSelect({
 
             {/* Results count */}
             <div className="text-xs text-gray-500 text-center">
-                {filteredCourts.length} sân có sẵn
+                {Math.min(filteredCourts.length, 18)} / {filteredCourts.length}{" "}
+                sân có sẵn
             </div>
         </div>
     );

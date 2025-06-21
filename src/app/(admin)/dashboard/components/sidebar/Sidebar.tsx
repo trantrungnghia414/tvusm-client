@@ -18,7 +18,6 @@ import {
     ShoppingBag,
     AlertTriangle,
     Dumbbell,
-    BadgePercent,
     Layers,
     GridIcon,
 } from "lucide-react";
@@ -97,12 +96,6 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         title="Thiết bị"
                         active={activeTab === "equipments"}
                         onClick={() => router.push("/dashboard/equipments")}
-                    />
-                    <SidebarItem
-                        icon={<BadgePercent className="h-4 w-4" />}
-                        title="Bảng giá"
-                        active={activeTab === "pricings"}
-                        onClick={() => router.push("/dashboard/pricings")}
                     />
 
                     <SidebarCategory label="QUẢN LÝ DỊCH VỤ" />

@@ -141,8 +141,8 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                     <SidebarItem
                         icon={<MessageSquare className="h-4 w-4" />}
                         title="Phản hồi"
-                        active={activeTab === "feedback"}
-                        onClick={() => router.push("/dashboard/feedback")}
+                        active={activeTab === "feedbacks"}
+                        onClick={() => router.push("/dashboard/feedbacks")}
                         count={5}
                     />
 

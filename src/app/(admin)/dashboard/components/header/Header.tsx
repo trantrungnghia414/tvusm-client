@@ -4,14 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
-import {
-    Menu,
-    Search,
-    Bell,
-    User,
-    Settings,
-    LogOut,
-} from "lucide-react";
+import { Menu, Search, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +16,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { fetchApi } from "@/lib/api";
+import NotificationDropdown from "./NotificationDropdown";
 
 interface HeaderProps {
     mobileMenuOpen: boolean;
@@ -58,12 +52,6 @@ export default function Header({
                 if (response.ok) {
                     const data = await response.json();
                     setUserProfile(data);
-                    // console.log("Full user profile data:", data);
-                } else {
-                    console.error(
-                        "Failed to fetch user profile:",
-                        response.status
-                    );
                 }
             } catch (error) {
                 console.error("Error fetching user profile:", error);
@@ -111,12 +99,9 @@ export default function Header({
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
-                <Button variant="outline" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                        5
-                    </span>
-                </Button>
+                {/* ✅ Thay thế notification cũ bằng NotificationDropdown mới */}
+                <NotificationDropdown />
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button

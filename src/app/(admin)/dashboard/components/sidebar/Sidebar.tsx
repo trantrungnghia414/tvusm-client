@@ -162,8 +162,8 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                     <SidebarItem
                         icon={<FileText className="h-4 w-4" />}
                         title="Nhật ký hoạt động"
-                        active={activeTab === "logs"}
-                        onClick={() => router.push("/dashboard/logs")}
+                        active={activeTab === "activity-log"}
+                        onClick={() => router.push("/dashboard/activity-log")}
                     />
                     <SidebarItem
                         icon={<Settings className="h-4 w-4" />}

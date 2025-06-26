@@ -2,67 +2,117 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import {
-    Bell,
-    Calendar,
-    CreditCard,
-    Info,
-    CheckCircle,
-    AlertTriangle,
-    XCircle,
-    Settings,
-    Eye,
-} from "lucide-react";
+import { Bell, Check, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
-import { vi } from "date-fns/locale";
 import { fetchApi } from "@/lib/api";
-import { Notification, NotificationStats } from "@/app/(admin)/dashboard/notifications/types/notification";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+
+// ✅ Định nghĩa interface cho notification data thay vì any
+interface NotificationData {
+    link?: string;
+    booking_id?: number;
+    booking_code?: string;
+    court_name?: string;
+    venue_name?: string;
+    payment_id?: number;
+    amount?: number;
+    payment_method?: string;
+    event_id?: number;
+    event_title?: string;
+    user_id?: number;
+    username?: string;
+    priority?: "low" | "medium" | "high" | "urgent";
+    category?: string;
+    tags?: string[];
+    [key: string]: string | number | boolean | string[] | undefined;
+}
+
+interface Notification {
+    notification_id: number;
+    title: string;
+    message: string;
+    type: string;
+    is_read: boolean;
+    created_at: string;
+    data?: NotificationData; // ✅ Thay any bằng NotificationData
+}
+
+interface NotificationStats {
+    total: number;
+    unread: number;
+}
 
 export default function NotificationDropdown() {
-    const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [stats, setStats] = useState<NotificationStats>({
         total: 0,
         unread: 0,
     });
     const [loading, setLoading] = useState(false);
-    const [open, setOpen] = useState(false);
+    const router = useRouter();
 
-    // Fetch notifications
+    // ✅ Fetch notifications với debug logging
     const fetchNotifications = async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await fetchApi("/notifications", {
+            console.log("🔔 Fetching notifications...");
+
+            // Fetch notifications
+            const notificationsResponse = await fetchApi(
+                "/notifications?limit=10",
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            // Fetch stats
+            const statsResponse = await fetchApi("/notifications/stats", {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setNotifications(data.notifications || []);
-                setStats(data.stats || { total: 0, unread: 0 });
+            if (notificationsResponse.ok && statsResponse.ok) {
+                const notificationsData = await notificationsResponse.json();
+                const statsData = await statsResponse.json();
+
+                console.log("📊 Notifications data:", notificationsData);
+                console.log("📈 Stats data:", statsData);
+
+                setNotifications(notificationsData.notifications || []);
+                setStats(statsData);
+            } else {
+                console.error("❌ Failed to fetch notifications");
+                console.log(
+                    "Response status:",
+                    notificationsResponse.status,
+                    statsResponse.status
+                );
             }
         } catch (error) {
-            console.error("Error fetching notifications:", error);
+            console.error("❌ Error fetching notifications:", error);
         } finally {
             setLoading(false);
         }
     };
+
+    // ✅ Load notifications on mount và định kỳ
+    useEffect(() => {
+        fetchNotifications();
+
+        // Refresh mỗi 30 giây
+        const interval = setInterval(fetchNotifications, 30000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     // Mark notification as read
     const markAsRead = async (notificationId: number) => {
@@ -70,13 +120,14 @@ export default function NotificationDropdown() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await fetchApi(
-                `/notifications/${notificationId}/read`,
-                {
-                    method: "PATCH",
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
+            const response = await fetchApi("/notifications/read", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ notification_ids: [notificationId] }),
+            });
 
             if (response.ok) {
                 setNotifications((prev) =>
@@ -127,196 +178,185 @@ export default function NotificationDropdown() {
             await markAsRead(notification.notification_id);
         }
 
-        // Navigate based on notification type and data
+        // ✅ Navigate based on notification data với type safety
         if (notification.data?.link) {
             router.push(notification.data.link);
-            setOpen(false);
-        } else if (
-            notification.type === "booking" &&
-            notification.data?.booking_id
-        ) {
-            router.push(`/dashboard/bookings/${notification.data.booking_id}`);
-            setOpen(false);
-        } else if (
-            notification.type === "payment" &&
-            notification.data?.payment_id
-        ) {
-            router.push(`/dashboard/payments/${notification.data.payment_id}`);
-            setOpen(false);
+        } else {
+            // Default navigation based on notification type
+            switch (notification.type) {
+                case "booking":
+                    if (notification.data?.booking_id) {
+                        router.push(
+                            `/dashboard/bookings/${notification.data.booking_id}`
+                        );
+                    } else {
+                        router.push("/dashboard/bookings");
+                    }
+                    break;
+                case "payment":
+                    router.push("/dashboard/payments");
+                    break;
+                case "event":
+                    if (notification.data?.event_id) {
+                        router.push(
+                            `/dashboard/events/${notification.data.event_id}`
+                        );
+                    } else {
+                        router.push("/dashboard/events");
+                    }
+                    break;
+                default:
+                    router.push("/dashboard/notifications");
+                    break;
+            }
         }
     };
 
-    // Get icon for notification type
-    const getNotificationIcon = (type: Notification["type"]) => {
-        const iconClass = "h-4 w-4";
+    // Format time
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return "Vừa xong";
+        if (diffMins < 60) return `${diffMins} phút trước`;
+        if (diffHours < 24) return `${diffHours} giờ trước`;
+        return `${diffDays} ngày trước`;
+    };
+
+    // Get notification type icon and color
+    const getNotificationStyle = (type: string) => {
         switch (type) {
             case "booking":
-                return <Calendar className={`${iconClass} text-blue-600`} />;
+                return { icon: "📅", color: "text-blue-600" };
             case "payment":
-                return <CreditCard className={`${iconClass} text-green-600`} />;
+                return { icon: "💳", color: "text-green-600" };
+            case "event":
+                return { icon: "🎉", color: "text-purple-600" };
             case "success":
-                return (
-                    <CheckCircle className={`${iconClass} text-green-600`} />
-                );
+                return { icon: "✅", color: "text-green-600" };
             case "warning":
-                return (
-                    <AlertTriangle className={`${iconClass} text-yellow-600`} />
-                );
+                return { icon: "⚠️", color: "text-yellow-600" };
             case "error":
-                return <XCircle className={`${iconClass} text-red-600`} />;
+                return { icon: "❌", color: "text-red-600" };
             case "system":
-                return <Settings className={`${iconClass} text-gray-600`} />;
+                return { icon: "⚙️", color: "text-gray-600" };
+            case "info":
+                return { icon: "ℹ️", color: "text-blue-500" };
             default:
-                return <Info className={`${iconClass} text-blue-600`} />;
+                return { icon: "🔔", color: "text-gray-600" };
         }
     };
-
-    // Get notification color based on type
-    const getNotificationColor = (type: Notification["type"]) => {
-        switch (type) {
-            case "booking":
-                return "border-l-blue-500 bg-blue-50";
-            case "payment":
-                return "border-l-green-500 bg-green-50";
-            case "success":
-                return "border-l-green-500 bg-green-50";
-            case "warning":
-                return "border-l-yellow-500 bg-yellow-50";
-            case "error":
-                return "border-l-red-500 bg-red-50";
-            case "system":
-                return "border-l-gray-500 bg-gray-50";
-            default:
-                return "border-l-blue-500 bg-blue-50";
-        }
-    };
-
-    useEffect(() => {
-        fetchNotifications();
-    }, []);
-
-    // Auto refresh notifications every 30 seconds
-    useEffect(() => {
-        const interval = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(interval);
-    }, []);
 
     return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
                     {stats.unread > 0 && (
                         <Badge
                             variant="destructive"
-                            className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
                         >
                             {stats.unread > 99 ? "99+" : stats.unread}
                         </Badge>
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel className="flex items-center justify-between">
-                    <span>Thông báo</span>
-                    {stats.unread > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={markAllAsRead}
-                            className="h-6 px-2 text-xs"
-                        >
-                            Đánh dấu tất cả đã đọc
-                        </Button>
-                    )}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+            <DropdownMenuContent align="end" className="w-80 p-0">
+                <div className="p-4 border-b">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">Thông báo</h3>
+                        {stats.unread > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={markAllAsRead}
+                                className="text-xs"
+                            >
+                                <Check className="h-3 w-3 mr-1" />
+                                Đánh dấu tất cả
+                            </Button>
+                        )}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {stats.unread} chưa đọc / {stats.total} tổng
+                    </p>
+                </div>
 
-                {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    </div>
-                ) : notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <Bell className="h-8 w-8 text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-500">
+                <div className="max-h-96 overflow-y-auto">
+                    {loading ? (
+                        <div className="p-4 text-center text-gray-500">
+                            Đang tải...
+                        </div>
+                    ) : notifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
                             Không có thông báo nào
-                        </p>
-                    </div>
-                ) : (
-                    <ScrollArea className="h-96">
-                        <div className="space-y-1">
-                            {notifications.map((notification) => (
-                                <DropdownMenuItem
+                        </div>
+                    ) : (
+                        notifications.map((notification) => {
+                            const style = getNotificationStyle(
+                                notification.type
+                            );
+                            return (
+                                <div
                                     key={notification.notification_id}
-                                    className="p-0"
-                                    onSelect={() =>
+                                    className={`p-3 border-b hover:bg-gray-50 cursor-pointer transition-colors ${
+                                        !notification.is_read
+                                            ? "bg-blue-50"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
                                         handleNotificationClick(notification)
                                     }
                                 >
-                                    <div
-                                        className={`
-                                            w-full p-3 border-l-4 cursor-pointer transition-colors
-                                            ${getNotificationColor(
-                                                notification.type
-                                            )}
-                                            ${
-                                                !notification.is_read
-                                                    ? "bg-opacity-100"
-                                                    : "bg-opacity-50"
-                                            }
-                                            hover:bg-opacity-75
-                                        `}
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="flex-shrink-0 mt-0.5">
-                                                {getNotificationIcon(
-                                                    notification.type
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 mt-1">
+                                            <span className="text-lg">
+                                                {style.icon}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h4
+                                                    className={`font-medium text-sm ${style.color} truncate`}
+                                                >
+                                                    {notification.title}
+                                                </h4>
+                                                {!notification.is_read && (
+                                                    <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <h4 className="text-sm font-medium text-gray-900 truncate">
-                                                        {notification.title}
-                                                    </h4>
-                                                    {!notification.is_read && (
-                                                        <div className="h-2 w-2 bg-blue-600 rounded-full flex-shrink-0 ml-2"></div>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs text-gray-600 line-clamp-2 mb-1">
-                                                    {notification.message}
-                                                </p>
-                                                <p className="text-xs text-gray-400">
-                                                    {formatDistanceToNow(
-                                                        new Date(
-                                                            notification.created_at
-                                                        ),
-                                                        {
-                                                            addSuffix: true,
-                                                            locale: vi,
-                                                        }
-                                                    )}
-                                                </p>
-                                            </div>
+                                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                                {notification.message}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                {formatTime(
+                                                    notification.created_at
+                                                )}
+                                            </p>
                                         </div>
                                     </div>
-                                </DropdownMenuItem>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                )}
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
 
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                    onSelect={() => {
-                        router.push("/dashboard/notifications");
-                        setOpen(false);
-                    }}
-                    className="justify-center"
-                >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Xem tất cả thông báo
-                </DropdownMenuItem>
+                <div className="p-3 border-t">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => router.push("/dashboard/notifications")}
+                    >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Xem tất cả thông báo
+                    </Button>
+                </div>
             </DropdownMenuContent>
         </DropdownMenu>
     );

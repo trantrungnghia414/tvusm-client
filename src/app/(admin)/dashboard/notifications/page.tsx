@@ -35,16 +35,24 @@ import { vi } from "date-fns/locale";
 import { fetchApi } from "@/lib/api";
 import DashboardLayout from "../components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { Notification, NotificationStats } from "@/app/(admin)/dashboard/notifications/types/notification";
+import {
+    Notification,
+    NotificationStats,
+} from "@/app/(admin)/dashboard/notifications/types/notification";
 
 export default function NotificationsPage() {
     const router = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
-    const [stats, setStats] = useState<NotificationStats>({ total: 0, unread: 0 });
+    const [filteredNotifications, setFilteredNotifications] = useState<
+        Notification[]
+    >([]);
+    const [stats, setStats] = useState<NotificationStats>({
+        total: 0,
+        unread: 0,
+    });
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    
+
     // Filters
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
@@ -60,48 +68,90 @@ export default function NotificationsPage() {
                 return;
             }
 
-            const response = await fetchApi("/notifications", {
+            console.log("🔔 [Admin] Fetching notifications...");
+
+            // ✅ Sử dụng admin API thay vì user API
+            const response = await fetchApi(
+                `/admin/notifications?page=1&limit=100&type=${
+                    typeFilter !== "all" ? typeFilter : ""
+                }&status=${statusFilter !== "all" ? statusFilter : ""}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            // ✅ Fetch admin stats riêng biệt
+            const statsResponse = await fetchApi("/admin/notifications/stats", {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setNotifications(data.notifications || []);
-                setStats(data.stats || { total: 0, unread: 0 });
+            console.log(
+                "📡 Admin notifications response status:",
+                response.status
+            );
+            console.log(
+                "📡 Admin stats response status:",
+                statsResponse.status
+            );
+
+            if (response.ok && statsResponse.ok) {
+                const notificationsData = await response.json();
+                const statsData = await statsResponse.json();
+
+                console.log("📊 Admin notifications data:", notificationsData);
+                console.log("📈 Admin stats data:", statsData);
+
+                // ✅ Set notifications và stats
+                setNotifications(notificationsData.notifications || []);
+                setStats({
+                    total: statsData.total || 0,
+                    unread: statsData.unread || 0,
+                });
             } else {
-                throw new Error("Failed to fetch notifications");
+                console.error("❌ Failed to fetch admin notifications");
+                const notifError = !response.ok ? await response.text() : null;
+                const statsError = !statsResponse.ok
+                    ? await statsResponse.text()
+                    : null;
+                console.log("Notifications error:", notifError);
+                console.log("Stats error:", statsError);
+                throw new Error("Failed to fetch admin notifications");
             }
         } catch (error) {
-            console.error("Error fetching notifications:", error);
+            console.error("Error fetching admin notifications:", error);
             toast.error("Không thể tải danh sách thông báo");
         } finally {
             setLoading(false);
         }
-    }, [router]);
+    }, [router, typeFilter, statusFilter]);
 
     // Filter notifications
     const filterNotifications = useCallback(() => {
         let result = [...notifications];
 
-        // Search filter
+        // Search filter - bao gồm cả thông tin user
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase();
-            result = result.filter(notif =>
-                notif.title.toLowerCase().includes(searchLower) ||
-                notif.message.toLowerCase().includes(searchLower)
+            result = result.filter(
+                (notif) =>
+                    notif.title.toLowerCase().includes(searchLower) ||
+                    notif.message.toLowerCase().includes(searchLower) ||
+                    notif.user?.username?.toLowerCase().includes(searchLower) ||
+                    notif.user?.email?.toLowerCase().includes(searchLower) ||
+                    notif.user?.fullname?.toLowerCase().includes(searchLower)
             );
         }
 
         // Type filter
         if (typeFilter !== "all") {
-            result = result.filter(notif => notif.type === typeFilter);
+            result = result.filter((notif) => notif.type === typeFilter);
         }
 
         // Status filter
         if (statusFilter === "read") {
-            result = result.filter(notif => notif.is_read);
+            result = result.filter((notif) => notif.is_read);
         } else if (statusFilter === "unread") {
-            result = result.filter(notif => !notif.is_read);
+            result = result.filter((notif) => !notif.is_read);
         }
 
         setFilteredNotifications(result);
@@ -113,7 +163,13 @@ export default function NotificationsPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await fetchApi("/notifications/mark-read", {
+            console.log(
+                "✅ Admin marking notifications as read:",
+                notificationIds
+            );
+
+            // ✅ Có thể sử dụng user API hoặc tạo admin API riêng
+            const response = await fetchApi("/notifications/read", {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -123,18 +179,22 @@ export default function NotificationsPage() {
             });
 
             if (response.ok) {
-                setNotifications(prev =>
-                    prev.map(notif =>
+                setNotifications((prev) =>
+                    prev.map((notif) =>
                         notificationIds.includes(notif.notification_id)
                             ? { ...notif, is_read: true }
                             : notif
                     )
                 );
-                setStats(prev => ({
+                setStats((prev) => ({
                     ...prev,
-                    unread: Math.max(0, prev.unread - notificationIds.length)
+                    unread: Math.max(0, prev.unread - notificationIds.length),
                 }));
                 toast.success("Đã đánh dấu thông báo là đã đọc");
+            } else {
+                const errorText = await response.text();
+                console.error("Mark as read error:", errorText);
+                throw new Error("Failed to mark as read");
             }
         } catch (error) {
             console.error("Error marking notifications as read:", error);
@@ -158,9 +218,10 @@ export default function NotificationsPage() {
             });
 
             if (response.ok) {
-                setNotifications(prev =>
-                    prev.filter(notif =>
-                        !notificationIds.includes(notif.notification_id)
+                setNotifications((prev) =>
+                    prev.filter(
+                        (notif) =>
+                            !notificationIds.includes(notif.notification_id)
                     )
                 );
                 setSelectedIds([]);
@@ -185,20 +246,24 @@ export default function NotificationsPage() {
     };
 
     // Get notification icon
-    const getNotificationIcon = (type: Notification['type']) => {
+    const getNotificationIcon = (type: Notification["type"]) => {
         const iconClass = "h-5 w-5";
         switch (type) {
-            case 'booking':
+            case "booking":
                 return <Calendar className={`${iconClass} text-blue-600`} />;
-            case 'payment':
+            case "payment":
                 return <CreditCard className={`${iconClass} text-green-600`} />;
-            case 'success':
-                return <CheckCircle className={`${iconClass} text-green-600`} />;
-            case 'warning':
-                return <AlertTriangle className={`${iconClass} text-yellow-600`} />;
-            case 'error':
+            case "success":
+                return (
+                    <CheckCircle className={`${iconClass} text-green-600`} />
+                );
+            case "warning":
+                return (
+                    <AlertTriangle className={`${iconClass} text-yellow-600`} />
+                );
+            case "error":
                 return <XCircle className={`${iconClass} text-red-600`} />;
-            case 'system':
+            case "system":
                 return <Settings className={`${iconClass} text-gray-600`} />;
             default:
                 return <Info className={`${iconClass} text-blue-600`} />;
@@ -208,17 +273,22 @@ export default function NotificationsPage() {
     // Selection handlers
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedIds(filteredNotifications.map(n => n.notification_id));
+            setSelectedIds(filteredNotifications.map((n) => n.notification_id));
         } else {
             setSelectedIds([]);
         }
     };
 
-    const handleSelectNotification = (notificationId: number, checked: boolean) => {
+    const handleSelectNotification = (
+        notificationId: number,
+        checked: boolean
+    ) => {
         if (checked) {
-            setSelectedIds(prev => [...prev, notificationId]);
+            setSelectedIds((prev) => [...prev, notificationId]);
         } else {
-            setSelectedIds(prev => prev.filter(id => id !== notificationId));
+            setSelectedIds((prev) =>
+                prev.filter((id) => id !== notificationId)
+            );
         }
     };
 
@@ -230,9 +300,11 @@ export default function NotificationsPage() {
         filterNotifications();
     }, [filterNotifications]);
 
-    const isAllSelected = filteredNotifications.length > 0 && 
+    const isAllSelected =
+        filteredNotifications.length > 0 &&
         selectedIds.length === filteredNotifications.length;
-    const isPartiallySelected = selectedIds.length > 0 && 
+    const isPartiallySelected =
+        selectedIds.length > 0 &&
         selectedIds.length < filteredNotifications.length;
 
     return (
@@ -264,8 +336,12 @@ export default function NotificationsPage() {
                             <div className="flex items-center gap-3">
                                 <Bell className="h-8 w-8 text-blue-600" />
                                 <div>
-                                    <p className="text-2xl font-bold">{stats.total}</p>
-                                    <p className="text-sm text-gray-600">Tổng thông báo</p>
+                                    <p className="text-2xl font-bold">
+                                        {stats.total}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Tổng thông báo
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -275,8 +351,12 @@ export default function NotificationsPage() {
                             <div className="flex items-center gap-3">
                                 <AlertTriangle className="h-8 w-8 text-orange-600" />
                                 <div>
-                                    <p className="text-2xl font-bold">{stats.unread}</p>
-                                    <p className="text-sm text-gray-600">Chưa đọc</p>
+                                    <p className="text-2xl font-bold">
+                                        {stats.unread}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Chưa đọc
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -286,8 +366,12 @@ export default function NotificationsPage() {
                             <div className="flex items-center gap-3">
                                 <CheckCircle className="h-8 w-8 text-green-600" />
                                 <div>
-                                    <p className="text-2xl font-bold">{stats.total - stats.unread}</p>
-                                    <p className="text-sm text-gray-600">Đã đọc</p>
+                                    <p className="text-2xl font-bold">
+                                        {stats.total - stats.unread}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        Đã đọc
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -310,33 +394,57 @@ export default function NotificationsPage() {
                                     <Input
                                         placeholder="Tìm kiếm thông báo..."
                                         value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onChange={(e) =>
+                                            setSearchTerm(e.target.value)
+                                        }
                                         className="pl-10"
                                     />
                                 </div>
                             </div>
-                            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                            <Select
+                                value={typeFilter}
+                                onValueChange={setTypeFilter}
+                            >
                                 <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Loại thông báo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Tất cả loại</SelectItem>
-                                    <SelectItem value="booking">Đặt sân</SelectItem>
-                                    <SelectItem value="payment">Thanh toán</SelectItem>
-                                    <SelectItem value="system">Hệ thống</SelectItem>
-                                    <SelectItem value="info">Thông tin</SelectItem>
-                                    <SelectItem value="success">Thành công</SelectItem>
-                                    <SelectItem value="warning">Cảnh báo</SelectItem>
+                                    <SelectItem value="all">
+                                        Tất cả loại
+                                    </SelectItem>
+                                    <SelectItem value="booking">
+                                        Đặt sân
+                                    </SelectItem>
+                                    <SelectItem value="payment">
+                                        Thanh toán
+                                    </SelectItem>
+                                    <SelectItem value="system">
+                                        Hệ thống
+                                    </SelectItem>
+                                    <SelectItem value="info">
+                                        Thông tin
+                                    </SelectItem>
+                                    <SelectItem value="success">
+                                        Thành công
+                                    </SelectItem>
+                                    <SelectItem value="warning">
+                                        Cảnh báo
+                                    </SelectItem>
                                     <SelectItem value="error">Lỗi</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select
+                                value={statusFilter}
+                                onValueChange={setStatusFilter}
+                            >
                                 <SelectTrigger className="w-40">
                                     <SelectValue placeholder="Trạng thái" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Tất cả</SelectItem>
-                                    <SelectItem value="unread">Chưa đọc</SelectItem>
+                                    <SelectItem value="unread">
+                                        Chưa đọc
+                                    </SelectItem>
                                     <SelectItem value="read">Đã đọc</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -364,7 +472,9 @@ export default function NotificationsPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => deleteNotifications(selectedIds)}
+                                        onClick={() =>
+                                            deleteNotifications(selectedIds)
+                                        }
                                         className="text-red-600 border-red-300 hover:bg-red-50"
                                     >
                                         <Trash2 className="h-4 w-4 mr-1" />
@@ -381,7 +491,8 @@ export default function NotificationsPage() {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>
-                                Danh sách thông báo ({filteredNotifications.length})
+                                Danh sách thông báo (
+                                {filteredNotifications.length})
                             </CardTitle>
                             {filteredNotifications.length > 0 && (
                                 <Checkbox
@@ -402,7 +513,8 @@ export default function NotificationsPage() {
                                     Không có thông báo
                                 </h3>
                                 <p className="text-gray-600">
-                                    Không tìm thấy thông báo nào phù hợp với bộ lọc
+                                    Không tìm thấy thông báo nào phù hợp với bộ
+                                    lọc
                                 </p>
                             </div>
                         ) : (
@@ -411,23 +523,35 @@ export default function NotificationsPage() {
                                     <div
                                         key={notification.notification_id}
                                         className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                                            !notification.is_read ? 'bg-blue-50' : ''
+                                            !notification.is_read
+                                                ? "bg-blue-50"
+                                                : ""
                                         }`}
-                                        onClick={() => handleNotificationClick(notification)}
+                                        onClick={() =>
+                                            handleNotificationClick(
+                                                notification
+                                            )
+                                        }
                                     >
                                         <div className="flex items-start gap-4">
                                             <Checkbox
-                                                checked={selectedIds.includes(notification.notification_id)}
+                                                checked={selectedIds.includes(
+                                                    notification.notification_id
+                                                )}
                                                 onCheckedChange={(checked) =>
                                                     handleSelectNotification(
                                                         notification.notification_id,
                                                         checked as boolean
                                                     )
                                                 }
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
                                             />
                                             <div className="flex-shrink-0 mt-1">
-                                                {getNotificationIcon(notification.type)}
+                                                {getNotificationIcon(
+                                                    notification.type
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between mb-1">
@@ -437,8 +561,14 @@ export default function NotificationsPage() {
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-xs text-gray-500">
                                                             {formatDistanceToNow(
-                                                                new Date(notification.created_at),
-                                                                { addSuffix: true, locale: vi }
+                                                                new Date(
+                                                                    notification.created_at
+                                                                ),
+                                                                {
+                                                                    addSuffix:
+                                                                        true,
+                                                                    locale: vi,
+                                                                }
                                                             )}
                                                         </span>
                                                         {!notification.is_read && (
@@ -449,15 +579,49 @@ export default function NotificationsPage() {
                                                 <p className="text-sm text-gray-600 mb-2">
                                                     {notification.message}
                                                 </p>
-                                                <Badge variant="outline" className="text-xs">
-                                                    {notification.type === 'booking' && 'Đặt sân'}
-                                                    {notification.type === 'payment' && 'Thanh toán'}
-                                                    {notification.type === 'system' && 'Hệ thống'}
-                                                    {notification.type === 'info' && 'Thông tin'}
-                                                    {notification.type === 'success' && 'Thành công'}
-                                                    {notification.type === 'warning' && 'Cảnh báo'}
-                                                    {notification.type === 'error' && 'Lỗi'}
-                                                </Badge>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            {notification.type ===
+                                                                "booking" &&
+                                                                "Đặt sân"}
+                                                            {notification.type ===
+                                                                "payment" &&
+                                                                "Thanh toán"}
+                                                            {notification.type ===
+                                                                "system" &&
+                                                                "Hệ thống"}
+                                                            {notification.type ===
+                                                                "event" &&
+                                                                "Sự kiện"}
+                                                            {notification.type ===
+                                                                "success" &&
+                                                                "Thành công"}
+                                                            {notification.type ===
+                                                                "warning" &&
+                                                                "Cảnh báo"}
+                                                            {notification.type ===
+                                                                "error" &&
+                                                                "Lỗi"}
+                                                        </Badge>
+                                                        {/* ✅ Hiển thị thông tin user cho admin */}
+                                                        {notification.user && (
+                                                            <span className="text-xs text-gray-400">
+                                                                User:{" "}
+                                                                {notification
+                                                                    .user
+                                                                    .username ||
+                                                                    notification
+                                                                        .user
+                                                                        .email ||
+                                                                    `ID: ${notification.user_id}`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

@@ -4,26 +4,14 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
     Plus,
-    Download,
-    FileText,
-    RefreshCw,
-    MoreHorizontal,
-    Calendar,
-    Filter,
-    Settings,
+    FileDown,
 } from "lucide-react";
 import { Booking } from "../types/booking";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface BookingActionsProps {
     onAddBooking: () => void;
@@ -35,8 +23,6 @@ interface BookingActionsProps {
 export default function BookingActions({
     onAddBooking,
     bookings,
-    onRefresh,
-    loading = false,
 }: BookingActionsProps) {
     const [exporting, setExporting] = useState(false);
 
@@ -44,7 +30,12 @@ export default function BookingActions({
         try {
             setExporting(true);
 
-            // Prepare data for export
+            if (bookings.length === 0) {
+                toast.error("Không có dữ liệu để xuất");
+                return;
+            }
+
+            // Prepare data for exporttcd 
             const dataToExport = bookings.map((booking, index) => ({
                 STT: index + 1,
                 "Mã đặt sân": `BK${booking.booking_id
@@ -61,7 +52,7 @@ export default function BookingActions({
                 }),
                 "Giờ bắt đầu": booking.start_time,
                 "Giờ kết thúc": booking.end_time,
-                "Tổng tiền": booking.total_amount,
+                "Tổng tiền": booking.total_amount.toLocaleString("vi-VN") + "đ",
                 "Trạng thái": getStatusText(booking.status),
                 "Thanh toán": getPaymentStatusText(booking.payment_status),
                 "Ghi chú": booking.notes || "",
@@ -107,8 +98,11 @@ export default function BookingActions({
 
             // Save file
             XLSX.writeFile(wb, filename);
+
+            toast.success(`Đã xuất ${bookings.length} đặt sân ra file Excel`);
         } catch (error) {
             console.error("Error exporting bookings:", error);
+            toast.error("Không thể xuất file Excel");
         } finally {
             setExporting(false);
         }
@@ -152,69 +146,18 @@ export default function BookingActions({
                     <Plus className="h-4 w-4 mr-2" />
                     Thêm đặt sân
                 </Button>
-
-                <Button
-                    variant="outline"
-                    onClick={onRefresh}
-                    disabled={loading}
-                >
-                    <RefreshCw
-                        className={`h-4 w-4 mr-2 ${
-                            loading ? "animate-spin" : ""
-                        }`}
-                    />
-                    Làm mới
-                </Button>
             </div>
 
             <div className="flex gap-2">
-                {/* Export Dropdown */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                            <Download className="h-4 w-4 mr-2" />
-                            Xuất file
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                            onClick={exportToExcel}
-                            disabled={exporting || bookings.length === 0}
-                        >
-                            <FileText className="h-4 w-4 mr-2" />
-                            {exporting ? "Đang xuất..." : "Xuất Excel"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem disabled>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Xuất PDF (Sắp có)
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* More Actions */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem>
-                            <Calendar className="h-4 w-4 mr-2" />
-                            Xem lịch đặt sân
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <Filter className="h-4 w-4 mr-2" />
-                            Lưu bộ lọc
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Cài đặt hiển thị
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Export Excel Button */}
+                <Button
+                    variant="outline"
+                    onClick={exportToExcel}
+                    disabled={exporting || bookings.length === 0}
+                >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    {exporting ? "Đang xuất..." : "Xuất Excel"}
+                </Button>
             </div>
         </div>
     );

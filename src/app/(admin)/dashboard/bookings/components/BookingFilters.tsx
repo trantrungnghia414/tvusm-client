@@ -18,12 +18,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-    Search,
-    Calendar as CalendarIcon,
-    X,
-    SlidersHorizontal,
-} from "lucide-react";
+import { Search, Calendar as CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -57,8 +52,6 @@ export default function BookingFilters({
     setDateFilter,
     courts,
     onClearFilters,
-    showAdvanced,
-    setShowAdvanced,
 }: BookingFiltersProps) {
     const hasActiveFilters =
         searchTerm ||
@@ -69,41 +62,41 @@ export default function BookingFilters({
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            {/* Basic Filters */}
-            <div className="flex flex-col lg:flex-row gap-4 mb-4">
-                {/* Search */}
-                <div className="flex-1">
-                    <Label
-                        htmlFor="search"
-                        className="text-sm font-medium text-gray-700 mb-2 block"
-                    >
-                        Tìm kiếm
-                    </Label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                            id="search"
-                            type="text"
-                            placeholder="Tìm theo tên khách hàng, email, mã đặt sân..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
-                        />
-                        {searchTerm && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                                onClick={() => setSearchTerm("")}
-                            >
-                                <X className="h-3 w-3" />
-                            </Button>
-                        )}
-                    </div>
+            {/* Search Filter - Full Width */}
+            <div className="mb-4">
+                <Label
+                    htmlFor="search"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                    Tìm kiếm
+                </Label>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                        id="search"
+                        type="text"
+                        placeholder="Tìm theo tên khách hàng, email, mã đặt sân..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                    {searchTerm && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                            onClick={() => setSearchTerm("")}
+                        >
+                            <X className="h-3 w-3" />
+                        </Button>
+                    )}
                 </div>
+            </div>
 
+            {/* All Other Filters in One Row */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
                 {/* Status Filter */}
-                <div className="w-full lg:w-48">
+                <div className="w-full lg:w-1/5">
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
                         Trạng thái
                     </Label>
@@ -112,12 +105,10 @@ export default function BookingFilters({
                         onValueChange={setStatusFilter}
                     >
                         <SelectTrigger>
-                            <SelectValue placeholder="Chọn trạng thái" />
+                            <SelectValue placeholder="Trạng thái" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">
-                                Tất cả trạng thái
-                            </SelectItem>
+                            <SelectItem value="all">Tất cả</SelectItem>
                             <SelectItem value="pending">
                                 Chờ xác nhận
                             </SelectItem>
@@ -132,137 +123,129 @@ export default function BookingFilters({
                     </Select>
                 </div>
 
+                {/* Payment Status Filter */}
+                <div className="w-full lg:w-1/5">
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Thanh toán
+                    </Label>
+                    <Select
+                        value={paymentStatusFilter}
+                        onValueChange={setPaymentStatusFilter}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Thanh toán" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả</SelectItem>
+                            <SelectItem value="pending">
+                                Chưa thanh toán
+                            </SelectItem>
+                            <SelectItem value="paid">Đã thanh toán</SelectItem>
+                            <SelectItem value="refunded">
+                                Đã hoàn tiền
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Court Filter */}
+                <div className="w-full lg:w-2/5">
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Sân thể thao
+                    </Label>
+                    <Select value={courtFilter} onValueChange={setCourtFilter}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Chọn sân" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả sân</SelectItem>
+                            {courts.map((court) => (
+                                <SelectItem
+                                    key={court.court_id}
+                                    value={court.court_id.toString()}
+                                >
+                                    {court.name} ({court.type_name})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 {/* Date Filter */}
-                <div className="w-full lg:w-48">
+                <div className="w-full lg:w-1/5">
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
                         Ngày đặt sân
                     </Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
+                    <div className="flex gap-1">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 justify-start text-left font-normal"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateFilter ? (
+                                        format(dateFilter, "dd/MM", {
+                                            locale: vi,
+                                        })
+                                    ) : (
+                                        <span>Chọn ngày</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                            >
+                                <Calendar
+                                    mode="single"
+                                    selected={dateFilter}
+                                    onSelect={setDateFilter}
+                                    initialFocus
+                                    locale={vi}
+                                />
+                            </PopoverContent>
+                        </Popover>
+
+                        {/* Clear Date Button */}
+                        {dateFilter && (
                             <Button
                                 variant="outline"
-                                className="w-full justify-start text-left font-normal"
+                                size="icon"
+                                onClick={() => setDateFilter(undefined)}
+                                className="flex-shrink-0"
+                                title="Bỏ chọn ngày"
                             >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateFilter ? (
-                                    format(dateFilter, "dd/MM/yyyy", {
-                                        locale: vi,
-                                    })
-                                ) : (
-                                    <span>Chọn ngày</span>
-                                )}
+                                <X className="h-4 w-4" />
                             </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={dateFilter}
-                                onSelect={setDateFilter}
-                                initialFocus
-                                locale={vi}
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
-
-                {/* Advanced Toggle */}
-                <div className="flex items-end">
-                    <Button
-                        variant="outline"
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="flex items-center gap-2"
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                        Nâng cao
-                    </Button>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Advanced Filters */}
-            {showAdvanced && (
-                <div className="border-t pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                        {/* Payment Status */}
-                        <div>
-                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                                Trạng thái thanh toán
-                            </Label>
-                            <Select
-                                value={paymentStatusFilter}
-                                onValueChange={setPaymentStatusFilter}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn trạng thái thanh toán" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Tất cả</SelectItem>
-                                    <SelectItem value="pending">
-                                        Chưa thanh toán
-                                    </SelectItem>
-                                    <SelectItem value="paid">
-                                        Đã thanh toán
-                                    </SelectItem>
-                                    <SelectItem value="refunded">
-                                        Đã hoàn tiền
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Court Filter */}
-                        <div>
-                            <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                                Sân thể thao
-                            </Label>
-                            <Select
-                                value={courtFilter}
-                                onValueChange={setCourtFilter}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn sân" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        Tất cả sân
-                                    </SelectItem>
-                                    {courts.map((court) => (
-                                        <SelectItem
-                                            key={court.court_id}
-                                            value={court.court_id.toString()}
-                                        >
-                                            {court.name} ({court.type_name})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Clear Filters */}
-                        <div className="flex items-end">
-                            {hasActiveFilters && (
-                                <Button
-                                    variant="outline"
-                                    onClick={onClearFilters}
-                                    className="w-full"
-                                >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Xóa bộ lọc
-                                </Button>
-                            )}
-                        </div>
-                    </div>
+            {/* Clear All Filters Button */}
+            {hasActiveFilters && (
+                <div className="flex justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={onClearFilters}
+                        className="flex items-center gap-2"
+                    >
+                        <X className="h-4 w-4" />
+                        Xóa bộ lọc
+                    </Button>
                 </div>
             )}
 
             {/* Active Filters Summary */}
             {hasActiveFilters && (
-                <div className="flex flex-wrap gap-2 pt-4 border-t">
+                <div className="flex flex-wrap gap-2 pt-4 border-t mt-4">
                     <span className="text-sm text-gray-500">
                         Bộ lọc đang áp dụng:
                     </span>
                     {searchTerm && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Tìm kiếm: &qout;{searchTerm}&qout;
+                            Tìm kiếm: &quot;{searchTerm}&quot;
                         </span>
                     )}
                     {statusFilter !== "all" && (
@@ -273,6 +256,16 @@ export default function BookingFilters({
                     {paymentStatusFilter !== "all" && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                             Thanh toán: {paymentStatusFilter}
+                        </span>
+                    )}
+                    {courtFilter !== "all" && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            Sân:{" "}
+                            {
+                                courts.find(
+                                    (c) => c.court_id.toString() === courtFilter
+                                )?.name
+                            }
                         </span>
                     )}
                     {dateFilter && (

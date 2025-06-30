@@ -496,10 +496,14 @@ export default function BookingsPage() {
                     <span>
                         Tổng doanh thu:{" "}
                         {filteredBookings
-                            .reduce(
-                                (sum, booking) => sum + booking.total_amount,
-                                0
-                            )
+                            .reduce((sum, booking) => {
+                                // ✅ Đảm bảo total_amount là number
+                                const amount =
+                                    typeof booking.total_amount === "string"
+                                        ? parseFloat(booking.total_amount) || 0
+                                        : booking.total_amount || 0;
+                                return sum + amount;
+                            }, 0)
                             .toLocaleString("vi-VN")}
                         đ
                     </span>

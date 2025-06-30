@@ -35,7 +35,7 @@ export default function BookingActions({
                 return;
             }
 
-            // Prepare data for exporttcd 
+            // Prepare data for export
             const dataToExport = bookings.map((booking, index) => ({
                 STT: index + 1,
                 "Mã đặt sân": `BK${booking.booking_id

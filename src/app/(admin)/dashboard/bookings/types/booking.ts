@@ -1,4 +1,13 @@
 // client/src/types/booking.ts
+export interface User {
+    user_id: number;
+    username: string;
+    email: string;
+    fullname?: string;
+    phone?: string;
+    avatar?: string; // ✅ Thêm avatar field
+}
+
 export interface Booking {
     booking_id: number;
     user_id: number;
@@ -9,18 +18,12 @@ export interface Booking {
     total_amount: number;
     status: "pending" | "confirmed" | "completed" | "cancelled";
     payment_status: "pending" | "paid" | "refunded";
-    notes?: string;
+    notes: string;
     created_at: string;
     updated_at: string;
 
     // Relations
-    user?: {
-        user_id: number;
-        username: string;
-        email: string;
-        fullname?: string;
-        phone?: string;
-    };
+    user?: User;
     court?: {
         court_id: number;
         name: string;

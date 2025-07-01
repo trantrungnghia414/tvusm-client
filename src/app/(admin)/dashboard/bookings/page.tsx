@@ -36,6 +36,7 @@ interface RawBookingData {
         fullname?: string;
         name?: string;
         phone?: string;
+        avatar?: string; // ✅ Thêm avatar
     };
     court?: {
         court_id: number;
@@ -143,6 +144,7 @@ export default function BookingsPage() {
                               fullname:
                                   booking.user.fullname || booking.user.name,
                               phone: booking.user.phone,
+                              avatar: booking.user.avatar, // ✅ Thêm avatar
                           }
                         : undefined,
                     court: booking.court

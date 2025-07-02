@@ -20,21 +20,27 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
     CalendarIcon,
     Clock,
     User,
-    MapPin,
+    Building2,
     DollarSign,
-    Save,
-    X,
+    AlertCircle,
+    CheckCircle2,
+    Users,
 } from "lucide-react";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 import { CreateBookingDto } from "../types/booking";
 import { fetchApi } from "@/lib/api";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/utils";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+
+interface BookingFormProps {
+    onSubmit: (data: CreateBookingDto) => void;
+    submitting?: boolean;
+}
 
 interface Court {
     court_id: number;
@@ -42,6 +48,7 @@ interface Court {
     type_name: string;
     venue_name: string;
     hourly_rate: number;
+    status: string;
 }
 
 interface User {
@@ -52,84 +59,45 @@ interface User {
     phone?: string;
 }
 
-// ✅ Thêm interface cho dữ liệu thô từ API
-interface RawCourtData {
-    court_id: number;
-    name: string;
-    type_name?: string;
-    venue_name?: string;
-    hourly_rate?: number;
-    court_type?: {
-        name: string;
-    };
-    venue?: {
-        name: string;
-    };
-}
-
-interface RawUserData {
-    user_id: number;
-    username: string;
-    email: string;
-    fullname?: string;
-    name?: string;
-    phone?: string;
-}
-
-interface BookingFormProps {
-    onSubmit: (data: CreateBookingDto) => void;
-    submitting?: boolean;
-    initialData?: Partial<CreateBookingDto>;
-}
-
 export default function BookingForm({
     onSubmit,
     submitting = false,
-    initialData,
 }: BookingFormProps) {
     // Form states
     const [formData, setFormData] = useState<CreateBookingDto>({
-        user_id: initialData?.user_id,
-        court_id: initialData?.court_id || 0,
-        date: initialData?.date || "",
-        start_time: initialData?.start_time || "",
-        end_time: initialData?.end_time || "",
-        total_amount: initialData?.total_amount,
-        notes: initialData?.notes || "",
-        customer_name: initialData?.customer_name || "",
-        customer_phone: initialData?.customer_phone || "",
-        customer_email: initialData?.customer_email || "",
+        user_id: undefined,
+        court_id: 0,
+        date: "",
+        start_time: "",
+        end_time: "",
+        notes: "",
+        customer_name: "",
+        customer_phone: "",
+        customer_email: "",
     });
 
     // Data states
     const [courts, setCourts] = useState<Court[]>([]);
     const [users, setUsers] = useState<User[]>([]);
-    const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
-    const [dateOpen, setDateOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-        initialData?.date ? new Date(initialData.date) : undefined
+        undefined
+    );
+    const [bookingType, setBookingType] = useState<"existing" | "new">(
+        "existing"
     );
 
     // UI states
     const [loading, setLoading] = useState(true);
-    const [bookingType, setBookingType] = useState<"registered" | "guest">(
-        "registered"
-    );
+    const [totalAmount, setTotalAmount] = useState(0);
 
-    // Time slots for selection
-    const timeSlots = Array.from({ length: 14 }, (_, i) => {
-        const hour = i + 6; // Start from 6 AM
-        return `${hour.toString().padStart(2, "0")}:00`;
-    });
-
-    // Fetch courts and users
+    // Fetch data
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem("token");
                 if (!token) return;
 
-                const [courtsResponse, usersResponse] = await Promise.all([
+                const [courtsRes, usersRes] = await Promise.all([
                     fetchApi("/courts", {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
@@ -138,42 +106,18 @@ export default function BookingForm({
                     }),
                 ]);
 
-                if (courtsResponse.ok) {
-                    const courtsData: RawCourtData[] =
-                        await courtsResponse.json();
-                    const transformedCourts: Court[] = courtsData.map(
-                        (court: RawCourtData) => ({
-                            court_id: court.court_id,
-                            name: court.name,
-                            type_name:
-                                court.type_name || court.court_type?.name || "",
-                            venue_name:
-                                court.venue_name || court.venue?.name || "",
-                            hourly_rate: court.hourly_rate || 0,
-                        })
+                if (courtsRes.ok) {
+                    const courtsData = await courtsRes.json();
+                    setCourts(
+                        courtsData.filter(
+                            (court: Court) => court.status === "available"
+                        )
                     );
-                    setCourts(transformedCourts);
-
-                    // Set selected court if provided
-                    if (initialData?.court_id) {
-                        const court = transformedCourts.find(
-                            (c) => c.court_id === initialData.court_id
-                        );
-                        setSelectedCourt(court || null);
-                    }
                 }
 
-                if (usersResponse.ok) {
-                    const usersData: RawUserData[] = await usersResponse.json();
-                    setUsers(
-                        usersData.map((user: RawUserData) => ({
-                            user_id: user.user_id,
-                            username: user.username,
-                            email: user.email,
-                            fullname: user.fullname || user.name,
-                            phone: user.phone,
-                        }))
-                    );
+                if (usersRes.ok) {
+                    const usersData = await usersRes.json();
+                    setUsers(usersData);
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -184,31 +128,31 @@ export default function BookingForm({
         };
 
         fetchData();
-    }, [initialData]);
+    }, []);
 
-    // Calculate total amount when court or time changes
+    // Calculate total amount
     useEffect(() => {
-        if (selectedCourt && formData.start_time && formData.end_time) {
-            const startHour = parseInt(formData.start_time.split(":")[0]);
-            const endHour = parseInt(formData.end_time.split(":")[0]);
-            const duration = endHour - startHour;
+        if (formData.court_id && formData.start_time && formData.end_time) {
+            const court = courts.find((c) => c.court_id === formData.court_id);
+            if (court) {
+                const start = new Date(`2000-01-01 ${formData.start_time}`);
+                const end = new Date(`2000-01-01 ${formData.end_time}`);
+                const diffHours =
+                    (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
-            if (duration > 0) {
-                const totalAmount = selectedCourt.hourly_rate * duration;
-                setFormData((prev) => ({ ...prev, total_amount: totalAmount }));
+                if (diffHours > 0) {
+                    setTotalAmount(diffHours * court.hourly_rate);
+                } else {
+                    setTotalAmount(0);
+                }
             }
+        } else {
+            setTotalAmount(0);
         }
-    }, [selectedCourt, formData.start_time, formData.end_time]);
-
-    const handleCourtChange = (courtId: string) => {
-        const court = courts.find((c) => c.court_id.toString() === courtId);
-        setSelectedCourt(court || null);
-        setFormData((prev) => ({ ...prev, court_id: parseInt(courtId) }));
-    };
+    }, [formData.court_id, formData.start_time, formData.end_time, courts]);
 
     const handleDateSelect = (date: Date | undefined) => {
         setSelectedDate(date);
-        setDateOpen(false);
         if (date) {
             setFormData((prev) => ({
                 ...prev,
@@ -221,63 +165,112 @@ export default function BookingForm({
         e.preventDefault();
 
         // Validation
-        if (
-            !formData.court_id ||
-            !formData.date ||
-            !formData.start_time ||
-            !formData.end_time
-        ) {
-            toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+        if (!formData.court_id) {
+            toast.error("Vui lòng chọn sân");
             return;
         }
 
-        if (bookingType === "registered" && !formData.user_id) {
+        if (!formData.date) {
+            toast.error("Vui lòng chọn ngày");
+            return;
+        }
+
+        if (!formData.start_time || !formData.end_time) {
+            toast.error("Vui lòng chọn giờ bắt đầu và kết thúc");
+            return;
+        }
+
+        if (bookingType === "existing" && !formData.user_id) {
             toast.error("Vui lòng chọn khách hàng");
             return;
         }
 
-        if (
-            bookingType === "guest" &&
-            (!formData.customer_name || !formData.customer_phone)
-        ) {
-            toast.error("Vui lòng điền tên và số điện thoại khách hàng");
+        if (bookingType === "new") {
+            if (!formData.customer_name || !formData.customer_phone) {
+                toast.error("Vui lòng nhập tên và số điện thoại khách hàng");
+                return;
+            }
+        }
+
+        // Check time validity
+        const start = new Date(`2000-01-01 ${formData.start_time}`);
+        const end = new Date(`2000-01-01 ${formData.end_time}`);
+
+        if (end <= start) {
+            toast.error("Giờ kết thúc phải sau giờ bắt đầu");
             return;
         }
 
-        // Validate time
-        const startTime = formData.start_time;
-        const endTime = formData.end_time;
-        if (startTime >= endTime) {
-            toast.error("Thời gian kết thúc phải sau thời gian bắt đầu");
-            return;
+        const submitData = {
+            ...formData,
+            total_amount: totalAmount,
+        };
+
+        if (bookingType === "existing") {
+            delete submitData.customer_name;
+            delete submitData.customer_phone;
+            delete submitData.customer_email;
+        } else {
+            delete submitData.user_id;
         }
 
-        onSubmit(formData);
+        onSubmit(submitData);
     };
+
+    const selectedCourt = courts.find(
+        (court) => court.court_id === formData.court_id
+    );
 
     if (loading) {
         return (
-            <div className="space-y-6">
-                {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
-                        <CardHeader>
-                            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div className="h-4 bg-gray-200 rounded"></div>
-                                <div className="h-10 bg-gray-200 rounded"></div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+            <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2">Đang tải dữ liệu...</span>
             </div>
         );
     }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Customer Selection */}
+            {/* Booking Type Selection */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Loại đặt sân
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                        <Button
+                            type="button"
+                            variant={
+                                bookingType === "existing"
+                                    ? "default"
+                                    : "outline"
+                            }
+                            onClick={() => setBookingType("existing")}
+                            className="h-16 flex flex-col gap-1"
+                        >
+                            <User className="h-5 w-5" />
+                            <span>Khách hàng có sẵn</span>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={
+                                bookingType === "new" ? "default" : "outline"
+                            }
+                            onClick={() => setBookingType("new")}
+                            className="h-16 flex flex-col gap-1"
+                        >
+                            <Users className="h-5 w-5" />
+                            <span>Khách hàng mới</span>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Customer Information */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -286,29 +279,7 @@ export default function BookingForm({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div>
-                        <Label>Loại khách hàng</Label>
-                        <Select
-                            value={bookingType}
-                            onValueChange={(value: "registered" | "guest") =>
-                                setBookingType(value)
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="registered">
-                                    Khách hàng đã đăng ký
-                                </SelectItem>
-                                <SelectItem value="guest">
-                                    Khách vãng lai
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {bookingType === "registered" ? (
+                    {bookingType === "existing" ? (
                         <div>
                             <Label htmlFor="user_id">Chọn khách hàng *</Label>
                             <Select
@@ -321,7 +292,7 @@ export default function BookingForm({
                                 }
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Chọn khách hàng" />
+                                    <SelectValue placeholder="Tìm và chọn khách hàng" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {users.map((user) => (
@@ -329,15 +300,24 @@ export default function BookingForm({
                                             key={user.user_id}
                                             value={user.user_id.toString()}
                                         >
-                                            {user.fullname || user.username} (
-                                            {user.email})
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">
+                                                    {user.fullname ||
+                                                        user.username}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                    {user.email}{" "}
+                                                    {user.phone &&
+                                                        `• ${user.phone}`}
+                                                </span>
+                                            </div>
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="customer_name">
                                     Tên khách hàng *
@@ -370,7 +350,7 @@ export default function BookingForm({
                                     placeholder="Nhập số điện thoại"
                                 />
                             </div>
-                            <div>
+                            <div className="md:col-span-2">
                                 <Label htmlFor="customer_email">Email</Label>
                                 <Input
                                     id="customer_email"
@@ -382,7 +362,7 @@ export default function BookingForm({
                                             customer_email: e.target.value,
                                         }))
                                     }
-                                    placeholder="Nhập email"
+                                    placeholder="Nhập email (tùy chọn)"
                                 />
                             </div>
                         </div>
@@ -394,7 +374,7 @@ export default function BookingForm({
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5" />
+                        <Building2 className="h-5 w-5" />
                         Chọn sân
                     </CardTitle>
                 </CardHeader>
@@ -402,8 +382,13 @@ export default function BookingForm({
                     <div>
                         <Label htmlFor="court_id">Sân thể thao *</Label>
                         <Select
-                            value={formData.court_id.toString()}
-                            onValueChange={handleCourtChange}
+                            value={formData.court_id?.toString() || ""}
+                            onValueChange={(value) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    court_id: parseInt(value),
+                                }))
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Chọn sân thể thao" />
@@ -414,45 +399,49 @@ export default function BookingForm({
                                         key={court.court_id}
                                         value={court.court_id.toString()}
                                     >
-                                        {court.name} - {court.type_name} (
-                                        {court.venue_name}) -{" "}
-                                        {formatCurrency(court.hourly_rate)}/giờ
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">
+                                                {court.name}
+                                            </span>
+                                            <span className="text-sm text-gray-500">
+                                                {court.type_name} •{" "}
+                                                {court.venue_name} •{" "}
+                                                {court.hourly_rate.toLocaleString(
+                                                    "vi-VN"
+                                                )}
+                                                đ/giờ
+                                            </span>
+                                        </div>
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                    </div>
 
-                    {selectedCourt && (
-                        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                            <h4 className="font-medium text-blue-900 mb-2">
-                                Thông tin sân đã chọn
-                            </h4>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span className="text-blue-600">
-                                        Tên sân:
-                                    </span>{" "}
-                                    {selectedCourt.name}
-                                </div>
-                                <div>
-                                    <span className="text-blue-600">Loại:</span>{" "}
-                                    {selectedCourt.type_name}
-                                </div>
-                                <div>
-                                    <span className="text-blue-600">
-                                        Địa điểm:
-                                    </span>{" "}
-                                    {selectedCourt.venue_name}
-                                </div>
-                                <div>
-                                    <span className="text-blue-600">Giá:</span>{" "}
-                                    {formatCurrency(selectedCourt.hourly_rate)}
-                                    /giờ
+                        {selectedCourt && (
+                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium text-blue-900">
+                                            {selectedCourt.name}
+                                        </p>
+                                        <p className="text-sm text-blue-700">
+                                            {selectedCourt.type_name} •{" "}
+                                            {selectedCourt.venue_name}
+                                        </p>
+                                    </div>
+                                    <Badge
+                                        variant="secondary"
+                                        className="bg-blue-100 text-blue-800"
+                                    >
+                                        {selectedCourt.hourly_rate.toLocaleString(
+                                            "vi-VN"
+                                        )}
+                                        đ/giờ
+                                    </Badge>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -461,13 +450,14 @@ export default function BookingForm({
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Clock className="h-5 w-5" />
-                        Chọn thời gian
+                        Thời gian đặt sân
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {/* Date Selection */}
                     <div>
                         <Label>Ngày đặt sân *</Label>
-                        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                        <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
@@ -499,98 +489,74 @@ export default function BookingForm({
                         </Popover>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Time Selection */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="start_time">Giờ bắt đầu *</Label>
-                            <Select
+                            <Input
+                                id="start_time"
+                                type="time"
                                 value={formData.start_time}
-                                onValueChange={(value) =>
+                                onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
-                                        start_time: value,
+                                        start_time: e.target.value,
                                     }))
                                 }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn giờ bắt đầu" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {timeSlots.map((time) => (
-                                        <SelectItem key={time} value={time}>
-                                            {time}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            />
                         </div>
-
                         <div>
                             <Label htmlFor="end_time">Giờ kết thúc *</Label>
-                            <Select
+                            <Input
+                                id="end_time"
+                                type="time"
                                 value={formData.end_time}
-                                onValueChange={(value) =>
+                                onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
-                                        end_time: value,
+                                        end_time: e.target.value,
                                     }))
                                 }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn giờ kết thúc" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {timeSlots.map((time) => (
-                                        <SelectItem key={time} value={time}>
-                                            {time}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            />
                         </div>
                     </div>
+
+                    {/* Duration & Cost Preview */}
+                    {formData.start_time &&
+                        formData.end_time &&
+                        totalAmount > 0 && (
+                            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                        <span className="font-medium text-green-900">
+                                            Thời lượng:{" "}
+                                            {(
+                                                (new Date(
+                                                    `2000-01-01 ${formData.end_time}`
+                                                ).getTime() -
+                                                    new Date(
+                                                        `2000-01-01 ${formData.start_time}`
+                                                    ).getTime()) /
+                                                (1000 * 60 * 60)
+                                            ).toFixed(1)}{" "}
+                                            giờ
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign className="h-5 w-5 text-green-600" />
+                                        <span className="font-bold text-green-900 text-lg">
+                                            {totalAmount.toLocaleString(
+                                                "vi-VN"
+                                            )}
+                                            đ
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                 </CardContent>
             </Card>
-
-            {/* Payment Info */}
-            {formData.total_amount && formData.total_amount > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <DollarSign className="h-5 w-5" />
-                            Thông tin thanh toán
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="bg-green-50 p-4 rounded-lg">
-                            <div className="flex justify-between items-center text-lg font-medium">
-                                <span>Tổng tiền:</span>
-                                <span className="text-green-600">
-                                    {formatCurrency(formData.total_amount)}
-                                </span>
-                            </div>
-                            {selectedCourt &&
-                                formData.start_time &&
-                                formData.end_time && (
-                                    <div className="text-sm text-gray-600 mt-2">
-                                        {formatCurrency(
-                                            selectedCourt.hourly_rate
-                                        )}
-                                        /giờ ×{" "}
-                                        {parseInt(
-                                            formData.end_time.split(":")[0]
-                                        ) -
-                                            parseInt(
-                                                formData.start_time.split(
-                                                    ":"
-                                                )[0]
-                                            )}{" "}
-                                        giờ
-                                    </div>
-                                )}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
 
             {/* Notes */}
             <Card>
@@ -606,39 +572,57 @@ export default function BookingForm({
                                 notes: e.target.value,
                             }))
                         }
-                        placeholder="Ghi chú thêm cho đặt sân..."
+                        placeholder="Nhập ghi chú cho đặt sân (tùy chọn)"
                         rows={3}
                     />
                 </CardContent>
             </Card>
 
+            {/* Warning */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                    <p className="font-medium">Lưu ý quan trọng:</p>
+                    <ul className="mt-1 space-y-1 list-disc list-inside">
+                        <li>
+                            Vui lòng kiểm tra kỹ thông tin trước khi tạo đặt sân
+                        </li>
+                        <li>
+                            Đặt sân sẽ được tạo với trạng thái &quot;Chờ xác nhận&quot;
+                        </li>
+                        <li>
+                            Khách hàng sẽ nhận được thông báo qua email (nếu có)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
             {/* Submit Buttons */}
-            <div className="flex items-center gap-4">
-                <Button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                    {submitting ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                            Đang xử lý...
-                        </>
-                    ) : (
-                        <>
-                            <Save className="h-4 w-4 mr-2" />
-                            Tạo đặt sân
-                        </>
-                    )}
-                </Button>
+            <div className="flex gap-3 pt-4 border-t">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={() => window.history.back()}
-                    disabled={submitting}
+                    className="flex-1"
                 >
-                    <X className="h-4 w-4 mr-2" />
                     Hủy
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={submitting || totalAmount <= 0}
+                    className="flex-1"
+                >
+                    {submitting ? (
+                        <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Đang tạo...
+                        </>
+                    ) : (
+                        <>
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Tạo đặt sân
+                        </>
+                    )}
                 </Button>
             </div>
         </form>

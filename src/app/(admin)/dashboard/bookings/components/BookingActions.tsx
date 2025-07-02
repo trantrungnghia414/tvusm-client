@@ -3,15 +3,13 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-    Plus,
-    FileDown,
-} from "lucide-react";
+import { Plus, FileDown, Calendar } from "lucide-react";
 import { Booking } from "../types/booking";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation"; // ✅ Thêm useRouter
 
 interface BookingActionsProps {
     onAddBooking: () => void;
@@ -25,6 +23,7 @@ export default function BookingActions({
     bookings,
 }: BookingActionsProps) {
     const [exporting, setExporting] = useState(false);
+    const router = useRouter(); // ✅ Khởi tạo router
 
     const exportToExcel = async () => {
         try {
@@ -108,6 +107,11 @@ export default function BookingActions({
         }
     };
 
+    // ✅ Handler cho nút xem lịch sân
+    const handleViewSchedule = () => {
+        router.push("/dashboard/schedule");
+    };
+
     const getStatusText = (status: string) => {
         switch (status) {
             case "pending":
@@ -145,6 +149,16 @@ export default function BookingActions({
                 >
                     <Plus className="h-4 w-4 mr-2" />
                     Thêm đặt sân
+                </Button>
+
+                {/* ✅ Nút xem lịch sân */}
+                <Button
+                    onClick={handleViewSchedule}
+                    variant="outline"
+                    className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
+                >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Xem lịch sân
                 </Button>
             </div>
 

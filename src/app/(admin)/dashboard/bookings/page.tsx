@@ -453,23 +453,20 @@ export default function BookingsPage() {
                         <h1 className="text-2xl font-bold text-gray-900">
                             Quản lý đặt sân
                         </h1>
-                        <p className="text-gray-600 mt-1">
-                            Quản lý và theo dõi tất cả các đặt sân trong hệ
-                            thống
-                        </p>
+                    </div>
+                    <div>
+                        {/* Actions */}
+                        <BookingActions
+                            onAddBooking={handleAddBooking}
+                            bookings={filteredBookings}
+                            onRefresh={handleRefresh}
+                            loading={refreshing}
+                        />
                     </div>
                 </div>
 
                 {/* Stats */}
                 <BookingStats stats={stats} loading={false} />
-
-                {/* Actions */}
-                <BookingActions
-                    onAddBooking={handleAddBooking}
-                    bookings={filteredBookings}
-                    onRefresh={handleRefresh}
-                    loading={refreshing}
-                />
 
                 {/* Filters */}
                 <BookingFilters

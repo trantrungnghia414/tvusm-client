@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FileDown, Calendar } from "lucide-react";
+import { FileDown, Calendar } from "lucide-react";
 import { Booking } from "../types/booking";
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
@@ -19,7 +19,6 @@ interface BookingActionsProps {
 }
 
 export default function BookingActions({
-    onAddBooking,
     bookings,
 }: BookingActionsProps) {
     const [exporting, setExporting] = useState(false);
@@ -143,13 +142,6 @@ export default function BookingActions({
     return (
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
             <div className="flex flex-wrap gap-3">
-                <Button
-                    onClick={onAddBooking}
-                    className="bg-blue-600 hover:bg-blue-700"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Thêm đặt sân
-                </Button>
 
                 {/* ✅ Nút xem lịch sân */}
                 <Button

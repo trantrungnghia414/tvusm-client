@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -21,6 +23,14 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     ArrowLeft,
     Calendar as CalendarIcon,
     Clock,
@@ -28,6 +38,9 @@ import {
     Phone,
     ChevronLeft,
     ChevronRight,
+    Plus,
+    DollarSign,
+    CheckCircle2,
 } from "lucide-react";
 import {
     format,
@@ -81,7 +94,6 @@ interface CourtType {
     description?: string;
 }
 
-// ✅ Sửa lỗi: Thêm interface cho raw booking data từ API
 interface RawBookingData {
     booking_id: number;
     court_id: number;
@@ -104,6 +116,20 @@ interface RawBookingData {
     };
 }
 
+// ✅ Interface cho Quick Booking
+interface QuickBookingSlot {
+    date: string;
+    start_time: string;
+    end_time: string;
+}
+
+interface QuickBookingForm {
+    customer_name: string;
+    customer_phone: string;
+    customer_email: string;
+    notes: string;
+}
+
 export default function SchedulePage() {
     const router = useRouter();
 
@@ -119,6 +145,19 @@ export default function SchedulePage() {
     const [selectedCourt, setSelectedCourt] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [fetchingSchedule, setFetchingSchedule] = useState(false);
+
+    // ✅ Quick Booking States
+    const [quickBookingOpen, setQuickBookingOpen] = useState(false);
+    const [selectedSlot, setSelectedSlot] = useState<QuickBookingSlot | null>(
+        null
+    );
+    const [creatingBooking, setCreatingBooking] = useState(false);
+    const [bookingForm, setBookingForm] = useState<QuickBookingForm>({
+        customer_name: "",
+        customer_phone: "",
+        customer_email: "",
+        notes: "",
+    });
 
     // Time slots from 6:00 to 22:00 (every hour)
     const timeSlots = React.useMemo(() => {
@@ -359,7 +398,140 @@ export default function SchedulePage() {
         }
     };
 
-    // Handle booking click
+    // ✅ Handle slot click for booking
+    const handleSlotClick = (
+        date: Date,
+        timeSlot: { start_time: string; end_time: string }
+    ) => {
+        const booking = getBookingForTimeSlot(date, timeSlot);
+
+        if (booking) {
+            // If slot has booking, view booking details
+            router.push(`/dashboard/bookings/${booking.booking_id}`);
+        } else {
+            // If slot is empty, open quick booking dialog
+            const dateStr = format(date, "yyyy-MM-dd");
+            setSelectedSlot({
+                date: dateStr,
+                start_time: timeSlot.start_time,
+                end_time: timeSlot.end_time,
+            });
+            setQuickBookingOpen(true);
+        }
+    };
+
+    // ✅ Handle quick booking creation
+    const handleQuickBooking = async () => {
+        if (!selectedSlot || !selectedCourt) return;
+
+        // ✅ Enhanced Validation
+        if (!bookingForm.customer_name.trim()) {
+            toast.error("Vui lòng nhập tên khách hàng");
+            return;
+        }
+
+        if (!bookingForm.customer_phone.trim()) {
+            toast.error("Vui lòng nhập số điện thoại");
+            return;
+        }
+
+        // ✅ Validate phone number
+        if (!/^0\d{9}$/.test(bookingForm.customer_phone.trim())) {
+            toast.error(
+                "Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng số 0)"
+            );
+            return;
+        }
+
+        // ✅ Validate email if provided, or use default
+        let email = bookingForm.customer_email.trim();
+        if (!email) {
+            email = "guest@example.com"; // Default email
+        } else {
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                toast.error("Vui lòng nhập email hợp lệ");
+                return;
+            }
+        }
+
+        try {
+            setCreatingBooking(true);
+            const token = localStorage.getItem("token");
+
+            // ✅ Booking data for both authenticated and guest users
+            const bookingData = {
+                court_id: parseInt(selectedCourt),
+                date: selectedSlot.date,
+                start_time: selectedSlot.start_time,
+                end_time: selectedSlot.end_time,
+                renter_name: bookingForm.customer_name.trim(),
+                renter_phone: bookingForm.customer_phone.trim(),
+                renter_email: email,
+                notes: bookingForm.notes.trim() || "",
+                payment_method: "cash",
+            };
+
+            console.log("Sending booking data:", bookingData);
+
+            // ✅ Request headers (with or without token)
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            };
+
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            const response = await fetchApi("/bookings", {
+                method: "POST",
+                headers,
+                body: JSON.stringify(bookingData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Booking error:", errorData);
+
+                // ✅ Better error handling
+                if (errorData.message && Array.isArray(errorData.message)) {
+                    toast.error(errorData.message.join(", "));
+                } else {
+                    toast.error(errorData.message || "Không thể tạo đặt sân");
+                }
+                return;
+            }
+
+            const responseData = await response.json();
+            console.log("Booking success:", responseData);
+
+            toast.success("Đặt sân thành công!");
+
+            // Reset form
+            setBookingForm({
+                customer_name: "",
+                customer_phone: "",
+                customer_email: "",
+                notes: "",
+            });
+
+            // Close dialog
+            setQuickBookingOpen(false);
+            setSelectedSlot(null);
+
+            // Refresh schedule
+            await fetchSchedule();
+        } catch (error) {
+            console.error("Error creating booking:", error);
+            toast.error(
+                error instanceof Error ? error.message : "Không thể tạo đặt sân"
+            );
+        } finally {
+            setCreatingBooking(false);
+        }
+    };
+
     const handleBookingClick = (bookingId: number) => {
         router.push(`/dashboard/bookings/${bookingId}`);
     };
@@ -388,6 +560,10 @@ export default function SchedulePage() {
         (type) => type.type_id.toString() === selectedCourtType
     );
 
+    const selectedCourtInfo = courts.find(
+        (court) => court.court_id.toString() === selectedCourt
+    );
+
     if (loading) {
         return (
             <DashboardLayout activeTab="bookings">
@@ -413,6 +589,10 @@ export default function SchedulePage() {
                             <h1 className="text-2xl font-bold text-gray-900">
                                 Lịch đặt sân theo tuần
                             </h1>
+                            <p className="text-sm text-gray-600 mt-1">
+                                Click vào khung giờ trống để đặt sân mới cho
+                                khách hàng
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -481,13 +661,6 @@ export default function SchedulePage() {
                                                     <span className="font-medium text-start">
                                                         {court.name}
                                                     </span>
-                                                    {/* <span className="text-sm text-gray-500">
-                                                        {court.venue_name} •{" "}
-                                                        {formatCurrency(
-                                                            court.hourly_rate
-                                                        )}
-                                                        /giờ
-                                                    </span> */}
                                                 </div>
                                             </SelectItem>
                                         ))}
@@ -575,6 +748,46 @@ export default function SchedulePage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Selected Court Info */}
+                        {selectedCourtInfo && (
+                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Building2 className="h-5 w-5 text-blue-600" />
+                                        <div>
+                                            <h3 className="font-semibold text-blue-900">
+                                                {selectedCourtInfo.name}
+                                            </h3>
+                                            <div className="flex items-center gap-2 text-sm text-blue-700">
+                                                <span>
+                                                    {
+                                                        selectedCourtInfo.type_name
+                                                    }
+                                                </span>
+                                                <span>•</span>
+                                                <span>
+                                                    {
+                                                        selectedCourtInfo.venue_name
+                                                    }
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-lg font-bold text-blue-900">
+                                            {formatCurrency(
+                                                selectedCourtInfo.hourly_rate
+                                            )}
+                                            /giờ
+                                        </div>
+                                        <div className="text-sm text-blue-700">
+                                            Giá thuê sân
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -593,7 +806,7 @@ export default function SchedulePage() {
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded bg-green-50 border-2 border-green-200"></div>
-                                        <span>Trống</span>
+                                        <span>Trống (Click để đặt)</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded bg-yellow-100 border border-yellow-300"></div>
@@ -679,7 +892,7 @@ export default function SchedulePage() {
                                                         className="border-r border-gray-200 min-h-[60px]"
                                                     >
                                                         {booking && isStart ? (
-                                                            // ✅ Booking card
+                                                            // ✅ Booking card - Click to view details
                                                             <div
                                                                 onClick={() =>
                                                                     handleBookingClick(
@@ -687,6 +900,7 @@ export default function SchedulePage() {
                                                                     )
                                                                 }
                                                                 className={`h-full p-2 cursor-pointer hover:shadow-md transition-all border-l-4 ${slotColor}`}
+                                                                title="Click để xem chi tiết đặt sân"
                                                             >
                                                                 <div className="space-y-1">
                                                                     <div className="font-semibold text-xs truncate">
@@ -743,13 +957,23 @@ export default function SchedulePage() {
                                                                 </span>
                                                             </div>
                                                         ) : (
-                                                            // ✅ Available slot
+                                                            // ✅ Available slot - Click to book
                                                             <div
-                                                                className={`h-full border-2 border-dashed cursor-pointer ${slotColor} flex items-center justify-center hover:shadow-sm transition-all`}
+                                                                onClick={() =>
+                                                                    handleSlotClick(
+                                                                        date,
+                                                                        timeSlot
+                                                                    )
+                                                                }
+                                                                className={`h-full border-2 border-dashed cursor-pointer ${slotColor} flex items-center justify-center hover:shadow-sm transition-all group`}
+                                                                title="Click để đặt sân cho khách hàng"
                                                             >
-                                                                <span className="text-xs opacity-50">
-                                                                    Trống
-                                                                </span>
+                                                                <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                                    <Plus className="h-3 w-3" />
+                                                                    <span className="text-xs">
+                                                                        Đặt sân
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -776,38 +1000,252 @@ export default function SchedulePage() {
                     </Card>
                 )}
 
-                {/* Legend */}
-                {/* <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm">
-                            Chú thích màu sắc
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-green-50 border-2 border-green-200"></div>
-                                <span>Trống</span>
+                {/* Summary */}
+                {selectedCourt && bookings.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-sm">
+                                Tổng kết tuần{" "}
+                                {format(weekDates[0], "dd/MM", { locale: vi })}{" "}
+                                -{" "}
+                                {format(weekDates[6], "dd/MM/yyyy", {
+                                    locale: vi,
+                                })}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                        {bookings.length}
+                                    </div>
+                                    <div className="text-blue-700">
+                                        Tổng booking
+                                    </div>
+                                </div>
+                                <div className="text-center p-3 bg-green-50 rounded-lg">
+                                    <div className="text-2xl font-bold text-green-600">
+                                        {
+                                            bookings.filter(
+                                                (b) => b.status === "confirmed"
+                                            ).length
+                                        }
+                                    </div>
+                                    <div className="text-green-700">
+                                        Đã xác nhận
+                                    </div>
+                                </div>
+                                <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                                    <div className="text-2xl font-bold text-yellow-600">
+                                        {
+                                            bookings.filter(
+                                                (b) => b.status === "pending"
+                                            ).length
+                                        }
+                                    </div>
+                                    <div className="text-yellow-700">
+                                        Chờ xác nhận
+                                    </div>
+                                </div>
+                                <div className="text-center p-3 bg-purple-50 rounded-lg">
+                                    <div className="text-2xl font-bold text-purple-600">
+                                        {formatCurrency(
+                                            bookings.reduce(
+                                                (sum, b) =>
+                                                    sum + b.total_amount,
+                                                0
+                                            )
+                                        )}
+                                    </div>
+                                    <div className="text-purple-700">
+                                        Doanh thu tuần
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-yellow-100 border border-yellow-300"></div>
-                                <span>Chờ xác nhận</span>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* ✅ Quick Booking Dialog */}
+                <Dialog
+                    open={quickBookingOpen}
+                    onOpenChange={setQuickBookingOpen}
+                >
+                    <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Plus className="h-5 w-5" />
+                                Đặt sân cho khách hàng
+                            </DialogTitle>
+                            <DialogDescription>
+                                Nhập thông tin khách hàng để tạo đặt sân mới
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {selectedSlot && selectedCourtInfo && (
+                            <div className="space-y-6">
+                                {/* Booking Details */}
+                                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <h4 className="font-medium text-blue-900 mb-2">
+                                        Thông tin đặt sân
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="h-4 w-4 text-blue-600" />
+                                            <span className="text-blue-800">
+                                                {selectedCourtInfo.name} -{" "}
+                                                {selectedCourtInfo.venue_name}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CalendarIcon className="h-4 w-4 text-blue-600" />
+                                            <span className="text-blue-800">
+                                                {format(
+                                                    new Date(selectedSlot.date),
+                                                    "EEEE, dd/MM/yyyy",
+                                                    { locale: vi }
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-4 w-4 text-blue-600" />
+                                            <span className="text-blue-800">
+                                                {selectedSlot.start_time} -{" "}
+                                                {selectedSlot.end_time}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <DollarSign className="h-4 w-4 text-blue-600" />
+                                            <span className="font-bold text-blue-900">
+                                                {formatCurrency(
+                                                    selectedCourtInfo.hourly_rate
+                                                )}{" "}
+                                                (Thanh toán tiền mặt)
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Customer Form */}
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customer_name">
+                                            Tên khách hàng{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id="customer_name"
+                                            placeholder="Nhập tên khách hàng"
+                                            value={bookingForm.customer_name}
+                                            onChange={(e) =>
+                                                setBookingForm({
+                                                    ...bookingForm,
+                                                    customer_name:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customer_phone">
+                                            Số điện thoại{" "}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id="customer_phone"
+                                            placeholder="Nhập số điện thoại (VD: 0123456789)"
+                                            value={bookingForm.customer_phone}
+                                            onChange={(e) =>
+                                                setBookingForm({
+                                                    ...bookingForm,
+                                                    customer_phone:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customer_email">
+                                            Email (tùy chọn)
+                                        </Label>
+                                        <Input
+                                            id="customer_email"
+                                            type="email"
+                                            placeholder="Nhập email khách hàng"
+                                            value={bookingForm.customer_email}
+                                            onChange={(e) =>
+                                                setBookingForm({
+                                                    ...bookingForm,
+                                                    customer_email:
+                                                        e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="notes">
+                                            Ghi chú (tùy chọn)
+                                        </Label>
+                                        <Input
+                                            id="notes"
+                                            placeholder="Ghi chú thêm về đặt sân"
+                                            value={bookingForm.notes}
+                                            onChange={(e) =>
+                                                setBookingForm({
+                                                    ...bookingForm,
+                                                    notes: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
-                                <span>Đã xác nhận</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
-                                <span>Hoàn thành</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
-                                <span>Đã hủy</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card> */}
+                        )}
+
+                        <DialogFooter className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setQuickBookingOpen(false);
+                                    setBookingForm({
+                                        customer_name: "",
+                                        customer_phone: "",
+                                        customer_email: "",
+                                        notes: "",
+                                    });
+                                }}
+                            >
+                                Hủy
+                            </Button>
+                            <Button
+                                onClick={handleQuickBooking}
+                                disabled={creatingBooking}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                {creatingBooking ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Đang tạo...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                                        Tạo đặt sân
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </DashboardLayout>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import CTASection from "@/app/(client)/components/home/CTASection";
-import FeaturedVenues from "@/app/(client)/components/home/FeaturedVenues";
+// import FeaturedVenues from "@/app/(client)/components/home/FeaturedVenues";
 import NewsSection from "@/app/(client)/components/home/NewsSection";
 import PopularCourts from "@/app/(client)/components/home/PopularCourts";
 import StatisticsSection from "@/app/(client)/components/home/StatisticsSection";
@@ -20,7 +20,7 @@ export default function HomePage() {
             <main>
                 <Hero />
                 <PopularCourts />
-                <FeaturedVenues />
+                {/* <FeaturedVenues /> */}
                 <StatisticsSection />
                 <UpcomingEvents />
                 <NewsSection />

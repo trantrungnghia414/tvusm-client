@@ -248,7 +248,8 @@ export default function BookingPage() {
             !selectedCourt ||
             !dateTime.date ||
             !dateTime.startTime ||
-            !userInfo.name
+            !userInfo.name ||
+            !userInfo.phone
         ) {
             toast.error("Thiếu thông tin đặt sân");
             return;
@@ -257,31 +258,40 @@ export default function BookingPage() {
         setSubmitting(true);
 
         try {
-            const bookingData = {
+            // ✅ Chuẩn bị data và chỉ gửi email nếu có giá trị
+            const bookingData: any = {
                 court_id: selectedCourt.court_id,
                 date: dateTime.date,
                 start_time: dateTime.startTime,
                 end_time: dateTime.endTime,
                 renter_name: userInfo.name,
-                renter_email: userInfo.email,
                 renter_phone: userInfo.phone,
-                notes: userInfo.notes,
+                notes: userInfo.notes || "",
                 booking_code: `BK${Math.floor(Math.random() * 1000000)}`,
                 booking_type: "public",
-                user_id: undefined as number | undefined,
             };
 
+            // ✅ Chỉ thêm email nếu có giá trị và hợp lệ
+            if (userInfo.email && userInfo.email.trim()) {
+                bookingData.renter_email = userInfo.email.trim();
+            }
+
+            // Get user_id if logged in
             if (localStorage.getItem("token")) {
-                const userResponse = await fetchApi("/users/profile", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem(
-                            "token"
-                        )}`,
-                    },
-                });
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    bookingData.user_id = userData.user_id;
+                try {
+                    const userResponse = await fetchApi("/users/profile", {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem(
+                                "token"
+                            )}`,
+                        },
+                    });
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        bookingData.user_id = userData.user_id;
+                    }
+                } catch (error) {
+                    console.warn("Could not get user profile:", error);
                 }
             }
 
@@ -293,6 +303,8 @@ export default function BookingPage() {
             if (token) {
                 headers.Authorization = `Bearer ${token}`;
             }
+
+            console.log("Sending booking data:", bookingData); // Debug log
 
             const response = await fetchApi("/bookings", {
                 method: "POST",
@@ -313,6 +325,7 @@ export default function BookingPage() {
 
             const completeBookingData: BookingData = {
                 booking_id:
+                    responseData.booking?.booking_id ||
                     responseData.booking_id ||
                     `BK${Math.floor(Math.random() * 10000)}`,
                 court_id: selectedCourt.court_id,
@@ -323,9 +336,9 @@ export default function BookingPage() {
                 end_time: dateTime.endTime,
                 duration: dateTime.duration,
                 renter_name: userInfo.name,
-                renter_email: userInfo.email,
+                renter_email: userInfo.email || "",
                 renter_phone: userInfo.phone,
-                notes: userInfo.notes,
+                notes: userInfo.notes || "",
                 payment_method: paymentMethod,
                 total_price: selectedCourt.hourly_rate * dateTime.duration,
             };

@@ -32,14 +32,19 @@ export default function UserInfoForm({
         phone: "",
     });
 
+    // ✅ Thêm state để theo dõi trạng thái đăng nhập
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
     // Validate form on value change
     useEffect(() => {
         const isNameValid = validateName(value.name);
-        const isEmailValid = validateEmail(value.email);
         const isPhoneValid = validatePhone(value.phone);
 
-        onValidityChange(isNameValid && isEmailValid && isPhoneValid);
-    }, [value, onValidityChange]);
+        // ✅ Chỉ validate email khi người dùng đã đăng nhập
+        const isEmailValid = isLoggedIn ? validateEmail(value.email) : true;
+
+        onValidityChange(isNameValid && isPhoneValid && isEmailValid);
+    }, [value, onValidityChange, isLoggedIn]);
 
     const validateName = (name: string): boolean => {
         if (!name.trim()) {
@@ -51,6 +56,26 @@ export default function UserInfoForm({
     };
 
     const validateEmail = (email: string): boolean => {
+        // ✅ Nếu người dùng chưa đăng nhập và email rỗng thì OK
+        if (!isLoggedIn) {
+            // Nếu không nhập email thì không sao
+            if (!email || !email.trim()) {
+                setErrors((prev) => ({ ...prev, email: "" }));
+                return true;
+            }
+            // Nếu có nhập email thì phải hợp lệ
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                setErrors((prev) => ({
+                    ...prev,
+                    email: "Email không hợp lệ",
+                }));
+                return false;
+            }
+            setErrors((prev) => ({ ...prev, email: "" }));
+            return true;
+        }
+
+        // Nếu đã đăng nhập thì email bắt buộc
         if (!email.trim()) {
             setErrors((prev) => ({ ...prev, email: "Vui lòng nhập email" }));
             return false;
@@ -95,6 +120,9 @@ export default function UserInfoForm({
             try {
                 const token = localStorage.getItem("token");
                 if (token) {
+                    // ✅ Đánh dấu người dùng đã đăng nhập
+                    setIsLoggedIn(true);
+
                     console.log("Đang lấy thông tin người dùng...");
                     const response = await fetchApi("/users/profile", {
                         headers: {
@@ -123,12 +151,16 @@ export default function UserInfoForm({
                         );
                     }
                 } else {
+                    // ✅ Đánh dấu người dùng chưa đăng nhập
+                    setIsLoggedIn(false);
                     console.log(
                         "Người dùng chưa đăng nhập, không thể tự động điền thông tin"
                     );
                 }
             } catch (error) {
                 console.error("Lỗi khi lấy thông tin người dùng:", error);
+                // ✅ Nếu có lỗi, coi như chưa đăng nhập
+                setIsLoggedIn(false);
             }
         };
 
@@ -137,11 +169,36 @@ export default function UserInfoForm({
 
     return (
         <Card className="border-blue-100">
-            {/* <CardHeader className="pb-3">
-                <CardTitle>Thông Tin Liên Hệ</CardTitle>
-            </CardHeader> */}
             <CardContent>
                 <div className="space-y-4">
+                    {/* ✅ Thêm thông báo cho người dùng chưa đăng nhập */}
+                    {/* {!isLoggedIn && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                            <div className="flex items-start space-x-2">
+                                <div className="text-blue-600 mt-0.5">
+                                    <svg
+                                        className="w-4 h-4"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </div>
+                                <div className="text-sm text-blue-800">
+                                    <p className="font-medium">Đặt sân nhanh</p>
+                                    <p>
+                                        Chỉ cần nhập họ tên và số điện thoại để
+                                        đặt sân.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )} */}
+
                     {/* Full Name */}
                     <div className="space-y-2">
                         <Label htmlFor="name" className="flex items-center">
@@ -160,29 +217,6 @@ export default function UserInfoForm({
                         {errors.name && (
                             <p className="text-red-500 text-sm">
                                 {errors.name}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Email */}
-                    <div className="space-y-2">
-                        <Label htmlFor="email" className="flex items-center">
-                            <Mail className="h-4 w-4 mr-2 text-blue-600" />
-                            Email <span className="text-red-500 ml-1">*</span>
-                        </Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="example@email.com"
-                            value={value.email}
-                            onChange={(e) =>
-                                handleChange("email", e.target.value)
-                            }
-                            className={errors.email ? "border-red-500" : ""}
-                        />
-                        {errors.email && (
-                            <p className="text-red-500 text-sm">
-                                {errors.email}
                             </p>
                         )}
                     </div>
@@ -211,11 +245,52 @@ export default function UserInfoForm({
                         )}
                     </div>
 
+                    {/* Email */}
+                    <div className="space-y-2">
+                        <Label htmlFor="email" className="flex items-center">
+                            <Mail className="h-4 w-4 mr-2 text-blue-600" />
+                            Email
+                            {/* ✅ Chỉ hiển thị dấu * khi người dùng đã đăng nhập */}
+                            {isLoggedIn && (
+                                <span className="text-red-500 ml-1">*</span>
+                            )}
+                            {/* ✅ Hiển thị "(tùy chọn)" khi chưa đăng nhập */}
+                            {!isLoggedIn && (
+                                <span className="text-gray-500 ml-1 text-sm">
+                                    (tùy chọn)
+                                </span>
+                            )}
+                        </Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder={
+                                isLoggedIn
+                                    ? "example@email.com"
+                                    : "example@email.com (không bắt buộc)"
+                            }
+                            value={value.email}
+                            onChange={(e) =>
+                                handleChange("email", e.target.value)
+                            }
+                            className={errors.email ? "border-red-500" : ""}
+                        />
+                        {errors.email && (
+                            <p className="text-red-500 text-sm">
+                                {errors.email}
+                            </p>
+                        )}
+                    </div>
+
                     {/* Notes */}
                     <div className="space-y-2">
                         <Label htmlFor="notes" className="flex items-center">
                             <FileText className="h-4 w-4 mr-2 text-blue-600" />
                             Ghi chú
+                            {/* ✅ Ghi chú luôn là tùy chọn */}
+                            <span className="text-gray-500 ml-1 text-sm">
+                                (tùy chọn)
+                            </span>
                         </Label>
                         <Textarea
                             id="notes"

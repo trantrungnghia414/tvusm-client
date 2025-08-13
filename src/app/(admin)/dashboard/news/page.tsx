@@ -1,3 +1,4 @@
+// trang quản lý tin tức
 "use client";
 
 import { useState, useCallback, useEffect } from "react";

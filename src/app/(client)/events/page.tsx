@@ -1,3 +1,4 @@
+// trang sự kiện
 "use client";
 
 import React, { useState } from "react";

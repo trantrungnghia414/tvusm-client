@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/reports/page.tsx
+// trang quản lý báo cáo
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

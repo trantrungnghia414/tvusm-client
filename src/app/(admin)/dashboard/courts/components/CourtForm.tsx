@@ -24,6 +24,22 @@ const COURT_LOCATIONS = [
     { value: "outdoor", label: "Sân ngoài trời" },
 ];
 
+// ✅ Định nghĩa các cấp độ sân cho court mapping
+const COURT_LEVELS = [
+    {
+        value: "1",
+        label: "Cấp 1 - Sân nhỏ",
+    },
+    {
+        value: "2",
+        label: "Cấp 2 - Sân trung bình",
+    },
+    {
+        value: "3",
+        label: "Cấp 3 - Sân lớn",
+    },
+];
+
 interface CourtFormProps {
     court?: Court;
     onSubmit: (formData: FormData) => Promise<void>;
@@ -42,6 +58,9 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
 
     // Thay đổi state từ boolean sang string
     const [location, setLocation] = useState<"indoor" | "outdoor">("indoor");
+
+    // ✅ Thêm state cho cấp độ sân
+    const [courtLevel, setCourtLevel] = useState<string>("1");
 
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -99,6 +118,11 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
 
                     setStatus(court.status);
                     setLocation(court.is_indoor ? "indoor" : "outdoor");
+
+                    // ✅ Thêm load court level nếu có trong dữ liệu
+                    if (court.court_level) {
+                        setCourtLevel(court.court_level.toString());
+                    }
 
                     if (court.image) {
                         setImagePreview(getImageUrl(court.image));
@@ -220,6 +244,9 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
             // Chuyển đổi location thành giá trị is_indoor
             const isIndoor = location === "indoor";
             formData.append("is_indoor", isIndoor ? "1" : "0");
+
+            // ✅ Thêm court_level vào FormData
+            formData.append("court_level", courtLevel);
 
             if (imageFile) formData.append("image", imageFile);
 
@@ -388,6 +415,33 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
                         ))}
                     </SelectContent>
                 </Select>
+            </div>
+
+            {/* ✅ Thêm trường chọn cấp độ sân */}
+            <div className="space-y-2">
+                <Label htmlFor="court-level">Cấp độ sân</Label>
+                <Select
+                    value={courtLevel}
+                    onValueChange={(value) => setCourtLevel(value)}
+                >
+                    <SelectTrigger id="court-level">
+                        <SelectValue placeholder="Chọn cấp độ sân" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {COURT_LEVELS.map((level) => (
+                            <SelectItem key={level.value} value={level.value}>
+                                <div className="flex flex-col">
+                                    <span className="font-medium">
+                                        {level.label}
+                                    </span>
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">
+                    Cấp độ sân dùng để phân loại và ghép sân theo quy mô
+                </p>
             </div>
 
             <div className="space-y-2">

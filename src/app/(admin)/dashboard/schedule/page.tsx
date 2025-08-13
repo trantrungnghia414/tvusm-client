@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/schedule/page.tsx
+// trang quản lý lịch đặt sân
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

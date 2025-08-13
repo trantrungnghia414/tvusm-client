@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/settings/page.tsx
+// trang quản lý cài đặt
 "use client";
 
 import React, { useState, useEffect } from "react";

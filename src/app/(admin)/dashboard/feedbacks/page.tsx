@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/feedbacks/page.tsx
+// trang quản lý phản hồi
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

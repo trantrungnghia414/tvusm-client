@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/payments/page.tsx
+// trang quản lý thanh toán
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

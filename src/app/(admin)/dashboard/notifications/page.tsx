@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/notifications/page.tsx
+// trang quản lý thông báo
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

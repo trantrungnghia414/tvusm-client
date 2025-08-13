@@ -1,4 +1,4 @@
-// client/src/app/(client)/news/page.tsx
+// trang tin tức
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

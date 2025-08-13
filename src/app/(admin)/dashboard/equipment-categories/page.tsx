@@ -1,3 +1,4 @@
+// trang quản lý loại thiết bị
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import CategoryForm from "./components/CategoryForm";
 

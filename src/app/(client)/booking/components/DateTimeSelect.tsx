@@ -13,6 +13,8 @@ interface TimeSlot {
     start_time: string;
     end_time: string;
     is_available: boolean;
+    booking_id?: number | null; // ✅ Thêm property này
+    booking_status?: string | null; // ✅ Thêm thêm booking_status nếu cần
 }
 
 interface DayAvailability {
@@ -384,23 +386,90 @@ export default function DateTimeSelect({
                                                                 s.end_time ===
                                                                     slot.end_time
                                                         );
+
+                                                    // ✅ SỬA LỖI: Logic màu sắc và khả năng click chính xác
+                                                    const getSlotStyle = () => {
+                                                        // ✅ 1. Kiểm tra xem slot có booking thật không (từ booking_id)
+                                                        const hasRealBooking =
+                                                            !slot.is_available &&
+                                                            slot.booking_id;
+
+                                                        // ✅ 2. Kiểm tra xem slot đã qua giờ không (không có booking nhưng is_available = false)
+                                                        const isPastTime =
+                                                            !slot.is_available &&
+                                                            !slot.booking_id;
+
+                                                        // ✅ 3. Slot đã được đặt sân (có booking thật) - MÀU ĐỎ, không thể click
+                                                        if (hasRealBooking) {
+                                                            return {
+                                                                className:
+                                                                    "bg-red-100 border border-red-300 text-red-800 cursor-not-allowed opacity-90",
+                                                                clickable:
+                                                                    false,
+                                                                tooltip: `Khung giờ này đã được đặt (Booking #${slot.booking_id})`,
+                                                            };
+                                                        }
+
+                                                        // ✅ 4. Slot đã qua giờ - MÀU XÁM, không thể click
+                                                        if (isPastTime) {
+                                                            return {
+                                                                className:
+                                                                    "bg-gray-100 border border-gray-300 text-gray-500 cursor-not-allowed opacity-60",
+                                                                clickable:
+                                                                    false,
+                                                                tooltip:
+                                                                    "Khung giờ này đã qua",
+                                                            };
+                                                        }
+
+                                                        // ✅ 5. Slot đang được chọn - MÀU XANH DƯƠNG
+                                                        if (isSelected) {
+                                                            return {
+                                                                className:
+                                                                    "bg-blue-100 border border-blue-300 text-blue-800 shadow-md cursor-pointer ring-2 ring-blue-400",
+                                                                clickable: true,
+                                                                tooltip:
+                                                                    "Click để bỏ chọn",
+                                                            };
+                                                        }
+
+                                                        // ✅ 6. Slot trống, có thể đặt - MÀU XANH LÁ
+                                                        return {
+                                                            className:
+                                                                "bg-green-100 border border-green-300 text-green-800 hover:bg-green-200 cursor-pointer hover:shadow-sm",
+                                                            clickable: true,
+                                                            tooltip:
+                                                                "Click để chọn khung giờ này",
+                                                        };
+                                                    };
+
+                                                    const slotStyle =
+                                                        getSlotStyle();
+
                                                     return (
                                                         <div
                                                             key={index}
                                                             className={`
-                                                            text-center py-3 px-1 rounded-md cursor-pointer transition-all transform hover:scale-105
-                                                            ${
-                                                                !slot.is_available
-                                                                    ? "bg-red-100 border border-red-200 text-red-800"
-                                                                    : isSelected
-                                                                    ? "bg-blue-100 border border-blue-300 text-blue-800 shadow-md"
-                                                                    : "bg-green-100 border border-green-200 text-green-800 hover:bg-green-200"
-                                                            }
-                                                        `}
-                                                            onClick={() =>
-                                                                handleSlotToggle(
-                                                                    slot
-                                                                )
+                    text-center py-3 px-1 rounded-md transition-all transform duration-200
+                    ${slotStyle.className}
+                    ${slotStyle.clickable ? "hover:scale-105" : ""}
+                `}
+                                                            onClick={() => {
+                                                                if (
+                                                                    slotStyle.clickable
+                                                                ) {
+                                                                    handleSlotToggle(
+                                                                        slot
+                                                                    );
+                                                                } else {
+                                                                    // ✅ Log lý do không thể click
+                                                                    console.log(
+                                                                        `❌ Cannot select slot ${slot.start_time}: ${slotStyle.tooltip}`
+                                                                    );
+                                                                }
+                                                            }}
+                                                            title={
+                                                                slotStyle.tooltip
                                                             }
                                                         >
                                                             <div className="text-xs font-semibold">

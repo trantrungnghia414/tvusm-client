@@ -1,3 +1,4 @@
+// trang quản lý sự kiện
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

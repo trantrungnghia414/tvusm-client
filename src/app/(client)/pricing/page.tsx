@@ -1,4 +1,4 @@
-// client/src/app/(client)/pricing/page.tsx
+// trang giá cả
 "use client";
 
 import React, { useState, useEffect } from "react";

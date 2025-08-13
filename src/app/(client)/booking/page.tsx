@@ -1,3 +1,4 @@
+// trang đặt sân
 "use client";
 
 import { useState, useEffect } from "react";
@@ -45,6 +46,28 @@ interface BookingData {
     booking_id?: string;
 }
 
+// ✅ Interface cho booking request data (được sử dụng trong handleConfirmBooking)
+interface BookingRequestData {
+    court_id: number;
+    date: string;
+    start_time: string;
+    end_time: string;
+    renter_name: string;
+    renter_phone: string;
+    renter_email?: string; // Optional
+    notes: string;
+}
+
+// ✅ Interface cho user profile response
+interface UserProfileResponse {
+    user_id: number;
+    username: string;
+    fullname?: string;
+    email: string;
+    phone?: string;
+    [key: string]: unknown;
+}
+
 export default function BookingPage() {
     const searchParams = useSearchParams();
     const [currentStep, setCurrentStep] = useState(1);
@@ -69,6 +92,11 @@ export default function BookingPage() {
         notes: "",
     });
     const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+
+    // ✅ State để track login status
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    // ✅ Bỏ userProfile state vì không sử dụng
+    // const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null);
 
     // Steps configuration
     const steps = [
@@ -142,6 +170,51 @@ export default function BookingPage() {
 
         initializeFromQueryParams();
     }, [searchParams]);
+
+    // Check login status
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setIsLoggedIn(false);
+                return;
+            }
+
+            try {
+                const response = await fetchApi("/users/profile", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const userData: UserProfileResponse = await response.json();
+                    // ✅ Bỏ setUserProfile vì không sử dụng
+                    // setUserProfile(userData);
+                    setIsLoggedIn(true);
+
+                    // ✅ Auto-fill user info if available
+                    if (userData.fullname || userData.username) {
+                        setUserInfo((prev) => ({
+                            ...prev,
+                            name: userData.fullname || userData.username || "",
+                            email: userData.email || "",
+                            phone: userData.phone || "",
+                        }));
+                    }
+                } else {
+                    localStorage.removeItem("token");
+                    setIsLoggedIn(false);
+                }
+            } catch (error) {
+                console.error("Error checking auth status:", error);
+                localStorage.removeItem("token");
+                setIsLoggedIn(false);
+            }
+        };
+
+        checkAuthStatus();
+    }, []);
 
     // Handle court selection
     const handleCourtSelect = (court: Court | null) => {
@@ -244,6 +317,13 @@ export default function BookingPage() {
 
     // Handle booking confirmation
     const handleConfirmBooking = async () => {
+        // ✅ Check login trước khi đặt sân
+        if (!isLoggedIn) {
+            toast.error("Bạn cần đăng nhập để đặt sân");
+            window.location.href = "/login";
+            return;
+        }
+
         if (
             !selectedCourt ||
             !dateTime.date ||
@@ -258,8 +338,8 @@ export default function BookingPage() {
         setSubmitting(true);
 
         try {
-            // ✅ Chuẩn bị data và chỉ gửi email nếu có giá trị
-            const bookingData: any = {
+            // ✅ Sử dụng interface BookingRequestData với type annotation
+            const bookingData: BookingRequestData = {
                 court_id: selectedCourt.court_id,
                 date: dateTime.date,
                 start_time: dateTime.startTime,
@@ -267,8 +347,6 @@ export default function BookingPage() {
                 renter_name: userInfo.name,
                 renter_phone: userInfo.phone,
                 notes: userInfo.notes || "",
-                booking_code: `BK${Math.floor(Math.random() * 1000000)}`,
-                booking_type: "public",
             };
 
             // ✅ Chỉ thêm email nếu có giá trị và hợp lệ
@@ -276,35 +354,21 @@ export default function BookingPage() {
                 bookingData.renter_email = userInfo.email.trim();
             }
 
-            // Get user_id if logged in
-            if (localStorage.getItem("token")) {
-                try {
-                    const userResponse = await fetchApi("/users/profile", {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem(
-                                "token"
-                            )}`,
-                        },
-                    });
-                    if (userResponse.ok) {
-                        const userData = await userResponse.json();
-                        bookingData.user_id = userData.user_id;
-                    }
-                } catch (error) {
-                    console.warn("Could not get user profile:", error);
-                }
+            const token = localStorage.getItem("token");
+
+            // ✅ Kiểm tra token lần nữa
+            if (!token) {
+                toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại");
+                window.location.href = "/login";
+                return;
             }
 
-            const token = localStorage.getItem("token");
             const headers: Record<string, string> = {
                 "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`, // ✅ Bắt buộc có token
             };
 
-            if (token) {
-                headers.Authorization = `Bearer ${token}`;
-            }
-
-            console.log("Sending booking data:", bookingData); // Debug log
+            console.log("📝 Booking data:", bookingData);
 
             const response = await fetchApi("/bookings", {
                 method: "POST",
@@ -314,19 +378,29 @@ export default function BookingPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(
-                    errorData.message || "Không thể hoàn tất đặt sân"
-                );
+
+                // ✅ Handle 401 Unauthorized
+                if (response.status === 401) {
+                    toast.error(
+                        "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại"
+                    );
+                    localStorage.removeItem("token");
+                    window.location.href = "/login";
+                    return;
+                }
+
+                throw new Error(errorData.message || "Không thể tạo đặt sân");
             }
 
-            const responseData = await response.json();
+            const result = await response.json();
+            console.log("✅ Booking created:", result);
 
             toast.success("Đặt sân thành công!");
 
             const completeBookingData: BookingData = {
                 booking_id:
-                    responseData.booking?.booking_id ||
-                    responseData.booking_id ||
+                    result.booking?.booking_id?.toString() ||
+                    result.booking_id?.toString() ||
                     `BK${Math.floor(Math.random() * 10000)}`,
                 court_id: selectedCourt.court_id,
                 court_name: selectedCourt.name,
@@ -346,34 +420,74 @@ export default function BookingPage() {
             setBookingComplete(completeBookingData);
             setCurrentStep(5);
         } catch (error) {
-            console.error("Error booking court:", error);
+            console.error("❌ Booking error:", error);
             toast.error(
-                error instanceof Error
-                    ? error.message
-                    : "Đã xảy ra lỗi khi đặt sân"
+                error instanceof Error ? error.message : "Có lỗi xảy ra"
             );
         } finally {
             setSubmitting(false);
         }
     };
 
+    // ✅ Component để hiển thị yêu cầu đăng nhập
+    const LoginRequiredMessage = () => (
+        <div className="bg-white rounded-lg shadow-sm border">
+            <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="h-8 w-8 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    Bạn cần đăng nhập để đặt sân
+                </h2>
+                <p className="text-gray-600 mb-6">
+                    Vui lòng đăng nhập vào tài khoản để có thể đặt sân thể thao.
+                </p>
+                <div className="space-y-3">
+                    <Button
+                        onClick={() => (window.location.href = "/login")}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                        Đăng nhập
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => (window.location.href = "/register")}
+                        className="w-full"
+                    >
+                        Đăng ký tài khoản mới
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
 
-            {/* Steps Progress */}
-            <div className="bg-white py-6 border-b mt-16">
-                <div className="container mx-auto px-4">
-                    <div className="flex justify-center">
-                        <div className="flex items-center space-x-8 max-w-4xl w-full">
-                            {steps.map((step, index) => (
-                                <div
-                                    key={step.number}
-                                    className="flex items-center flex-1"
-                                >
-                                    <div className="flex flex-col items-center">
+            {/* ✅ Hiển thị login required nếu chưa đăng nhập */}
+            {!isLoggedIn ? (
+                <div className="container mx-auto px-4 py-16">
+                    <div className="max-w-md mx-auto">
+                        <LoginRequiredMessage />
+                    </div>
+                </div>
+            ) : (
+                // ✅ Hiển thị booking form nếu đã đăng nhập
+                <>
+                    {/* Steps Progress */}
+                    <div className="bg-white py-6 border-b mt-16">
+                        <div className="container mx-auto px-4">
+                            <div className="flex justify-center">
+                                <div className="flex items-center space-x-8 max-w-4xl w-full">
+                                    {steps.map((step, index) => (
                                         <div
-                                            className={`
+                                            key={step.number}
+                                            className="flex items-center flex-1"
+                                        >
+                                            <div className="flex flex-col items-center">
+                                                <div
+                                                    className={`
                                                 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all
                                                 ${
                                                     currentStep > step.number
@@ -388,234 +502,266 @@ export default function BookingPage() {
                                                         : "bg-gray-100 border-gray-300 text-gray-400"
                                                 }
                                             `}
-                                        >
-                                            {currentStep > step.number ||
-                                            isStepComplete(step.number) ? (
-                                                <CheckCircle className="h-6 w-6" />
-                                            ) : (
-                                                step.icon
+                                                >
+                                                    {currentStep >
+                                                        step.number ||
+                                                    isStepComplete(
+                                                        step.number
+                                                    ) ? (
+                                                        <CheckCircle className="h-6 w-6" />
+                                                    ) : (
+                                                        step.icon
+                                                    )}
+                                                </div>
+                                                <div className="mt-2 text-center">
+                                                    <div
+                                                        className={`text-sm font-medium ${
+                                                            currentStep >=
+                                                            step.number
+                                                                ? "text-gray-900"
+                                                                : "text-gray-400"
+                                                        }`}
+                                                    >
+                                                        {step.title}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 mt-1">
+                                                        {step.description}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Connector line */}
+                                            {index < steps.length - 1 && (
+                                                <div className="flex-1 h-0.5 mx-4 mt-6">
+                                                    <div
+                                                        className={`h-full transition-all ${
+                                                            currentStep >
+                                                            step.number
+                                                                ? "bg-green-500"
+                                                                : "bg-gray-200"
+                                                        }`}
+                                                    />
+                                                </div>
                                             )}
                                         </div>
-                                        <div className="mt-2 text-center">
-                                            <div
-                                                className={`text-sm font-medium ${
-                                                    currentStep >= step.number
-                                                        ? "text-gray-900"
-                                                        : "text-gray-400"
-                                                }`}
-                                            >
-                                                {step.title}
-                                            </div>
-                                            <div className="text-xs text-gray-500 mt-1">
-                                                {step.description}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Connector line */}
-                                    {index < steps.length - 1 && (
-                                        <div className="flex-1 h-0.5 mx-4 mt-6">
-                                            <div
-                                                className={`h-full transition-all ${
-                                                    currentStep > step.number
-                                                        ? "bg-green-500"
-                                                        : "bg-gray-200"
-                                                }`}
-                                            />
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Main Content */}
-            <div className="container mx-auto px-4 py-8">
-                <div className="max-w-6xl mx-auto">
-                    <motion.div
-                        key={`step-${currentStep}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        {/* Step 1: Select Court */}
-                        {currentStep === 1 && (
-                            <div className="bg-white rounded-lg shadow-sm border">
-                                <div className="p-6 border-b">
-                                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                                        Chọn sân thể thao
-                                    </h2>
-                                    <p className="text-gray-600">
-                                        Chọn sân phù hợp với nhu cầu của bạn
-                                    </p>
-                                </div>
-                                <div className="p-6">
-                                    <CourtSelect
-                                        selectedCourtId={
-                                            selectedCourt?.court_id || 0
-                                        }
-                                        onCourtSelect={handleCourtSelect}
-                                        initialCourtId={parseInt(
-                                            searchParams.get("court_id") || "0",
-                                            10
-                                        )}
-                                        initialVenueId={parseInt(
-                                            searchParams.get("venue_id") || "0",
-                                            10
-                                        )}
-                                    />
-                                </div>
-                            </div>
-                        )}
+                    {/* Main Content */}
+                    <div className="container mx-auto px-4 py-8">
+                        <div className="max-w-6xl mx-auto">
+                            <motion.div
+                                key={`step-${currentStep}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                {/* Step 1: Select Court */}
+                                {currentStep === 1 && (
+                                    <div className="bg-white rounded-lg shadow-sm border">
+                                        <div className="p-6 border-b">
+                                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                                                Chọn sân thể thao
+                                            </h2>
+                                            <p className="text-gray-600">
+                                                Chọn sân phù hợp với nhu cầu của
+                                                bạn
+                                            </p>
+                                        </div>
+                                        <div className="p-6">
+                                            <CourtSelect
+                                                selectedCourtId={
+                                                    selectedCourt?.court_id || 0
+                                                }
+                                                onCourtSelect={
+                                                    handleCourtSelect
+                                                }
+                                                initialCourtId={parseInt(
+                                                    searchParams.get(
+                                                        "court_id"
+                                                    ) || "0",
+                                                    10
+                                                )}
+                                                initialVenueId={parseInt(
+                                                    searchParams.get(
+                                                        "venue_id"
+                                                    ) || "0",
+                                                    10
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-                        {/* Step 2: Select Time */}
-                        {currentStep === 2 && selectedCourt && (
-                            <div className="space-y-6">
-                                {/* Selected Court Info */}
-                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                <MapPin className="h-6 w-6 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-blue-900">
-                                                    {selectedCourt.name}
-                                                </h3>
-                                                <p className="text-blue-700 text-sm">
-                                                    {selectedCourt.venue_name} •{" "}
-                                                    {selectedCourt.hourly_rate.toLocaleString(
-                                                        "vi-VN"
-                                                    )}
-                                                    đ/giờ
-                                                </p>
+                                {/* Step 2: Select Time */}
+                                {currentStep === 2 && selectedCourt && (
+                                    <div className="space-y-6">
+                                        {/* Selected Court Info */}
+                                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                        <MapPin className="h-6 w-6 text-blue-600" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-semibold text-blue-900">
+                                                            {selectedCourt.name}
+                                                        </h3>
+                                                        <p className="text-blue-700 text-sm">
+                                                            {
+                                                                selectedCourt.venue_name
+                                                            }{" "}
+                                                            •{" "}
+                                                            {selectedCourt.hourly_rate.toLocaleString(
+                                                                "vi-VN"
+                                                            )}
+                                                            đ/giờ
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={
+                                                        handleSwitchToCourt
+                                                    } // ✅ Sử dụng function mới
+                                                    className="text-blue-600 border-blue-300"
+                                                >
+                                                    Đổi sân
+                                                </Button>
                                             </div>
                                         </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleSwitchToCourt} // ✅ Sử dụng function mới
-                                            className="text-blue-600 border-blue-300"
-                                        >
-                                            Đổi sân
-                                        </Button>
+
+                                        {/* DateTime Selection */}
+                                        <DateTimeSelect
+                                            value={dateTime}
+                                            onChange={handleDateTimeChange}
+                                            courtId={selectedCourt.court_id}
+                                            onNext={handleNextStep}
+                                        />
                                     </div>
-                                </div>
+                                )}
 
-                                {/* DateTime Selection */}
-                                <DateTimeSelect
-                                    value={dateTime}
-                                    onChange={handleDateTimeChange}
-                                    courtId={selectedCourt.court_id}
-                                    onNext={handleNextStep}
-                                />
-                            </div>
-                        )}
+                                {/* Step 3: User Info */}
+                                {currentStep === 3 && (
+                                    <div className="bg-white rounded-lg shadow-sm border">
+                                        <div className="p-6 border-b">
+                                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                                                Thông tin liên hệ
+                                            </h2>
+                                            <p className="text-gray-600">
+                                                Điền thông tin để hoàn tất đặt
+                                                sân
+                                            </p>
+                                        </div>
+                                        <div className="p-6">
+                                            <UserInfoForm
+                                                value={userInfo}
+                                                onChange={handleUserInfoChange}
+                                                onValidityChange={
+                                                    setUserFormValid
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-                        {/* Step 3: User Info */}
-                        {currentStep === 3 && (
-                            <div className="bg-white rounded-lg shadow-sm border">
-                                <div className="p-6 border-b">
-                                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                                        Thông tin liên hệ
-                                    </h2>
-                                    <p className="text-gray-600">
-                                        Điền thông tin để hoàn tất đặt sân
-                                    </p>
-                                </div>
-                                <div className="p-6">
-                                    <UserInfoForm
-                                        value={userInfo}
-                                        onChange={handleUserInfoChange}
-                                        onValidityChange={setUserFormValid}
+                                {/* Step 4: Confirmation */}
+                                {currentStep === 4 && selectedCourt && (
+                                    <BookingConfirm
+                                        bookingData={{
+                                            court_id: selectedCourt.court_id,
+                                            court_name: selectedCourt.name,
+                                            venue_name:
+                                                selectedCourt.venue_name,
+                                            date: dateTime.date,
+                                            start_time: dateTime.startTime,
+                                            end_time: dateTime.endTime,
+                                            duration: dateTime.duration,
+                                            renter_name: userInfo.name,
+                                            renter_email: userInfo.email,
+                                            renter_phone: userInfo.phone,
+                                            notes: userInfo.notes || "",
+                                            payment_method: paymentMethod,
+                                            total_price:
+                                                selectedCourt.hourly_rate *
+                                                dateTime.duration,
+                                        }}
+                                        onBack={handleBack}
+                                        onConfirm={handleConfirmBooking}
+                                        isSubmitting={submitting}
+                                        onPaymentMethodChange={
+                                            handlePaymentMethodChange
+                                        }
+                                        selectedPaymentMethod={paymentMethod}
                                     />
-                                </div>
-                            </div>
-                        )}
+                                )}
 
-                        {/* Step 4: Confirmation */}
-                        {currentStep === 4 && selectedCourt && (
-                            <BookingConfirm
-                                bookingData={{
-                                    court_id: selectedCourt.court_id,
-                                    court_name: selectedCourt.name,
-                                    venue_name: selectedCourt.venue_name,
-                                    date: dateTime.date,
-                                    start_time: dateTime.startTime,
-                                    end_time: dateTime.endTime,
-                                    duration: dateTime.duration,
-                                    renter_name: userInfo.name,
-                                    renter_email: userInfo.email,
-                                    renter_phone: userInfo.phone,
-                                    notes: userInfo.notes || "",
-                                    payment_method: paymentMethod,
-                                    total_price:
-                                        selectedCourt.hourly_rate *
-                                        dateTime.duration,
-                                }}
-                                onBack={handleBack}
-                                onConfirm={handleConfirmBooking}
-                                isSubmitting={submitting}
-                                onPaymentMethodChange={
-                                    handlePaymentMethodChange
-                                }
-                                selectedPaymentMethod={paymentMethod}
-                            />
-                        )}
+                                {/* Step 5: Success */}
+                                {currentStep === 5 && bookingComplete && (
+                                    <BookingSuccess
+                                        bookingData={{
+                                            booking_id:
+                                                bookingComplete.booking_id ||
+                                                `BK${Math.floor(
+                                                    Math.random() * 10000
+                                                )}`,
+                                            court_name:
+                                                bookingComplete.court_name,
+                                            venue_name:
+                                                bookingComplete.venue_name,
+                                            date: bookingComplete.date,
+                                            start_time:
+                                                bookingComplete.start_time,
+                                            end_time: bookingComplete.end_time,
+                                            renter_name:
+                                                bookingComplete.renter_name,
+                                            renter_email:
+                                                bookingComplete.renter_email,
+                                            renter_phone:
+                                                bookingComplete.renter_phone,
+                                            payment_method:
+                                                bookingComplete.payment_method,
+                                            total_price:
+                                                bookingComplete.total_price,
+                                        }}
+                                    />
+                                )}
+                            </motion.div>
 
-                        {/* Step 5: Success */}
-                        {currentStep === 5 && bookingComplete && (
-                            <BookingSuccess
-                                bookingData={{
-                                    booking_id:
-                                        bookingComplete.booking_id ||
-                                        `BK${Math.floor(
-                                            Math.random() * 10000
-                                        )}`,
-                                    court_name: bookingComplete.court_name,
-                                    venue_name: bookingComplete.venue_name,
-                                    date: bookingComplete.date,
-                                    start_time: bookingComplete.start_time,
-                                    end_time: bookingComplete.end_time,
-                                    renter_name: bookingComplete.renter_name,
-                                    renter_email: bookingComplete.renter_email,
-                                    renter_phone: bookingComplete.renter_phone,
-                                    payment_method:
-                                        bookingComplete.payment_method,
-                                    total_price: bookingComplete.total_price,
-                                }}
-                            />
-                        )}
-                    </motion.div>
-
-                    {/* Navigation Buttons */}
-                    {currentStep === 3 && (
-                        <div className="flex justify-between mt-8">
-                            <Button
-                                variant="outline"
-                                onClick={handleBack}
-                                className="px-6"
-                            >
-                                <ChevronLeft className="mr-2 h-4 w-4" />
-                                Quay lại
-                            </Button>
-
+                            {/* Navigation Buttons */}
                             {currentStep === 3 && (
-                                <Button
-                                    onClick={handleNextStep}
-                                    disabled={!isStepComplete(currentStep)}
-                                    className="px-6 bg-blue-600 hover:bg-blue-700"
-                                >
-                                    Tiếp theo
-                                    <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
+                                <div className="flex justify-between mt-8">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleBack}
+                                        className="px-6"
+                                    >
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
+                                        Quay lại
+                                    </Button>
+
+                                    {currentStep === 3 && (
+                                        <Button
+                                            onClick={handleNextStep}
+                                            disabled={
+                                                !isStepComplete(currentStep)
+                                            }
+                                            className="px-6 bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            Tiếp theo
+                                            <ChevronRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
                             )}
                         </div>
-                    )}
-                </div>
-            </div>
+                    </div>
+                </>
+            )}
 
             <Footer />
         </div>

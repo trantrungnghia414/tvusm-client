@@ -29,6 +29,11 @@ export interface Booking {
     customer_phone?: string;
     customer_email?: string;
 
+    // Thông tin người thuê (từ backend entity)
+    renter_name?: string;
+    renter_phone?: string;
+    renter_email?: string;
+
     // Relations
     user?: User;
     court?: {

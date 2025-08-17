@@ -29,6 +29,9 @@ interface RawBookingData {
     notes?: string;
     created_at: string;
     updated_at: string;
+    renter_name?: string;
+    renter_phone?: string;
+    renter_email?: string;
     user?: {
         user_id: number;
         username: string;
@@ -136,6 +139,9 @@ export default function BookingsPage() {
                     notes: booking.notes || "",
                     created_at: booking.created_at,
                     updated_at: booking.updated_at,
+                    renter_name: booking.renter_name,
+                    renter_phone: booking.renter_phone,
+                    renter_email: booking.renter_email,
                     user: booking.user
                         ? {
                               user_id: booking.user.user_id,
@@ -248,6 +254,9 @@ export default function BookingsPage() {
                     booking.user?.fullname?.toLowerCase().includes(search) ||
                     booking.user?.username?.toLowerCase().includes(search) ||
                     booking.user?.email?.toLowerCase().includes(search) ||
+                    booking.renter_name?.toLowerCase().includes(search) ||
+                    booking.renter_email?.toLowerCase().includes(search) ||
+                    booking.renter_phone?.toLowerCase().includes(search) ||
                     booking.booking_id.toString().includes(search) ||
                     booking.court?.name?.toLowerCase().includes(search)
             );

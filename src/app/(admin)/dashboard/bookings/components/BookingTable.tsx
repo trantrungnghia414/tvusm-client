@@ -344,25 +344,30 @@ export default function BookingTable({
                                                     booking.user?.name ||
                                                     booking.user?.username ||
                                                     booking.customer_name ||
+                                                    booking.renter_name ||
                                                     "N/A"}
                                             </div>
                                             {(booking.user?.email ||
-                                                booking.customer_email) && (
+                                                booking.customer_email ||
+                                                booking.renter_email) && (
                                                 <div className="text-xs text-gray-500 flex items-center gap-1">
                                                     <Mail className="h-3 w-3 flex-shrink-0" />
                                                     <span className="truncate">
                                                         {booking.user?.email ||
-                                                            booking.customer_email}
+                                                            booking.customer_email ||
+                                                            booking.renter_email}
                                                     </span>
                                                 </div>
                                             )}
                                             {(booking.user?.phone ||
-                                                booking.customer_phone) && (
+                                                booking.customer_phone ||
+                                                booking.renter_phone) && (
                                                 <div className="text-xs text-gray-500 flex items-center gap-1">
                                                     <Phone className="h-3 w-3 flex-shrink-0" />
                                                     <span>
                                                         {booking.user?.phone ||
-                                                            booking.customer_phone}
+                                                            booking.customer_phone ||
+                                                            booking.renter_phone}
                                                     </span>
                                                 </div>
                                             )}

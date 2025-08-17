@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     MoreHorizontal,
     Eye,
@@ -55,7 +54,6 @@ import BookingStatusBadge from "./BookingStatusBadge";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
-import { getImageUrl } from "@/lib/api"; // ✅ Import getImageUrl
 
 interface BookingTableProps {
     bookings: Booking[];
@@ -96,15 +94,6 @@ export default function BookingTable({
             setDeleteDialogOpen(false);
             setBookingToDelete(null);
         }
-    };
-
-    const getInitials = (name: string) => {
-        return name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
     };
 
     // Helper function to calculate duration
@@ -346,61 +335,37 @@ export default function BookingTable({
                                         {priorityBadge}
                                     </TableCell>
 
-                                    {/* ✅ Customer Info với Avatar thật */}
+                                    {/* Customer Info */}
                                     <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10 ring-2 ring-gray-100">
-                                                {/* ✅ Hiển thị avatar thật nếu có */}
-                                                {booking.user?.avatar && (
-                                                    <AvatarImage
-                                                        src={getImageUrl(
-                                                            booking.user.avatar
-                                                        )}
-                                                        alt={
-                                                            booking.user
-                                                                ?.fullname ||
-                                                            booking.user
-                                                                ?.username ||
-                                                            "User Avatar"
-                                                        }
-                                                        className="object-cover"
-                                                    />
-                                                )}
-                                                {/* ✅ Fallback với initials */}
-                                                <AvatarFallback className="text-xs bg-blue-100 text-blue-700 font-semibold">
-                                                    {getInitials(
-                                                        booking.user
-                                                            ?.fullname ||
-                                                            booking.user
-                                                                ?.username ||
-                                                            "U"
-                                                    )}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="font-semibold text-gray-900 truncate">
-                                                    {booking.user?.fullname ||
-                                                        booking.user
-                                                            ?.username ||
-                                                        "N/A"}
-                                                </div>
-                                                {booking.user?.email && (
-                                                    <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                                        <Mail className="h-3 w-3 flex-shrink-0" />
-                                                        <span className="truncate">
-                                                            {booking.user.email}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {booking.user?.phone && (
-                                                    <div className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <Phone className="h-3 w-3 flex-shrink-0" />
-                                                        <span>
-                                                            {booking.user.phone}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                        <div className="space-y-1">
+                                            <div className="font-semibold text-gray-900 truncate">
+                                                {booking.user?.fullname ||
+                                                    booking.user?.full_name ||
+                                                    booking.user?.name ||
+                                                    booking.user?.username ||
+                                                    booking.customer_name ||
+                                                    "N/A"}
                                             </div>
+                                            {(booking.user?.email ||
+                                                booking.customer_email) && (
+                                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <Mail className="h-3 w-3 flex-shrink-0" />
+                                                    <span className="truncate">
+                                                        {booking.user?.email ||
+                                                            booking.customer_email}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {(booking.user?.phone ||
+                                                booking.customer_phone) && (
+                                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <Phone className="h-3 w-3 flex-shrink-0" />
+                                                    <span>
+                                                        {booking.user?.phone ||
+                                                            booking.customer_phone}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </TableCell>
 

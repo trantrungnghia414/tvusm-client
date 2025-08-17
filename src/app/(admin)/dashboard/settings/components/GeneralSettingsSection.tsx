@@ -37,7 +37,7 @@ export default function GeneralSettingsSection({
     const [saving, setSaving] = useState(false);
 
     const handleInputChange = (field: keyof GeneralSettings, value: string) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [field]: value,
         }));
@@ -63,7 +63,7 @@ export default function GeneralSettingsSection({
     const clearLogo = () => {
         setLogoFile(null);
         setLogoPreview(null);
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             site_logo: undefined,
         }));
@@ -72,17 +72,20 @@ export default function GeneralSettingsSection({
     const handleSave = async () => {
         try {
             setSaving(true);
-            
+
             // Nếu có logo mới, upload trước
             let logoUrl = formData.site_logo;
             if (logoFile) {
                 const uploadFormData = new FormData();
-                uploadFormData.append('logo', logoFile);
-                
-                const uploadResponse = await fetch('/api/settings/upload-logo', {
-                    method: 'POST',
-                    body: uploadFormData,
-                });
+                uploadFormData.append("logo", logoFile);
+
+                const uploadResponse = await fetch(
+                    "/api/settings/upload-logo",
+                    {
+                        method: "POST",
+                        body: uploadFormData,
+                    }
+                );
 
                 if (uploadResponse.ok) {
                     const { url } = await uploadResponse.json();
@@ -139,8 +142,10 @@ export default function GeneralSettingsSection({
                         <Input
                             id="site_name"
                             value={formData.site_name}
-                            onChange={(e) => handleInputChange("site_name", e.target.value)}
-                            placeholder="TVU Sports Hub"
+                            onChange={(e) =>
+                                handleInputChange("site_name", e.target.value)
+                            }
+                            placeholder="TVU Stadium Management"
                         />
                     </div>
 
@@ -149,7 +154,12 @@ export default function GeneralSettingsSection({
                         <Textarea
                             id="site_description"
                             value={formData.site_description}
-                            onChange={(e) => handleInputChange("site_description", e.target.value)}
+                            onChange={(e) =>
+                                handleInputChange(
+                                    "site_description",
+                                    e.target.value
+                                )
+                            }
                             placeholder="Hệ thống quản lý sân thể thao Trường Đại học Trà Vinh"
                             rows={3}
                         />
@@ -202,20 +212,25 @@ export default function GeneralSettingsSection({
                 {/* Localization */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-medium">Bản địa hóa</h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <Label>Múi giờ</Label>
                             <Select
                                 value={formData.timezone}
-                                onValueChange={(value) => handleInputChange("timezone", value)}
+                                onValueChange={(value) =>
+                                    handleInputChange("timezone", value)
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {timezones.map((tz) => (
-                                        <SelectItem key={tz.value} value={tz.value}>
+                                        <SelectItem
+                                            key={tz.value}
+                                            value={tz.value}
+                                        >
                                             {tz.label}
                                         </SelectItem>
                                     ))}
@@ -227,14 +242,19 @@ export default function GeneralSettingsSection({
                             <Label>Ngôn ngữ</Label>
                             <Select
                                 value={formData.language}
-                                onValueChange={(value) => handleInputChange("language", value)}
+                                onValueChange={(value) =>
+                                    handleInputChange("language", value)
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {languages.map((lang) => (
-                                        <SelectItem key={lang.value} value={lang.value}>
+                                        <SelectItem
+                                            key={lang.value}
+                                            value={lang.value}
+                                        >
                                             {lang.label}
                                         </SelectItem>
                                     ))}
@@ -246,14 +266,19 @@ export default function GeneralSettingsSection({
                             <Label>Định dạng ngày</Label>
                             <Select
                                 value={formData.date_format}
-                                onValueChange={(value) => handleInputChange("date_format", value)}
+                                onValueChange={(value) =>
+                                    handleInputChange("date_format", value)
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {dateFormats.map((format) => (
-                                        <SelectItem key={format.value} value={format.value}>
+                                        <SelectItem
+                                            key={format.value}
+                                            value={format.value}
+                                        >
                                             {format.label}
                                         </SelectItem>
                                     ))}
@@ -265,14 +290,19 @@ export default function GeneralSettingsSection({
                             <Label>Định dạng giờ</Label>
                             <Select
                                 value={formData.time_format}
-                                onValueChange={(value) => handleInputChange("time_format", value)}
+                                onValueChange={(value) =>
+                                    handleInputChange("time_format", value)
+                                }
                             >
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {timeFormats.map((format) => (
-                                        <SelectItem key={format.value} value={format.value}>
+                                        <SelectItem
+                                            key={format.value}
+                                            value={format.value}
+                                        >
                                             {format.label}
                                         </SelectItem>
                                     ))}

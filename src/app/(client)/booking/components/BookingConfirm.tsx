@@ -15,27 +15,43 @@ import { format, parse } from "date-fns";
 import { vi } from "date-fns/locale";
 import PaymentMethods from "./PaymentMethods";
 
+// ✅ Thêm interface BookingRequestData vào BookingConfirm.tsx
+interface BookingRequestData {
+    court_id: number;
+    date: string;
+    start_time: string;
+    end_time: string;
+    renter_name: string;
+    renter_phone: string;
+    renter_email?: string;
+    notes: string;
+}
+
+interface BookingData {
+    court_id: number;
+    court_name: string;
+    venue_name: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    duration: number;
+    renter_name: string;
+    renter_email: string;
+    renter_phone: string;
+    notes: string;
+    payment_method: string;
+    total_price: number;
+    booking_id?: string;
+}
+
 interface BookingConfirmProps {
-    bookingData: {
-        court_id: number;
-        court_name: string;
-        venue_name: string;
-        date: string;
-        start_time: string;
-        end_time: string;
-        duration: number;
-        renter_name: string;
-        renter_email: string;
-        renter_phone: string;
-        notes: string;
-        payment_method: string;
-        total_price: number;
-    };
+    bookingData: BookingData;
     onBack: () => void;
     onConfirm: () => void;
     isSubmitting: boolean;
     onPaymentMethodChange: (method: string) => void;
     selectedPaymentMethod: string;
+    onVnpayPayment?: (bookingData: BookingRequestData) => void;
 }
 
 export default function BookingConfirm({
@@ -45,6 +61,7 @@ export default function BookingConfirm({
     isSubmitting,
     onPaymentMethodChange,
     selectedPaymentMethod,
+    onVnpayPayment,
 }: BookingConfirmProps) {
     // Format date from yyyy-MM-dd to readable format
     const formatDisplayDate = (dateString: string) => {
@@ -67,6 +84,36 @@ export default function BookingConfirm({
         })
             .format(amount)
             .replace("₫", "VNĐ");
+    };
+
+    // ✅ Handle confirm với payment method
+    const handleConfirm = () => {
+        console.log(
+            "🔍 Confirm clicked with payment method:",
+            selectedPaymentMethod
+        );
+
+        if (selectedPaymentMethod === "vnpay" && onVnpayPayment) {
+            console.log("🔍 Processing VNPay payment...");
+
+            // Tạo BookingRequestData từ BookingData
+            const requestData: BookingRequestData = {
+                court_id: bookingData.court_id,
+                date: bookingData.date,
+                start_time: bookingData.start_time,
+                end_time: bookingData.end_time,
+                renter_name: bookingData.renter_name,
+                renter_phone: bookingData.renter_phone,
+                renter_email: bookingData.renter_email || undefined,
+                notes: bookingData.notes || "",
+            };
+
+            console.log("🔍 Calling onVnpayPayment with data:", requestData);
+            onVnpayPayment(requestData);
+        } else {
+            console.log("🔍 Processing cash payment...");
+            onConfirm();
+        }
     };
 
     return (
@@ -229,27 +276,27 @@ export default function BookingConfirm({
                     </Card>
 
                     {/* Action Buttons */}
-                    <div className="space-y-3">
-                        <Button
-                            onClick={onConfirm}
-                            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                            ) : null}
-                            {isSubmitting
-                                ? "Đang xử lý..."
-                                : "Xác nhận đặt sân"}
-                        </Button>
-
+                    <div className="p-6 border-t bg-gray-50 flex justify-between">
                         <Button
                             variant="outline"
                             onClick={onBack}
-                            className="w-full flex items-center justify-center gap-2"
+                            disabled={isSubmitting}
                         >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="mr-2 h-4 w-4" />
                             Quay lại
+                        </Button>
+
+                        <Button
+                            onClick={handleConfirm} // ✅ Sử dụng handleConfirm
+                            disabled={isSubmitting}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
+                            {isSubmitting && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            {selectedPaymentMethod === "vnpay"
+                                ? "Thanh toán VNPay"
+                                : "Xác nhận đặt sân"}
                         </Button>
                     </div>
                 </div>

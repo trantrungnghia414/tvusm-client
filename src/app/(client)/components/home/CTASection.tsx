@@ -25,7 +25,7 @@ export default function CTASection() {
                     </h2>
                     <p className="text-blue-100 text-base md:text-lg mb-6 md:mb-8">
                         Đặt sân ngay hôm nay để tận hưởng những trải nghiệm thể
-                        thao tuyệt vời tại TVU Sports Hub!
+                        thao tuyệt vời tại TVU Stadium Management!
                     </p>
 
                     <div className="flex flex-col md:flex-row items-center justify-center gap-3 md:gap-4 mb-8 md:mb-12">

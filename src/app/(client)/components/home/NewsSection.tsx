@@ -74,7 +74,7 @@ export default function NewsSection() {
     }, []);
 
     return (
-        <section className="bg-gray-50 py-16">
+        <section className="bg-gray-50 py-6">
             <div className="container mx-auto px-4">
                 <div className="flex justify-between items-end mb-10">
                     <div>

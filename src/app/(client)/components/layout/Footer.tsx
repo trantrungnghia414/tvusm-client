@@ -20,7 +20,7 @@ export default function Footer() {
                         <Link href="/" className="inline-block mb-3 sm:mb-4">
                             <Image
                                 src="/images/logo-tvusm-white.png"
-                                alt="TVU Sports Hub"
+                                alt="TVU Stadium Management"
                                 width={180}
                                 height={50}
                                 className="h-10 sm:h-12 w-auto object-contain"
@@ -96,7 +96,7 @@ export default function Footer() {
                                     href="/pricing"
                                     className="text-gray-400 hover:text-white transition-colors"
                                 >
-                                    Bảng giá
+                                    Liên hệ
                                 </Link>
                             </li>
                         </ul>
@@ -183,7 +183,8 @@ export default function Footer() {
                 {/* Copyright */}
                 <div className="border-t border-gray-800 pt-6 sm:pt-8 mt-6 sm:mt-8 text-center text-gray-500 text-xs sm:text-sm">
                     <p>
-                        &copy; {new Date().getFullYear()} TVU Sports Hub. Tất cả quyền được bảo lưu.
+                        &copy; {new Date().getFullYear()} TVU Stadium
+                        Management. Tất cả quyền được bảo lưu.
                     </p>
                     <p className="mt-1 sm:mt-2">
                         Được phát triển bởi Trần Trung Nghĩa - Đồ án tốt nghiệp

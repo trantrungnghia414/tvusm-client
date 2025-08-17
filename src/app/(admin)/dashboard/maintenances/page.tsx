@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/maintenances/page.tsx
+// trang quản lý bảo trì
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

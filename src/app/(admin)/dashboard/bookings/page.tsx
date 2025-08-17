@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/bookings/page.tsx
+// trang đặt sân
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

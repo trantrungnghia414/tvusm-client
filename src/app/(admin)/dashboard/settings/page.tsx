@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/settings/page.tsx
+// trang quản lý cài đặt
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -42,7 +42,7 @@ export default function SettingsPage() {
 
     // Settings state
     const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
-        site_name: "TVU Sports Hub",
+        site_name: "TVU Stadium Management",
         site_description:
             "Hệ thống quản lý sân thể thao Trường Đại học Trà Vinh",
         timezone: "Asia/Ho_Chi_Minh",
@@ -68,7 +68,7 @@ export default function SettingsPage() {
         smtp_user: "",
         smtp_password: "",
         from_email: "",
-        from_name: "TVU Sports Hub",
+        from_name: "TVU Stadium Management",
         email_notifications: true,
     });
 

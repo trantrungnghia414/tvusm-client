@@ -1,3 +1,4 @@
+// trang quản lý thiết bị
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

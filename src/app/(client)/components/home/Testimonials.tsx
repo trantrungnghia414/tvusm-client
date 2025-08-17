@@ -19,7 +19,7 @@ export default function Testimonials() {
             role: "Sinh viên Khoa Kỹ thuật và Công nghệ",
             avatar: "/images/placeholder.jpg",
             content:
-                "Tôi rất hài lòng với chất lượng sân cầu lông tại TVU Sports Hub. Hệ thống đặt sân trực tuyến rất dễ sử dụng và tiện lợi. Giá cả hợp lý cho sinh viên.",
+                "Tôi rất hài lòng với chất lượng sân cầu lông tại TVU Stadium Management. Hệ thống đặt sân trực tuyến rất dễ sử dụng và tiện lợi. Giá cả hợp lý cho sinh viên.",
             rating: 5,
         },
         {
@@ -37,7 +37,7 @@ export default function Testimonials() {
             role: "Cựu sinh viên",
             avatar: "/images/placeholder.jpg",
             content:
-                "Tôi đã tổ chức giải đấu bóng rổ tại TVU Sports Hub và rất hài lòng với dịch vụ. Hệ thống âm thanh, ánh sáng và các tiện nghi khác đều rất tốt.",
+                "Tôi đã tổ chức giải đấu bóng rổ tại TVU Stadium Management và rất hài lòng với dịch vụ. Hệ thống âm thanh, ánh sáng và các tiện nghi khác đều rất tốt.",
             rating: 4,
         },
     ];

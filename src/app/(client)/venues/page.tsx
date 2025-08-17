@@ -1,3 +1,4 @@
+// trang danh sách nhà thi đấu
 "use client";
 
 import React, { useState, useEffect } from "react";

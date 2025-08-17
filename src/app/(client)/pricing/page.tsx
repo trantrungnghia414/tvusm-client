@@ -1,4 +1,4 @@
-// client/src/app/(client)/pricing/page.tsx
+// trang giá cả
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -305,57 +305,25 @@ export default function PricingPage() {
         fetchPromotions();
     }, []);
 
-    const handleTabChange = (tab: PricingTab) => {
-        setActiveTab(tab);
-        // Update URL without causing page reload
-        const url = new URL(window.location.href);
-        url.searchParams.set("tab", tab);
-        window.history.pushState({}, "", url.toString());
-    };
+    // const handleTabChange = (tab: PricingTab) => {
+    //     setActiveTab(tab);
+    //     // Update URL without causing page reload
+    //     const url = new URL(window.location.href);
+    //     url.searchParams.set("tab", tab);
+    //     window.history.pushState({}, "", url.toString());
+    // };
 
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
 
             <main className="pt-16">
-                {/* Hero Section */}
-                <PricingHero />
-
-                {/* Navigation Tabs */}
-                <PricingTabs
-                    activeTab={activeTab}
-                    onTabChange={handleTabChange}
-                />
-
-                {/* Main Content */}
-                <div className="min-h-[60vh]">
-                    {activeTab === "courts" && (
-                        <CourtPricingGrid
-                            courts={courts}
-                            loading={courtsLoading}
-                        />
-                    )}
-
-                    {activeTab === "services" && (
-                        <ServicePricingGrid
-                            services={services}
-                            loading={servicesLoading}
-                        />
-                    )}
-
-                    {activeTab === "promotions" && (
-                        <PricingPromotionComponent
-                            promotions={promotions}
-                            loading={promotionsLoading}
-                        />
-                    )}
-                </div>
-
-                {/* FAQ Section */}
-                <PricingFAQ />
 
                 {/* Contact Section */}
                 <PricingContact />
+
+                {/* FAQ Section */}
+                <PricingFAQ />
             </main>
 
             <Footer />

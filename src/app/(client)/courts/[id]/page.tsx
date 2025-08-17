@@ -130,7 +130,7 @@ export default function CourtDetailPage() {
                 setCourt(normalizedCourt);
 
                 // Thêm tiêu đề trang động
-                document.title = `${normalizedCourt.name} | TVU Sports Hub`;
+                document.title = `${normalizedCourt.name} | TVU Stadium Management`;
             } catch (err) {
                 console.error("Error fetching court details:", err);
                 setError("Đã xảy ra lỗi khi tải thông tin sân thể thao");

@@ -85,7 +85,7 @@ export default function EquipmentTable({
                         <TableHead className="w-[100px]">Trạng thái</TableHead>
                         <TableHead className="w-[100px]">Số lượng</TableHead>
                         <TableHead className="w-[120px]">Giá mua</TableHead>
-                        <TableHead className="w-[120px]">Phí thuê</TableHead>
+                        {/* <TableHead className="w-[120px]">Phí thuê</TableHead> */}
                         <TableHead className="w-[120px]">Ngày mua</TableHead>
                         <TableHead className="w-[120px]">Địa điểm</TableHead>
                         <TableHead className="w-[100px] text-right">
@@ -156,9 +156,9 @@ export default function EquipmentTable({
                                     ? formatCurrency(item.purchase_price)
                                     : "-"}
                             </TableCell>
-                            <TableCell>
+                            {/* <TableCell>
                                 {formatCurrency(item.rental_fee)}
-                            </TableCell>
+                            </TableCell> */}
                             <TableCell>
                                 {formatDate(item.purchase_date)}
                             </TableCell>

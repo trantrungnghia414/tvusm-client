@@ -123,7 +123,7 @@ export default function StatisticsSection() {
     ];
 
     return (
-        <section className="py-16 container mx-auto px-4">
+        <section className="py-6 container mx-auto px-4">
             {loading ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />

@@ -12,9 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
     HelpCircle,
-    MessageCircle,
-    Phone,
-    Mail,
 } from "lucide-react";
 import { PricingFAQItem } from "../types/pricingTypes";
 
@@ -164,42 +161,7 @@ export default function PricingFAQ({
                         </Accordion>
                     </div>
 
-                    {/* Contact Support */}
-                    <div className="mt-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white text-center">
-                        <h3 className="text-2xl font-bold mb-4">
-                            Vẫn cần hỗ trợ thêm?
-                        </h3>
-                        <p className="text-lg opacity-90 mb-6">
-                            Đội ngũ hỗ trợ của chúng tôi luôn sẵn sàng giúp đỡ
-                            bạn
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button
-                                variant="secondary"
-                                size="lg"
-                                className="bg-white text-blue-600 hover:bg-blue-50 gap-2"
-                            >
-                                <Phone className="h-5 w-5" />
-                                Gọi ngay: 0292.3855.246
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="lg"
-                                className="border-white text-white hover:bg-white hover:text-blue-600 gap-2"
-                            >
-                                <Mail className="h-5 w-5" />
-                                Email hỗ trợ
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="lg"
-                                className="border-white text-white hover:bg-white hover:text-blue-600 gap-2"
-                            >
-                                <MessageCircle className="h-5 w-5" />
-                                Chat trực tuyến
-                            </Button>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
         </section>

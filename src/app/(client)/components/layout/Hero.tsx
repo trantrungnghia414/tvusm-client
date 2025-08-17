@@ -78,7 +78,7 @@ export default function Hero() {
     };
 
     return (
-        <section className="relative bg-gradient-to-r from-blue-700 to-indigo-800 pt-32 pb-20 md:pb-32 overflow-hidden">
+        <section className="relative bg-gradient-to-r from-blue-700 to-indigo-800 pt-22 pb-20 md:pb-12 overflow-hidden">
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-10">
                 <div
@@ -99,7 +99,7 @@ export default function Hero() {
                         </span>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
                             Khu phức hợp thể thao hiện đại tại{" "}
-                            <span className="text-yellow-300">TVU</span>
+                            <span className="text-[#ffff00]">TVU</span>
                         </h1>
                         <p className="text-lg md:text-xl text-blue-100 mb-8">
                             Hệ thống cơ sở vật chất thể thao đạt chuẩn quốc tế,
@@ -133,7 +133,7 @@ export default function Hero() {
                             {/* Decorative elements */}
                             <Image
                                 src="/images/sportshall.jpg"
-                                alt="TVU Sports Hub"
+                                alt="TVU Stadium Management"
                                 width={800}
                                 height={500}
                                 className="w-full h-auto rounded-lg relative z-10"

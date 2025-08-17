@@ -2,12 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import {
-    CheckCircle2,
-    Download,
-    ArrowRightCircle,
-    Calendar,
-} from "lucide-react";
+import { CheckCircle2, ArrowRightCircle } from "lucide-react";
 import { format, parse } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -51,22 +46,6 @@ export default function BookingSuccess({ bookingData }: BookingSuccessProps) {
         })
             .format(amount)
             .replace("₫", "VNĐ");
-    };
-
-    // Handle download receipt (would normally generate a PDF)
-    const handleDownloadReceipt = () => {
-        // In a real app, this would generate and download a PDF receipt
-        alert(
-            "Tính năng đang phát triển. Vui lòng kiểm tra email để xem thông tin đặt sân."
-        );
-    };
-
-    // Handle add to calendar (would create an .ics file or Google Calendar event)
-    const handleAddToCalendar = () => {
-        // In a real app, this would generate an .ics file or redirect to Google Calendar
-        alert(
-            "Tính năng đang phát triển. Vui lòng thêm sự kiện vào lịch thủ công."
-        );
     };
 
     return (
@@ -149,43 +128,22 @@ export default function BookingSuccess({ bookingData }: BookingSuccessProps) {
                 </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            {/* Action buttons - giống style trang payment result */}
+            <div className="p-6 border-t bg-gray-50 flex gap-3">
                 <Button
                     variant="outline"
-                    className="flex items-center justify-center gap-2 h-12"
-                    onClick={handleDownloadReceipt}
+                    onClick={() => router.push("/courts")}
+                    className="flex-1"
                 >
-                    <Download className="h-4 w-4" />
-                    Tải biên nhận
+                    <ArrowRightCircle className="h-4 w-4 mr-2" />
+                    Quay lại trang sân thể thao
                 </Button>
 
                 <Button
-                    variant="outline"
-                    className="flex items-center justify-center gap-2 h-12"
-                    onClick={handleAddToCalendar}
-                >
-                    <Calendar className="h-4 w-4" />
-                    Thêm vào lịch
-                </Button>
-            </div>
-
-            {/* Navigation buttons */}
-            <div className="space-y-4">
-                <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 h-12"
                     onClick={() => router.push("/bookings")}
+                    className="flex-1"
                 >
                     Xem lịch sử đặt sân
-                    <ArrowRightCircle className="ml-2 h-4 w-4" />
-                </Button>
-
-                <Button
-                    variant="outline"
-                    className="w-full h-12"
-                    onClick={() => router.push("/courts")}
-                >
-                    Quay lại trang sân thể thao
                 </Button>
             </div>
         </div>

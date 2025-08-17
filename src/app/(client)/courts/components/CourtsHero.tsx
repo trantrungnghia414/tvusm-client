@@ -36,7 +36,7 @@ export default function CourtsHero({ stats }: CourtsHeroProps) {
                 <div className="max-w-4xl mx-auto text-center">
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                         Hệ thống sân thể thao
-                        {/* <span className="block text-blue-200">TVU Sports Hub</span> */}
+                        {/* <span className="block text-blue-200">TVU Stadium Management</span> */}
                     </h1>
                     <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
                         Khám phá và đặt sân thể thao hiện đại với đầy đủ tiện

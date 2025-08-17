@@ -173,7 +173,7 @@ export default function VenueDetailPage() {
 
                 setVenue(normalizedVenue);
                 // Thêm tiêu đề trang động
-                document.title = `${normalizedVenue.name} | TVU Sports Hub`;
+                document.title = `${normalizedVenue.name} | TVU Stadium Management`;
             } catch (err) {
                 console.error("Error fetching venue details:", err);
                 setError("Đã xảy ra lỗi khi tải thông tin nhà thi đấu");
@@ -236,7 +236,7 @@ export default function VenueDetailPage() {
             navigator
                 .share({
                     title: venue?.name || "Chi tiết nhà thi đấu",
-                    text: `Khám phá ${venue?.name} tại TVU Sports Hub`,
+                    text: `Khám phá ${venue?.name} tại TVU Stadium Management`,
                     url: window.location.href,
                 })
                 .catch((err) => console.error("Không thể chia sẻ:", err));

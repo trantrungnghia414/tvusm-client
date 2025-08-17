@@ -27,7 +27,10 @@ export default function EmailSettingsSection({
     const [testing, setTesting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const handleInputChange = (field: keyof EmailSettings, value: EmailSettings[keyof EmailSettings]) => {
+    const handleInputChange = (
+        field: keyof EmailSettings,
+        value: EmailSettings[keyof EmailSettings]
+    ) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
@@ -257,7 +260,7 @@ export default function EmailSettingsSection({
                                                 e.target.value
                                             )
                                         }
-                                        placeholder="TVU Sports Hub"
+                                        placeholder="TVU Stadium Management"
                                     />
                                 </div>
                             </div>

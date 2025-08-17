@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/rentals/page.tsx
+// trang quản lý thuê thiết bị
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

@@ -4,8 +4,8 @@ import CTASection from "@/app/(client)/components/home/CTASection";
 // import FeaturedVenues from "@/app/(client)/components/home/FeaturedVenues";
 import NewsSection from "@/app/(client)/components/home/NewsSection";
 import PopularCourts from "@/app/(client)/components/home/PopularCourts";
-import StatisticsSection from "@/app/(client)/components/home/StatisticsSection";
-import Testimonials from "@/app/(client)/components/home/Testimonials";
+// import StatisticsSection from "@/app/(client)/components/home/StatisticsSection";
+// import Testimonials from "@/app/(client)/components/home/Testimonials";
 import UpcomingEvents from "@/app/(client)/components/home/UpcomingEvents";
 import Footer from "@/app/(client)/components/layout/Footer";
 import Hero from "@/app/(client)/components/layout/Hero";
@@ -21,10 +21,10 @@ export default function HomePage() {
                 <Hero />
                 <PopularCourts />
                 {/* <FeaturedVenues /> */}
-                <StatisticsSection />
+                {/* <StatisticsSection /> */}
                 <UpcomingEvents />
                 <NewsSection />
-                <Testimonials />
+                {/* <Testimonials /> */}
                 <CTASection />
             </main>
             <Footer />

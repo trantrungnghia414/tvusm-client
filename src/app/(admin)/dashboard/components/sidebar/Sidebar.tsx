@@ -7,15 +7,15 @@ import {
     Calendar,
     CreditCard,
     LayoutDashboard,
-    MessageSquare,
-    Settings,
+    // MessageSquare,
+    // Settings,
     Users,
     FileText,
     Home,
     MapPin,
     CalendarClock,
     BookOpen,
-    ShoppingBag,
+    // ShoppingBag,
     AlertTriangle,
     Dumbbell,
     Layers,
@@ -104,14 +104,14 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         title="Đặt sân"
                         active={activeTab === "bookings"}
                         onClick={() => router.push("/dashboard/bookings")}
-                        count={8}
+                        // count={8}
                     />
-                    <SidebarItem
+                    {/* <SidebarItem
                         icon={<ShoppingBag className="h-4 w-4" />}
                         title="Thuê thiết bị"
                         active={activeTab === "rentals"}
                         onClick={() => router.push("/dashboard/rentals")}
-                    />
+                    /> */}
                     <SidebarItem
                         icon={<CreditCard className="h-4 w-4" />}
                         title="Thanh toán"
@@ -138,13 +138,13 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         active={activeTab === "news"}
                         onClick={() => router.push("/dashboard/news")}
                     />
-                    <SidebarItem
+                    {/* <SidebarItem
                         icon={<MessageSquare className="h-4 w-4" />}
                         title="Phản hồi"
                         active={activeTab === "feedbacks"}
                         onClick={() => router.push("/dashboard/feedbacks")}
                         count={5}
-                    />
+                    /> */}
 
                     <SidebarCategory label="QUẢN LÝ HỆ THỐNG" />
                     <SidebarItem
@@ -165,12 +165,12 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         active={activeTab === "activity-log"}
                         onClick={() => router.push("/dashboard/activity-log")}
                     />
-                    <SidebarItem
+                    {/* <SidebarItem
                         icon={<Settings className="h-4 w-4" />}
                         title="Cài đặt hệ thống"
                         active={activeTab === "settings"}
                         onClick={() => router.push("/dashboard/settings")}
-                    />
+                    /> */}
                 </nav>
             </div>
         </aside>

@@ -53,7 +53,7 @@ export default function VenuesStats({ stats }: VenuesStatsProps) {
                     </h2>
                     <p className="text-gray-600 max-w-2xl mx-auto">
                         Những con số ấn tượng về cơ sở vật chất và hoạt động của
-                        TVU Sports Hub
+                        TVU Stadium Management
                     </p>
                 </div>
 

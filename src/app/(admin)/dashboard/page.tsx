@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
                         user: "Trần Thị Bình",
                         field: "Sân cầu lông A",
                         time: "08:00 - 09:30 • 22/05/2025",
-                        status: "confirmed",
+                        status: "completed",
                     },
                     {
                         id: "B-2021",

@@ -58,7 +58,7 @@ export default function PopularCourts() {
     }, []);
 
     return (
-        <section className="bg-gray-50 py-12 md:py-16">
+        <section className="bg-gray-50 py-12 md:py-6">
             <div className="container mx-auto px-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 md:mb-10">
                     <div>

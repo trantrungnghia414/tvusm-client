@@ -120,7 +120,7 @@ export default function NewsDetailPage() {
 
     const handleShare = async (platform?: "facebook" | "twitter" | "copy") => {
         const currentUrl = window.location.href;
-        const title = article?.title || "Tin tức từ TVU Sports Hub";
+        const title = article?.title || "Tin tức từ TVU Stadium Management";
 
         if (platform === "facebook") {
             window.open(

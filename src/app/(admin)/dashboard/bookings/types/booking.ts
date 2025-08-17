@@ -4,6 +4,8 @@ export interface User {
     username: string;
     email: string;
     fullname?: string;
+    full_name?: string; // Thêm trường này để tương thích
+    name?: string; // Thêm trường này để tương thích
     phone?: string;
     avatar?: string; // ✅ Thêm avatar field
 }
@@ -21,6 +23,11 @@ export interface Booking {
     notes: string;
     created_at: string;
     updated_at: string;
+
+    // Thông tin khách hàng trực tiếp (cho khách vãng lai)
+    customer_name?: string;
+    customer_phone?: string;
+    customer_email?: string;
 
     // Relations
     user?: User;

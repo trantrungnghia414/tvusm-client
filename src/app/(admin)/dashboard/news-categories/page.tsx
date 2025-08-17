@@ -1,3 +1,4 @@
+// trang quản lý danh mục tin tức
 "use client";
 
 import React from "react";

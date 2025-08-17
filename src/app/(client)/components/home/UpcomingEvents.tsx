@@ -127,7 +127,7 @@ export default function UpcomingEvents() {
     }, []);
 
     return (
-        <section className="container mx-auto px-4 py-16">
+        <section className="container mx-auto px-4 py-6">
             {/* Header section */}
             <div className="flex justify-between items-end mb-10">
                 <div>

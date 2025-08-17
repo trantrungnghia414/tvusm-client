@@ -45,7 +45,7 @@ export default function Navbar() {
         { path: "/venues", label: "Nhà thi đấu" },
         { path: "/events", label: "Sự kiện" },
         { path: "/news", label: "Tin tức" }, // ✅ Thêm tin tức
-        { path: "/pricing", label: "Bảng giá" },
+        { path: "/pricing", label: "Liên hệ" },
     ];
 
     // Kiểm tra đường dẫn hiện tại có khớp với route không
@@ -151,7 +151,7 @@ export default function Navbar() {
                                 ? "/images/logo-tvusm-blue.png"
                                 : "/images/logo-tvusm-white.png"
                         }
-                        alt="TVU Sports Hub"
+                        alt="TVU Stadium Management"
                         width={180}
                         height={50}
                         className="h-8 sm:h-9 lg:h-10 w-auto object-contain"
@@ -416,7 +416,7 @@ export default function Navbar() {
                                 }`}
                         >
                             <CreditCard className="mr-3 h-5 w-5 text-blue-600 flex-shrink-0" />
-                            Bảng giá
+                            Liên hệ
                             {isActive("/pricing") && (
                                 <div className="ml-auto w-1.5 h-5 bg-blue-600 rounded-full"></div>
                             )}
@@ -514,7 +514,9 @@ export default function Navbar() {
 
                     {/* Footer info cho mobile */}
                     <div className="mt-auto py-6 px-4 text-center text-gray-500 text-xs xs:text-sm border-t border-gray-100 bg-gray-50">
-                        <p>© {new Date().getFullYear()} TVU Sports Hub</p>
+                        <p>
+                            © {new Date().getFullYear()} TVU Stadium Management
+                        </p>
                         <p className="mt-1">Trường Đại học Trà Vinh</p>
                     </div>
                 </div>

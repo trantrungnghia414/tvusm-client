@@ -1,4 +1,4 @@
-// client/src/app/(admin)/dashboard/activity-log/page.tsx
+// trang nhật ký hoạt động
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";

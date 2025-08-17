@@ -26,61 +26,69 @@ export default function PaymentStats({
     stats,
     loading = false,
 }: PaymentStatsProps) {
+    // ✅ Helper function để format currency an toàn
+    const safeFormatCurrency = (amount: number | undefined | null) => {
+        if (amount === null || amount === undefined || isNaN(amount)) {
+            return "0 ₫";
+        }
+        return formatCurrency(amount);
+    };
+
     const statsData = [
         {
-            title: "Tổng giao dịch",
-            value: stats.total_payments.toLocaleString(),
-            amount: formatCurrency(stats.total_amount),
+            title: "Tổng thu",
+            value: safeFormatCurrency(stats.total_amount),
+            amount: `${stats.total_payments || 0} giao dịch`,
             icon: <CreditCard className="h-4 w-4" />,
             color: "text-blue-600",
             bgColor: "bg-blue-50",
-            change: `${stats.completed_payments} thành công`,
+            change: `${stats.completed_payments || 0} thành công`,
         },
         {
             title: "Chờ xử lý",
-            value: stats.pending_payments.toLocaleString(),
-            amount: formatCurrency(stats.pending_amount),
+            value: (stats.pending_payments || 0).toLocaleString(),
+            amount: safeFormatCurrency(stats.pending_amount),
             icon: <Clock className="h-4 w-4" />,
             color: "text-orange-600",
             bgColor: "bg-orange-50",
-            urgent: stats.pending_payments > 10,
+            urgent: (stats.pending_payments || 0) > 10,
         },
         {
             title: "Thành công",
-            value: stats.completed_payments.toLocaleString(),
-            amount: formatCurrency(stats.completed_amount),
+            value: (stats.completed_payments || 0).toLocaleString(),
+            amount: safeFormatCurrency(stats.completed_amount),
             icon: <CheckCircle2 className="h-4 w-4" />,
             color: "text-green-600",
             bgColor: "bg-green-50",
             change: `${(
-                (stats.completed_payments / stats.total_payments) *
+                ((stats.completed_payments || 0) /
+                    (stats.total_payments || 1)) *
                 100
             ).toFixed(1)}% tỷ lệ thành công`,
         },
         {
             title: "Thất bại",
-            value: stats.failed_payments.toLocaleString(),
-            amount: formatCurrency(stats.refunded_amount),
+            value: (stats.failed_payments || 0).toLocaleString(),
+            amount: safeFormatCurrency(stats.refunded_amount),
             icon: <XCircle className="h-4 w-4" />,
             color: "text-red-600",
             bgColor: "bg-red-50",
         },
         {
             title: "Doanh thu hôm nay",
-            value: formatCurrency(stats.today_revenue),
-            amount: `${
-                stats.monthly_revenue > stats.today_revenue ? "+" : ""
-            }${((stats.today_revenue / stats.monthly_revenue) * 100).toFixed(
-                1
-            )}% so với tháng`,
+            value: safeFormatCurrency(stats.today_revenue),
+            amount: `${(
+                ((stats.today_revenue || 0) / (stats.monthly_revenue || 1)) *
+                100
+            ).toFixed(1)}% so với tháng`,
             icon: <TrendingUp className="h-4 w-4" />,
             color: "text-purple-600",
             bgColor: "bg-purple-50",
         },
         {
             title: "Doanh thu tháng",
-            value: formatCurrency(stats.monthly_revenue),
-            amount: `${stats.cash_payments + stats.online_payments} giao dịch`,
+            value: safeFormatCurrency(stats.monthly_revenue),
+            amount: `${stats.total_payments || 0} giao dịch`,
             icon: <DollarSign className="h-4 w-4" />,
             color: "text-indigo-600",
             bgColor: "bg-indigo-50",
@@ -88,9 +96,9 @@ export default function PaymentStats({
         },
         {
             title: "Tiền mặt",
-            value: stats.cash_payments.toLocaleString(),
+            value: (stats.cash_payments || 0).toLocaleString(),
             amount: `${(
-                (stats.cash_payments / stats.total_payments) *
+                ((stats.cash_payments || 0) / (stats.total_payments || 1)) *
                 100
             ).toFixed(1)}% tổng giao dịch`,
             icon: <Banknote className="h-4 w-4" />,
@@ -99,9 +107,9 @@ export default function PaymentStats({
         },
         {
             title: "Thanh toán online",
-            value: stats.online_payments.toLocaleString(),
+            value: (stats.online_payments || 0).toLocaleString(),
             amount: `${(
-                (stats.online_payments / stats.total_payments) *
+                ((stats.online_payments || 0) / (stats.total_payments || 1)) *
                 100
             ).toFixed(1)}% tổng giao dịch`,
             icon: <Smartphone className="h-4 w-4" />,

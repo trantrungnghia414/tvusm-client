@@ -67,17 +67,20 @@ export default function PaymentActions({
         try {
             const exportData = payments.map((payment) => ({
                 "Mã GD": `PAY${payment.payment_id.toString().padStart(6, "0")}`,
-                "Khách hàng": payment.user?.fullname || payment.user?.username || "N/A",
-                "Email": payment.user?.email || "",
+                "Khách hàng":
+                    payment.user?.fullname || payment.user?.username || "N/A",
+                Email: payment.user?.email || "",
                 "Số điện thoại": payment.user?.phone || "",
-                "Loại": payment.booking_id ? "Đặt sân" : "Thuê thiết bị",
+                Loại: payment.booking_id ? "Đặt sân" : "Thuê thiết bị",
                 "Số tiền": payment.amount,
                 "Phương thức": getPaymentMethodLabel(payment.payment_method),
                 "Trạng thái": getPaymentStatusLabel(payment.status),
                 "Mã giao dịch": payment.transaction_id || "",
-                "Ngày tạo": new Date(payment.created_at).toLocaleDateString("vi-VN"),
-                "Ngày thanh toán": payment.paid_at 
-                    ? new Date(payment.paid_at).toLocaleDateString("vi-VN") 
+                "Ngày tạo": new Date(payment.created_at).toLocaleDateString(
+                    "vi-VN"
+                ),
+                "Ngày thanh toán": payment.paid_at
+                    ? new Date(payment.paid_at).toLocaleDateString("vi-VN")
                     : "",
                 "Ghi chú": payment.notes || "",
             }));
@@ -103,9 +106,11 @@ export default function PaymentActions({
             ];
             ws["!cols"] = colWidths;
 
-            const fileName = `thanh-toan_${new Date().toISOString().split("T")[0]}.xlsx`;
+            const fileName = `thanh-toan_${
+                new Date().toISOString().split("T")[0]
+            }.xlsx`;
             XLSX.writeFile(wb, fileName);
-            
+
             toast.success(`Đã xuất ${payments.length} giao dịch ra file Excel`);
         } catch (error) {
             console.error("Error exporting to Excel:", error);
@@ -143,28 +148,59 @@ export default function PaymentActions({
 
     const getPaymentMethodLabel = (method: Payment["payment_method"]) => {
         switch (method) {
-            case "cash": return "Tiền mặt";
-            case "bank_transfer": return "Chuyển khoản";
-            case "vnpay": return "VNPay";
-            case "momo": return "MoMo";
-            default: return "Khác";
+            case "cash":
+                return "Tiền mặt";
+            case "bank_transfer":
+                return "Chuyển khoản";
+            case "vnpay":
+                return "VNPay";
+            case "momo":
+                return "MoMo";
+            default:
+                return "Khác";
         }
     };
 
     const getPaymentStatusLabel = (status: Payment["status"]) => {
         switch (status) {
-            case "pending": return "Chờ xử lý";
-            case "completed": return "Thành công";
-            case "failed": return "Thất bại";
-            case "refunded": return "Đã hoàn tiền";
-            case "cancelled": return "Đã hủy";
-            default: return "Không xác định";
+            case "pending":
+                return "Chờ xử lý";
+            case "completed":
+                return "Thành công";
+            case "failed":
+                return "Thất bại";
+            case "refunded":
+                return "Đã hoàn tiền";
+            case "cancelled":
+                return "Đã hủy";
+            default:
+                return "Không xác định";
         }
     };
 
-    const totalAmount = payments.reduce((sum, payment) => 
-        payment.status === "completed" ? sum + payment.amount : sum, 0
-    );
+    // ✅ Sửa lại tính toán totalAmount với xử lý an toàn
+    const totalAmount = payments.reduce((sum, payment) => {
+        // Kiểm tra payment.amount có hợp lệ không
+        const amount = payment.amount;
+        if (
+            payment.status === "completed" &&
+            amount !== null &&
+            amount !== undefined &&
+            !isNaN(Number(amount)) &&
+            Number(amount) > 0
+        ) {
+            return sum + Number(amount);
+        }
+        return sum;
+    }, 0);
+
+    // ✅ Thêm function helper để format an toàn
+    const safeFormatCurrency = (amount: number): string => {
+        if (amount === null || amount === undefined || isNaN(amount)) {
+            return "0 ₫";
+        }
+        return formatCurrency(amount);
+    };
 
     return (
         <div className="flex items-center justify-between mb-6">
@@ -177,19 +213,21 @@ export default function PaymentActions({
                         <div>
                             <p className="text-sm text-gray-600">Tổng thu</p>
                             <p className="text-lg font-bold text-green-600">
-                                {formatCurrency(totalAmount)}
+                                {safeFormatCurrency(totalAmount)}
                             </p>
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-100 rounded-lg">
                             <Receipt className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Tổng giao dịch</p>
+                            <p className="text-sm text-gray-600">
+                                Tổng giao dịch
+                            </p>
                             <p className="text-lg font-bold text-blue-600">
                                 {payments.length.toLocaleString()}
                             </p>
@@ -205,7 +243,11 @@ export default function PaymentActions({
                     disabled={loading}
                     size="sm"
                 >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                        className={`h-4 w-4 mr-2 ${
+                            loading ? "animate-spin" : ""
+                        }`}
+                    />
                     Làm mới
                 </Button>
 
@@ -252,14 +294,26 @@ export default function PaymentActions({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toast.info("Tính năng đang phát triển")}>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                toast.info("Tính năng đang phát triển")
+                            }
+                        >
                             Gửi báo cáo email
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toast.info("Tính năng đang phát triển")}>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                toast.info("Tính năng đang phát triển")
+                            }
+                        >
                             Đồng bộ dữ liệu
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => toast.info("Tính năng đang phát triển")}>
+                        <DropdownMenuItem
+                            onClick={() =>
+                                toast.info("Tính năng đang phát triển")
+                            }
+                        >
                             Cài đặt thông báo
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -275,7 +329,7 @@ export default function PaymentActions({
                             Tạo giao dịch thanh toán thủ công cho khách hàng
                         </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="space-y-4">
                         <div>
                             <Label htmlFor="user_id">ID Khách hàng *</Label>
@@ -285,9 +339,9 @@ export default function PaymentActions({
                                 placeholder="Nhập ID khách hàng"
                                 value={formData.user_id || ""}
                                 onChange={(e) =>
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        user_id: Number(e.target.value)
+                                        user_id: Number(e.target.value),
                                     }))
                                 }
                             />
@@ -301,22 +355,26 @@ export default function PaymentActions({
                                 placeholder="Nhập số tiền"
                                 value={formData.amount || ""}
                                 onChange={(e) =>
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        amount: Number(e.target.value)
+                                        amount: Number(e.target.value),
                                     }))
                                 }
                             />
                         </div>
 
                         <div>
-                            <Label htmlFor="payment_method">Phương thức thanh toán *</Label>
+                            <Label htmlFor="payment_method">
+                                Phương thức thanh toán *
+                            </Label>
                             <Select
                                 value={formData.payment_method}
-                                onValueChange={(value: Payment["payment_method"]) =>
-                                    setFormData(prev => ({
+                                onValueChange={(
+                                    value: Payment["payment_method"]
+                                ) =>
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        payment_method: value
+                                        payment_method: value,
                                     }))
                                 }
                             >
@@ -324,8 +382,12 @@ export default function PaymentActions({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="cash">Tiền mặt</SelectItem>
-                                    <SelectItem value="bank_transfer">Chuyển khoản</SelectItem>
+                                    <SelectItem value="cash">
+                                        Tiền mặt
+                                    </SelectItem>
+                                    <SelectItem value="bank_transfer">
+                                        Chuyển khoản
+                                    </SelectItem>
                                     <SelectItem value="vnpay">VNPay</SelectItem>
                                     <SelectItem value="momo">MoMo</SelectItem>
                                 </SelectContent>
@@ -339,9 +401,9 @@ export default function PaymentActions({
                                 placeholder="Nhập mã giao dịch (tùy chọn)"
                                 value={formData.transaction_id || ""}
                                 onChange={(e) =>
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        transaction_id: e.target.value
+                                        transaction_id: e.target.value,
                                     }))
                                 }
                             />
@@ -354,9 +416,9 @@ export default function PaymentActions({
                                 placeholder="Ghi chú thêm..."
                                 value={formData.notes || ""}
                                 onChange={(e) =>
-                                    setFormData(prev => ({
+                                    setFormData((prev) => ({
                                         ...prev,
-                                        notes: e.target.value
+                                        notes: e.target.value,
                                     }))
                                 }
                                 rows={3}

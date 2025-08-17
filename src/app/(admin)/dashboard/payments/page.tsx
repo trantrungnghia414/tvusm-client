@@ -16,6 +16,7 @@ import {
 import { fetchApi } from "@/lib/api";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { formatCurrency } from "@/lib/utils"; // ✅ Thêm import formatCurrency
 
 // Raw data interfaces for API responses
 interface RawPaymentData {
@@ -442,6 +443,22 @@ export default function PaymentsPage() {
         }
     };
 
+    // ✅ Tạo helper function để tính tổng an toàn
+    const calculateDisplayTotal = () => {
+        const total = filteredPayments
+            .filter((payment) => payment.status === "completed")
+            .reduce((sum, payment) => {
+                const amount = payment.amount;
+                // Kiểm tra amount hợp lệ
+                if (amount !== null && amount !== undefined && !isNaN(amount)) {
+                    return sum + Number(amount);
+                }
+                return sum;
+            }, 0);
+
+        return formatCurrency(total);
+    };
+
     if (loading) {
         return (
             <DashboardLayout activeTab="payments">
@@ -503,12 +520,7 @@ export default function PaymentsPage() {
                         {payments.length} giao dịch
                     </span>
                     <span>
-                        Tổng giá trị hiển thị:{" "}
-                        {filteredPayments
-                            .filter((payment) => payment.status === "completed")
-                            .reduce((sum, payment) => sum + payment.amount, 0)
-                            .toLocaleString("vi-VN")}
-                        đ
+                        Tổng giá trị hiển thị: {calculateDisplayTotal()}
                     </span>
                 </div>
 

@@ -140,7 +140,7 @@ export default function BookingSuccess({ bookingData }: BookingSuccessProps) {
                 </Button>
 
                 <Button
-                    onClick={() => router.push("/bookings")}
+                    onClick={() => router.push("/booking-history")}
                     className="flex-1"
                 >
                     Xem lịch sử đặt sân

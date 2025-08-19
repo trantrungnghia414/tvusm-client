@@ -14,6 +14,7 @@ import {
     EyeOff,
     X,
     Camera,
+    History,
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -509,9 +510,19 @@ export default function ProfilePage() {
         <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-5xl">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Thông tin cá nhân</h1>
-                <Button variant="outline" onClick={() => router.back()}>
-                    Quay lại
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => router.push("/booking-history")}
+                        className="flex items-center gap-2"
+                    >
+                        <History className="h-4 w-4" />
+                        Lịch sử đặt sân
+                    </Button>
+                    <Button variant="outline" onClick={() => router.back()}>
+                        Quay lại
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

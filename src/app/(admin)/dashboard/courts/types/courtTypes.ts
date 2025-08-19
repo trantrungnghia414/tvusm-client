@@ -13,6 +13,8 @@ export interface Court {
     is_indoor: boolean;
     // ✅ Thêm trường court_level cho việc mapping sân
     court_level?: number;
+    // ✅ Thêm trường sub_court_count cho số lượng sân con
+    sub_court_count?: number;
     created_at: string;
     updated_at: string;
 }

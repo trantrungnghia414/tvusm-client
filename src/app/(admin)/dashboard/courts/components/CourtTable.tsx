@@ -129,6 +129,9 @@ export default function CourtTable({
                                 Loại sân
                             </TableHead>
                             <TableHead className="hidden lg:table-cell">
+                                Cấp độ/Sân con
+                            </TableHead>
+                            <TableHead className="hidden lg:table-cell">
                                 Giá thuê/giờ
                             </TableHead>
                             <TableHead className="hidden lg:table-cell">
@@ -156,7 +159,7 @@ export default function CourtTable({
                                                     court.image ?? undefined
                                                 )}
                                                 alt={court.name}
-                                                className="object-cover"    
+                                                className="object-cover"
                                             />
                                             <AvatarFallback>
                                                 {getInitials(court.name)}
@@ -187,6 +190,20 @@ export default function CourtTable({
                                 </TableCell>
                                 <TableCell className="hidden lg:table-cell">
                                     {court.type_name}
+                                </TableCell>
+                                <TableCell className="hidden lg:table-cell">
+                                    <div className="flex flex-col space-y-1">
+                                        <span className="text-sm font-medium">
+                                            Cấp {court.court_level || 1}
+                                        </span>
+                                        {court.court_level &&
+                                            court.court_level > 1 && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    {court.sub_court_count || 1}{" "}
+                                                    sân con
+                                                </span>
+                                            )}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="hidden lg:table-cell">
                                     {formatPrice(court.hourly_rate)}

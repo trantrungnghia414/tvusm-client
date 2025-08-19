@@ -99,7 +99,7 @@ export default function CourtFilters({
                             <SelectItem value="available">
                                 Sẵn sàng sử dụng
                             </SelectItem>
-                            <SelectItem value="booked">Đã đặt</SelectItem>
+                            {/* <SelectItem value="booked">Đã đặt</SelectItem> */}
                             <SelectItem value="maintenance">
                                 Đang bảo trì
                             </SelectItem>

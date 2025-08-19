@@ -62,6 +62,9 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
     // ✅ Thêm state cho cấp độ sân
     const [courtLevel, setCourtLevel] = useState<string>("1");
 
+    // ✅ Thêm state cho số lượng sân con
+    const [subCourtCount, setSubCourtCount] = useState<string>("1");
+
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -122,6 +125,11 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
                     // ✅ Thêm load court level nếu có trong dữ liệu
                     if (court.court_level) {
                         setCourtLevel(court.court_level.toString());
+                    }
+
+                    // ✅ Thêm load sub court count nếu có trong dữ liệu
+                    if (court.sub_court_count) {
+                        setSubCourtCount(court.sub_court_count.toString());
                     }
 
                     if (court.image) {
@@ -229,6 +237,19 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
             return;
         }
 
+        // ✅ Kiểm tra số lượng sân con cho cấp 2 trở lên
+        if (courtLevel !== "1") {
+            if (
+                !subCourtCount ||
+                isNaN(Number(subCourtCount)) ||
+                Number(subCourtCount) < 1 ||
+                Number(subCourtCount) > 20
+            ) {
+                toast.error("Số lượng sân con phải từ 1 đến 20");
+                return;
+            }
+        }
+
         setSaving(true);
 
         try {
@@ -247,6 +268,13 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
 
             // ✅ Thêm court_level vào FormData
             formData.append("court_level", courtLevel);
+
+            // ✅ Thêm sub_court_count vào FormData (chỉ nếu không phải cấp 1)
+            if (courtLevel !== "1") {
+                formData.append("sub_court_count", subCourtCount);
+            } else {
+                formData.append("sub_court_count", "1"); // Cấp 1 luôn có 1 sân con
+            }
 
             if (imageFile) formData.append("image", imageFile);
 
@@ -418,30 +446,74 @@ export default function CourtForm({ court, onSubmit }: CourtFormProps) {
             </div>
 
             {/* ✅ Thêm trường chọn cấp độ sân */}
-            <div className="space-y-2">
-                <Label htmlFor="court-level">Cấp độ sân</Label>
-                <Select
-                    value={courtLevel}
-                    onValueChange={(value) => setCourtLevel(value)}
-                >
-                    <SelectTrigger id="court-level">
-                        <SelectValue placeholder="Chọn cấp độ sân" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {COURT_LEVELS.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
-                                <div className="flex flex-col">
-                                    <span className="font-medium">
-                                        {level.label}
-                                    </span>
-                                </div>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-500">
-                    Cấp độ sân dùng để phân loại và ghép sân theo quy mô
-                </p>
+            <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                    <Label htmlFor="court-level">Cấp độ sân</Label>
+                    <Select
+                        value={courtLevel}
+                        onValueChange={(value) => {
+                            setCourtLevel(value);
+                            // Reset số lượng sân con khi thay đổi cấp
+                            if (value === "1") {
+                                setSubCourtCount("1");
+                            } else if (subCourtCount === "1") {
+                                setSubCourtCount("2"); // Mặc định cho cấp 2+
+                            }
+                        }}
+                    >
+                        <SelectTrigger id="court-level">
+                            <SelectValue placeholder="Chọn cấp độ sân" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {COURT_LEVELS.map((level) => (
+                                <SelectItem
+                                    key={level.value}
+                                    value={level.value}
+                                >
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">
+                                            {level.label}
+                                        </span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">
+                        Cấp độ sân dùng để phân loại và ghép sân theo quy mô
+                    </p>
+                </div>
+
+                {/* ✅ Trường số lượng sân con - chỉ hiển thị khi không phải cấp 1 */}
+                {courtLevel !== "1" && (
+                    <div className="space-y-2">
+                        <Label htmlFor="sub-court-count">
+                            Số lượng sân con{" "}
+                            <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            id="sub-court-count"
+                            type="number"
+                            value={subCourtCount}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (
+                                    value === "" ||
+                                    (parseInt(value) >= 1 &&
+                                        parseInt(value) <= 20)
+                                ) {
+                                    setSubCourtCount(value);
+                                }
+                            }}
+                            placeholder="Nhập số lượng sân con"
+                            min="1"
+                            max="20"
+                        />
+                        <p className="text-sm text-gray-500">
+                            Số lượng sân con có thể chia từ sân chính này (1-20)
+                        </p>
+                    </div>
+                )}
             </div>
 
             <div className="space-y-2">

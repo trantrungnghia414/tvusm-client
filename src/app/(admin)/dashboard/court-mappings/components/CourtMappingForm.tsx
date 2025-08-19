@@ -15,12 +15,24 @@ import { Court } from "../../courts/types/courtTypes";
 import { Loader2 } from "lucide-react";
 import { CourtMapping, CourtMappingFormData } from "../types";
 
-// Định nghĩa các vị trí cố định
-const POSITIONS = [
-    { value: "Trái", label: "Trái" },
-    { value: "Giữa", label: "Giữa" },
-    { value: "Phải", label: "Phải" },
-];
+// Định nghĩa các vị trí cố định (sẽ không sử dụng nữa)
+// const POSITIONS = [
+//     { value: "Trái", label: "Trái" },
+//     { value: "Giữa", label: "Giữa" },
+//     { value: "Phải", label: "Phải" },
+// ];
+
+// ✅ Hàm tạo vị trí động dựa vào số lượng sân con của sân cha
+const generatePositions = (subCourtCount: number) => {
+    const positions = [];
+    for (let i = 1; i <= subCourtCount; i++) {
+        positions.push({
+            value: i.toString(),
+            label: `Vị trí ${i}`,
+        });
+    }
+    return positions;
+};
 
 // ✅ Định nghĩa các cấp độ sân
 const COURT_LEVELS = {
@@ -168,7 +180,7 @@ export default function CourtMappingForm({
         );
     });
 
-    // ✅ Lọc sân con dựa theo cấp độ của sân cha
+    // ✅ Lọc sân con dựa theo các tiêu chí mới
     const getChildCourts = () => {
         if (!parentCourtId) return [];
 
@@ -178,19 +190,10 @@ export default function CourtMappingForm({
 
         if (!selectedParentCourt || !selectedParentCourt.court_level) return [];
 
-        let allowedChildLevels: number[] = [];
         const parentLevel =
             typeof selectedParentCourt.court_level === "string"
                 ? parseInt(selectedParentCourt.court_level, 10)
                 : selectedParentCourt.court_level;
-
-        if (parentLevel === COURT_LEVELS.MEDIUM) {
-            // Sân cha cấp vừa → Sân con cấp nhỏ
-            allowedChildLevels = [COURT_LEVELS.SMALL];
-        } else if (parentLevel === COURT_LEVELS.LARGE) {
-            // Sân cha cấp lớn → Sân con cấp vừa và nhỏ
-            allowedChildLevels = [COURT_LEVELS.SMALL, COURT_LEVELS.MEDIUM];
-        }
 
         return courts.filter((court) => {
             const childLevel =
@@ -198,11 +201,27 @@ export default function CourtMappingForm({
                     ? parseInt(court.court_level, 10)
                     : court.court_level;
 
-            return (
-                childLevel &&
-                allowedChildLevels.includes(childLevel) &&
-                court.court_id.toString() !== parentCourtId
-            );
+            // 1. Sân con cấp phải nhỏ hơn sân cha
+            if (!childLevel || childLevel >= parentLevel) {
+                return false;
+            }
+
+            // 2. Sân con phải cùng nhà thi đấu với sân cha
+            if (court.venue_id !== selectedParentCourt.venue_id) {
+                return false;
+            }
+
+            // 3. Sân con phải cùng loại (trong nhà/ngoài trời) với sân cha
+            if (court.is_indoor !== selectedParentCourt.is_indoor) {
+                return false;
+            }
+
+            // 4. Không được chọn chính sân cha
+            if (court.court_id.toString() === parentCourtId) {
+                return false;
+            }
+
+            return true;
         });
     };
 
@@ -215,10 +234,33 @@ export default function CourtMappingForm({
         }
     }, [parentCourtId, existingMapping]);
 
-    // Lọc ra các vị trí còn khả dụng
-    const availablePositions = POSITIONS.filter(
-        (pos) => !usedPositions.includes(pos.value)
-    );
+    // ✅ Tạo danh sách vị trí có thể chọn dựa vào sân cha
+    const getAvailablePositions = () => {
+        if (!parentCourtId) {
+            return [];
+        }
+
+        const selectedParentCourt = courts.find(
+            (court) => court.court_id.toString() === parentCourtId
+        );
+
+        if (!selectedParentCourt?.sub_court_count) {
+            return [];
+        }
+
+        // Tạo tất cả vị trí có thể dựa vào sub_court_count
+        const allPositions = generatePositions(
+            selectedParentCourt.sub_court_count
+        );
+
+        // Lọc ra những vị trí đã được sử dụng
+        return allPositions.filter(
+            (pos: { value: string; label: string }) =>
+                !usedPositions.includes(pos.value)
+        );
+    };
+
+    const availablePositions = getAvailablePositions();
 
     // Tự động chọn vị trí đầu tiên có sẵn nếu vị trí hiện tại đã bị sử dụng
     useEffect(() => {
@@ -483,7 +525,16 @@ export default function CourtMappingForm({
                         }
                     >
                         <SelectTrigger id="position">
-                            <SelectValue placeholder="Chọn vị trí" />
+                            <SelectValue
+                                placeholder={
+                                    !parentCourtId
+                                        ? "Vui lòng chọn sân cha trước"
+                                        : !availablePositions.length &&
+                                          !existingMapping
+                                        ? "Sân cha đã hết vị trí"
+                                        : "Chọn vị trí"
+                                }
+                            />
                         </SelectTrigger>
                         <SelectContent>
                             {existingMapping && existingMapping.position ? (
@@ -491,27 +542,26 @@ export default function CourtMappingForm({
                                     key={existingMapping.position}
                                     value={existingMapping.position}
                                 >
-                                    {POSITIONS.find(
-                                        (p) =>
-                                            p.value === existingMapping.position
-                                    )?.label || existingMapping.position}
+                                    {`Vị trí ${existingMapping.position}`}
                                 </SelectItem>
                             ) : null}
 
                             {availablePositions
                                 .filter(
-                                    (pos) =>
+                                    (pos: { value: string; label: string }) =>
                                         !existingMapping ||
                                         pos.value !== existingMapping.position
                                 )
-                                .map((pos) => (
-                                    <SelectItem
-                                        key={pos.value}
-                                        value={pos.value}
-                                    >
-                                        {pos.label}
-                                    </SelectItem>
-                                ))}
+                                .map(
+                                    (pos: { value: string; label: string }) => (
+                                        <SelectItem
+                                            key={pos.value}
+                                            value={pos.value}
+                                        >
+                                            {pos.label}
+                                        </SelectItem>
+                                    )
+                                )}
                         </SelectContent>
                     </Select>
                     {usedPositions.length > 0 && (
@@ -519,11 +569,13 @@ export default function CourtMappingForm({
                             Vị trí đã sử dụng: {usedPositions.join(", ")}
                         </p>
                     )}
-                    {!availablePositions.length && !existingMapping && (
-                        <p className="text-xs text-red-500">
-                            Sân cha này đã sử dụng hết các vị trí có sẵn
-                        </p>
-                    )}
+                    {parentCourtId &&
+                        !availablePositions.length &&
+                        !existingMapping && (
+                            <p className="text-xs text-red-500">
+                                Sân cha này đã sử dụng hết các vị trí có sẵn
+                            </p>
+                        )}
                 </div>
             </div>
 

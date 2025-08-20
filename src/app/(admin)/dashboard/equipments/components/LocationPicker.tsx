@@ -29,14 +29,14 @@ interface LocationPickerProps {
 const COURT_LOCATIONS: Record<string, LocationPoint[]> = {
     football: [
         // Góc sân
-        { id: "corner-tl", name: "Góc trái trên", x: 5, y: 5, zone: "corner" },
-        { id: "corner-tr", name: "Góc phải trên", x: 95, y: 5, zone: "corner" },
-        { id: "corner-bl", name: "Góc trái dưới", x: 5, y: 95, zone: "corner" },
+        { id: "corner-tl", name: "Góc trái trên", x: 2, y: 4, zone: "corner" },
+        { id: "corner-tr", name: "Góc phải trên", x: 98, y: 4, zone: "corner" },
+        { id: "corner-bl", name: "Góc trái dưới", x: 2, y: 96, zone: "corner" },
         {
             id: "corner-br",
             name: "Góc phải dưới",
-            x: 95,
-            y: 95,
+            x: 98,
+            y: 96,
             zone: "corner",
         },
 
@@ -44,80 +44,42 @@ const COURT_LOCATIONS: Record<string, LocationPoint[]> = {
         { id: "center", name: "Trung tâm sân", x: 50, y: 50, zone: "center" },
         {
             id: "center-left",
-            name: "Trung tâm trái",
+            name: "Trung tâm sân trái",
             x: 25,
             y: 50,
             zone: "center",
         },
         {
             id: "center-right",
-            name: "Trung tâm phải",
+            name: "Trung tâm sân phải",
             x: 75,
             y: 50,
             zone: "center",
         },
 
         // Khu vực khung thành
-        { id: "goal-top", name: "Khung thành trên", x: 50, y: 2, zone: "goal" },
+        {
+            id: "goal-left",
+            name: "Khung thành trái",
+            x: 2,
+            y: 50,
+            zone: "goal",
+        },
         {
             id: "goal-bottom",
-            name: "Khung thành dưới",
-            x: 50,
-            y: 98,
+            name: "Khung thành phải",
+            x: 98,
+            y: 50,
             zone: "goal",
         },
 
-        // Khu vực cấm
-        {
-            id: "penalty-top",
-            name: "Vòng cấm trên",
-            x: 50,
-            y: 15,
-            zone: "penalty",
-        },
-        {
-            id: "penalty-bottom",
-            name: "Vòng cấm dưới",
-            x: 50,
-            y: 85,
-            zone: "penalty",
-        },
-
         // Biên sân
-        { id: "side-left", name: "Biên trái", x: 2, y: 50, zone: "side" },
-        { id: "side-right", name: "Biên phải", x: 98, y: 50, zone: "side" },
         { id: "side-top", name: "Biên trên", x: 50, y: 2, zone: "side" },
+        { id: "side-tl", name: "Biên trên trái", x: 25, y: 2, zone: "side" },
+        { id: "side-tr", name: "Biên trên phải", x: 75, y: 2, zone: "side" },
         { id: "side-bottom", name: "Biên dưới", x: 50, y: 98, zone: "side" },
-
-        // Khu vực thiết bị
-        {
-            id: "equipment-tl",
-            name: "Khu thiết bị trái trên",
-            x: 15,
-            y: 15,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-tr",
-            name: "Khu thiết bị phải trên",
-            x: 85,
-            y: 15,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-bl",
-            name: "Khu thiết bị trái dưới",
-            x: 15,
-            y: 85,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-br",
-            name: "Khu thiết bị phải dưới",
-            x: 85,
-            y: 85,
-            zone: "equipment",
-        },
+        { id: "side-bl", name: "Biên dưới trái", x: 25, y: 98, zone: "side" },
+        { id: "side-br", name: "Biên dưới phải", x: 75, y: 98, zone: "side" },
     ],
     basketball: [
         // Góc sân

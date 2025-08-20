@@ -453,494 +453,72 @@ export default function EquipmentForm({
 
     return (
         <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
                 {/* Thông tin cơ bản */}
-                <div className="lg:col-span-2 space-y-6">
-                    <Card>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name" className="font-medium">
-                                    Tên thiết bị{" "}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Nhập tên thiết bị"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="code" className="font-medium">
-                                    Mã thiết bị{" "}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="code"
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value)}
-                                    placeholder="Nhập mã thiết bị (VD: BB-001, VT-002)"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="description"
-                                    className="font-medium"
-                                >
-                                    Mô tả
-                                </Label>
-                                <Textarea
-                                    id="description"
-                                    value={description || ""}
-                                    onChange={(e) =>
-                                        setDescription(e.target.value)
-                                    }
-                                    placeholder="Nhập mô tả thiết bị"
-                                    rows={4}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="category"
-                                        className="font-medium"
-                                    >
-                                        Danh mục{" "}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Select
-                                        value={categoryId}
-                                        onValueChange={setCategoryId}
-                                        disabled={isLoadingCategories}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue
-                                                placeholder={
-                                                    isLoadingCategories
-                                                        ? "Đang tải..."
-                                                        : "Chọn danh mục"
-                                                }
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {categories.map((category) => (
-                                                <SelectItem
-                                                    key={category.category_id}
-                                                    value={category.category_id.toString()}
-                                                >
-                                                    {category.name}
-                                                </SelectItem>
-                                            ))}
-
-                                            {/* Nút thêm danh mục mới - giống News */}
-                                            <div className="px-2 py-1.5">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="w-full text-left text-sm flex items-center gap-2 text-blue-600"
-                                                    onClick={() =>
-                                                        setNewCategoryDialogOpen(
-                                                            true
-                                                        )
-                                                    }
-                                                >
-                                                    <Plus className="h-3 w-3" />
-                                                    <span className="font-medium">
-                                                        Thêm danh mục mới
-                                                    </span>
-                                                </Button>
-                                            </div>
-                                        </SelectContent>
-                                    </Select>
-
-                                    {categories.length === 0 && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="w-full mt-2"
-                                            onClick={() =>
-                                                setNewCategoryDialogOpen(true)
-                                            }
-                                        >
-                                            Chưa có danh mục. Thêm mới?
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="serialNumber"
-                                        className="font-medium"
-                                    >
-                                        Số serial
-                                    </Label>
-                                    <Input
-                                        id="serialNumber"
-                                        value={serialNumber}
-                                        onChange={(e) =>
-                                            setSerialNumber(e.target.value)
-                                        }
-                                        placeholder="Nhập số serial"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="manufacturer"
-                                        className="font-medium"
-                                    >
-                                        Nhà sản xuất
-                                    </Label>
-                                    <Input
-                                        id="manufacturer"
-                                        value={manufacturer}
-                                        onChange={(e) =>
-                                            setManufacturer(e.target.value)
-                                        }
-                                        placeholder="Nhập nhà sản xuất"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="model"
-                                        className="font-medium"
-                                    >
-                                        Model
-                                    </Label>
-                                    <Input
-                                        id="model"
-                                        value={model}
-                                        onChange={(e) =>
-                                            setModel(e.target.value)
-                                        }
-                                        placeholder="Nhập model"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="qrCode"
-                                        className="font-medium"
-                                    >
-                                        Mã QR
-                                    </Label>
-                                    <Input
-                                        id="qrCode"
-                                        value={qrCode}
-                                        onChange={(e) =>
-                                            setQrCode(e.target.value)
-                                        }
-                                        placeholder="Nhập mã QR"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Location Section */}
+                <Card>
+                    <CardContent className="space-y-4">
+                        {/* Layout 2 cột: Thông tin cơ bản bên trái, Hình ảnh bên phải */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Cột trái: Thông tin cơ bản */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-medium">
-                                    Vị trí thiết bị
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="venue"
-                                            className="font-medium"
-                                        >
-                                            Địa điểm
-                                        </Label>
-                                        <Select
-                                            value={venueId}
-                                            onValueChange={setVenueId}
-                                            disabled={isLoadingVenues}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Chọn địa điểm" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">
-                                                    Không chọn địa điểm
-                                                </SelectItem>
-                                                {venues.map((venue) => (
-                                                    <SelectItem
-                                                        key={venue.venue_id}
-                                                        value={venue.venue_id.toString()}
-                                                    >
-                                                        {venue.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="court"
-                                            className="font-medium"
-                                        >
-                                            Sân thi đấu
-                                        </Label>
-                                        <Select
-                                            value={courtId}
-                                            onValueChange={setCourtId}
-                                            disabled={
-                                                isLoadingCourts ||
-                                                !venueId ||
-                                                venueId === "none"
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Chọn sân thi đấu" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">
-                                                    Không chọn sân
-                                                </SelectItem>
-                                                {courts.map((court) => (
-                                                    <SelectItem
-                                                        key={court.court_id}
-                                                        value={court.court_id.toString()}
-                                                    >
-                                                        {court.name} (
-                                                        {court.code})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <Label className="font-medium">
-                                            Chi tiết vị trí
-                                        </Label>
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                id="useVisualPicker"
-                                                checked={useVisualPicker}
-                                                onChange={(e) =>
-                                                    setUseVisualPicker(
-                                                        e.target.checked
-                                                    )
-                                                }
-                                                className="rounded"
-                                            />
-                                            <label
-                                                htmlFor="useVisualPicker"
-                                                className="text-sm text-gray-600"
-                                            >
-                                                Chọn vị trí trực quan
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    {useVisualPicker ? (
-                                        <LocationPicker
-                                            selectedLocation={visualLocation}
-                                            onLocationSelect={
-                                                handleVisualLocationSelect
-                                            }
-                                            courtType={getCourtTypeForPicker()}
-                                            className="mt-2"
-                                        />
-                                    ) : (
-                                        <Input
-                                            id="locationDetail"
-                                            value={locationDetail}
-                                            onChange={(e) =>
-                                                setLocationDetail(
-                                                    e.target.value
-                                                )
-                                            }
-                                            placeholder="VD: Khu vực phòng thay đồ, góc phải sân..."
-                                        />
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="status"
+                                        htmlFor="name"
                                         className="font-medium"
                                     >
-                                        Trạng thái{" "}
+                                        Tên thiết bị{" "}
                                         <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select
-                                        value={status}
-                                        onValueChange={(value) =>
-                                            setStatus(
-                                                value as
-                                                    | "available"
-                                                    | "in_use"
-                                                    | "maintenance"
-                                                    | "unavailable"
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Chọn trạng thái" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="available">
-                                                Khả dụng
-                                            </SelectItem>
-                                            <SelectItem value="in_use">
-                                                Đang sử dụng
-                                            </SelectItem>
-                                            <SelectItem value="maintenance">
-                                                Đang bảo trì
-                                            </SelectItem>
-                                            <SelectItem value="unavailable">
-                                                Không khả dụng
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="purchaseDate"
-                                        className="font-medium"
-                                    >
-                                        Ngày mua
-                                    </Label>
-                                    <div className="relative">
-                                        <Input
-                                            id="purchaseDate"
-                                            type="date"
-                                            value={purchaseDate}
-                                            onChange={(e) =>
-                                                setPurchaseDate(e.target.value)
-                                            }
-                                            className="pr-10"
-                                            required
-                                        />
-                                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-5 w-5"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M8 6h13M8 12h13m-7 6h7"
-                                                />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="purchasePrice"
-                                        className="font-medium"
-                                    >
-                                        Giá mua (VNĐ)
-                                    </Label>
                                     <Input
-                                        id="purchasePrice"
-                                        type="number"
-                                        value={purchasePrice}
+                                        id="name"
+                                        value={name}
                                         onChange={(e) =>
-                                            setPurchasePrice(e.target.value)
+                                            setName(e.target.value)
                                         }
-                                        min="0"
-                                        placeholder="0"
+                                        placeholder="Nhập tên thiết bị"
                                         required
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="warrantyExpiry"
+                                        htmlFor="code"
                                         className="font-medium"
                                     >
-                                        Ngày hết hạn bảo hành
+                                        Mã thiết bị{" "}
+                                        <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
-                                        id="warrantyExpiry"
-                                        type="date"
-                                        value={warrantyExpiry}
+                                        id="code"
+                                        value={code}
                                         onChange={(e) =>
-                                            setWarrantyExpiry(e.target.value)
+                                            setCode(e.target.value)
                                         }
+                                        placeholder="Nhập mã thiết bị (VD: BB-001, VT-002)"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="description"
+                                        className="font-medium"
+                                    >
+                                        Mô tả
+                                    </Label>
+                                    <Textarea
+                                        id="description"
+                                        value={description || ""}
+                                        onChange={(e) =>
+                                            setDescription(e.target.value)
+                                        }
+                                        placeholder="Nhập mô tả thiết bị"
+                                        rows={4}
                                     />
                                 </div>
                             </div>
 
-                            {/* Maintenance Section */}
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-medium">
-                                    Bảo trì thiết bị
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="lastMaintenanceDate"
-                                            className="font-medium"
-                                        >
-                                            Ngày bảo trì gần nhất
-                                        </Label>
-                                        <Input
-                                            id="lastMaintenanceDate"
-                                            type="date"
-                                            value={lastMaintenanceDate}
-                                            onChange={(e) =>
-                                                setLastMaintenanceDate(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="nextMaintenanceDate"
-                                            className="font-medium"
-                                        >
-                                            Ngày bảo trì tiếp theo
-                                        </Label>
-                                        <Input
-                                            id="nextMaintenanceDate"
-                                            type="date"
-                                            value={nextMaintenanceDate}
-                                            onChange={(e) =>
-                                                setNextMaintenanceDate(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Hình ảnh và các tùy chọn */}
-                <div className="space-y-6">
-                    <Card>
-                        <CardContent className="space-y-4">
+                            {/* Cột phải: Hình ảnh thiết bị */}
                             <div className="space-y-2">
                                 <Label htmlFor="image" className="font-medium">
                                     Hình ảnh thiết bị
@@ -1032,35 +610,449 @@ export default function EquipmentForm({
                                     </div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
 
-                    <div className="flex items-center justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.push("/dashboard/equipments")}
-                            disabled={isSubmitting}
-                        >
-                            Hủy
-                        </Button>
-                        <Button
-                            type="submit"
-                            className="min-w-[120px]"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Đang xử lý...
-                                </>
-                            ) : equipment ? (
-                                "Cập nhật"
-                            ) : (
-                                "Thêm thiết bị"
-                            )}
-                        </Button>
-                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="category"
+                                    className="font-medium"
+                                >
+                                    Danh mục{" "}
+                                    <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={categoryId}
+                                    onValueChange={setCategoryId}
+                                    disabled={isLoadingCategories}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue
+                                            placeholder={
+                                                isLoadingCategories
+                                                    ? "Đang tải..."
+                                                    : "Chọn danh mục"
+                                            }
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((category) => (
+                                            <SelectItem
+                                                key={category.category_id}
+                                                value={category.category_id.toString()}
+                                            >
+                                                {category.name}
+                                            </SelectItem>
+                                        ))}
+
+                                        {/* Nút thêm danh mục mới - giống News */}
+                                        <div className="px-2 py-1.5">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                className="w-full text-left text-sm flex items-center gap-2 text-blue-600"
+                                                onClick={() =>
+                                                    setNewCategoryDialogOpen(
+                                                        true
+                                                    )
+                                                }
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                                <span className="font-medium">
+                                                    Thêm danh mục mới
+                                                </span>
+                                            </Button>
+                                        </div>
+                                    </SelectContent>
+                                </Select>
+
+                                {categories.length === 0 && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full mt-2"
+                                        onClick={() =>
+                                            setNewCategoryDialogOpen(true)
+                                        }
+                                    >
+                                        Chưa có danh mục. Thêm mới?
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="serialNumber"
+                                    className="font-medium"
+                                >
+                                    Số serial
+                                </Label>
+                                <Input
+                                    id="serialNumber"
+                                    value={serialNumber}
+                                    onChange={(e) =>
+                                        setSerialNumber(e.target.value)
+                                    }
+                                    placeholder="Nhập số serial"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="manufacturer"
+                                    className="font-medium"
+                                >
+                                    Nhà sản xuất
+                                </Label>
+                                <Input
+                                    id="manufacturer"
+                                    value={manufacturer}
+                                    onChange={(e) =>
+                                        setManufacturer(e.target.value)
+                                    }
+                                    placeholder="Nhập nhà sản xuất"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="model" className="font-medium">
+                                    Model
+                                </Label>
+                                <Input
+                                    id="model"
+                                    value={model}
+                                    onChange={(e) => setModel(e.target.value)}
+                                    placeholder="Nhập model"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="qrCode" className="font-medium">
+                                    Mã QR
+                                </Label>
+                                <Input
+                                    id="qrCode"
+                                    value={qrCode}
+                                    onChange={(e) => setQrCode(e.target.value)}
+                                    placeholder="Nhập mã QR"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Location Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">
+                                Vị trí thiết bị
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="venue"
+                                        className="font-medium"
+                                    >
+                                        Địa điểm
+                                    </Label>
+                                    <Select
+                                        value={venueId}
+                                        onValueChange={setVenueId}
+                                        disabled={isLoadingVenues}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Chọn địa điểm" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                Không chọn địa điểm
+                                            </SelectItem>
+                                            {venues.map((venue) => (
+                                                <SelectItem
+                                                    key={venue.venue_id}
+                                                    value={venue.venue_id.toString()}
+                                                >
+                                                    {venue.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="court"
+                                        className="font-medium"
+                                    >
+                                        Sân thi đấu
+                                    </Label>
+                                    <Select
+                                        value={courtId}
+                                        onValueChange={setCourtId}
+                                        disabled={
+                                            isLoadingCourts ||
+                                            !venueId ||
+                                            venueId === "none"
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Chọn sân thi đấu" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                Không chọn sân
+                                            </SelectItem>
+                                            {courts.map((court) => (
+                                                <SelectItem
+                                                    key={court.court_id}
+                                                    value={court.court_id.toString()}
+                                                >
+                                                    {court.name} ({court.code})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label className="font-medium">
+                                        Chi tiết vị trí
+                                    </Label>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="useVisualPicker"
+                                            checked={useVisualPicker}
+                                            onChange={(e) =>
+                                                setUseVisualPicker(
+                                                    e.target.checked
+                                                )
+                                            }
+                                            className="rounded"
+                                        />
+                                        <label
+                                            htmlFor="useVisualPicker"
+                                            className="text-sm text-gray-600"
+                                        >
+                                            Chọn vị trí trực quan
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {useVisualPicker ? (
+                                    <LocationPicker
+                                        selectedLocation={visualLocation}
+                                        onLocationSelect={
+                                            handleVisualLocationSelect
+                                        }
+                                        courtType={getCourtTypeForPicker()}
+                                        className="mt-2"
+                                    />
+                                ) : (
+                                    <Input
+                                        id="locationDetail"
+                                        value={locationDetail}
+                                        onChange={(e) =>
+                                            setLocationDetail(e.target.value)
+                                        }
+                                        placeholder="VD: Khu vực phòng thay đồ, góc phải sân..."
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="status" className="font-medium">
+                                    Trạng thái{" "}
+                                    <span className="text-red-500">*</span>
+                                </Label>
+                                <Select
+                                    value={status}
+                                    onValueChange={(value) =>
+                                        setStatus(
+                                            value as
+                                                | "available"
+                                                | "in_use"
+                                                | "maintenance"
+                                                | "unavailable"
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Chọn trạng thái" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="available">
+                                            Khả dụng
+                                        </SelectItem>
+                                        <SelectItem value="in_use">
+                                            Đang sử dụng
+                                        </SelectItem>
+                                        <SelectItem value="maintenance">
+                                            Đang bảo trì
+                                        </SelectItem>
+                                        <SelectItem value="unavailable">
+                                            Không khả dụng
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="purchaseDate"
+                                    className="font-medium"
+                                >
+                                    Ngày mua
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="purchaseDate"
+                                        type="date"
+                                        value={purchaseDate}
+                                        onChange={(e) =>
+                                            setPurchaseDate(e.target.value)
+                                        }
+                                        className="pr-10"
+                                        required
+                                    />
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8 6h13M8 12h13m-7 6h7"
+                                            />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="purchasePrice"
+                                    className="font-medium"
+                                >
+                                    Giá mua (VNĐ)
+                                </Label>
+                                <Input
+                                    id="purchasePrice"
+                                    type="number"
+                                    value={purchasePrice}
+                                    onChange={(e) =>
+                                        setPurchasePrice(e.target.value)
+                                    }
+                                    min="0"
+                                    placeholder="0"
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label
+                                    htmlFor="warrantyExpiry"
+                                    className="font-medium"
+                                >
+                                    Ngày hết hạn bảo hành
+                                </Label>
+                                <Input
+                                    id="warrantyExpiry"
+                                    type="date"
+                                    value={warrantyExpiry}
+                                    onChange={(e) =>
+                                        setWarrantyExpiry(e.target.value)
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        {/* Maintenance Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">
+                                Bảo trì thiết bị
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="lastMaintenanceDate"
+                                        className="font-medium"
+                                    >
+                                        Ngày bảo trì gần nhất
+                                    </Label>
+                                    <Input
+                                        id="lastMaintenanceDate"
+                                        type="date"
+                                        value={lastMaintenanceDate}
+                                        onChange={(e) =>
+                                            setLastMaintenanceDate(
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="nextMaintenanceDate"
+                                        className="font-medium"
+                                    >
+                                        Ngày bảo trì tiếp theo
+                                    </Label>
+                                    <Input
+                                        id="nextMaintenanceDate"
+                                        type="date"
+                                        value={nextMaintenanceDate}
+                                        onChange={(e) =>
+                                            setNextMaintenanceDate(
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="flex items-center justify-end gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.push("/dashboard/equipments")}
+                        disabled={isSubmitting}
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        type="submit"
+                        className="min-w-[120px]"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Đang xử lý...
+                            </>
+                        ) : equipment ? (
+                            "Cập nhật"
+                        ) : (
+                            "Thêm thiết bị"
+                        )}
+                    </Button>
                 </div>
             </div>
 

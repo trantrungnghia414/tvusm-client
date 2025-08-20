@@ -29,8 +29,10 @@ import {
     Tag,
     MapPin,
     Package,
-    CheckSquare,
     BarChart4,
+    Settings,
+    Shield,
+    Wrench,
 } from "lucide-react";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -125,6 +127,64 @@ export default function EquipmentDetailPage({
     const formatDate = (dateString: string | null) => {
         if (!dateString) return "Chưa cập nhật";
         return format(new Date(dateString), "dd/MM/yyyy", { locale: vi });
+    };
+
+    const getWarrantyStatus = (warrantyDate: string | null) => {
+        if (!warrantyDate) return null;
+
+        const today = new Date();
+        const warranty = new Date(warrantyDate);
+        const diffTime = warranty.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
+            return {
+                status: "expired",
+                text: "Đã hết hạn",
+                color: "text-red-600",
+            };
+        } else if (diffDays <= 30) {
+            return {
+                status: "expiring",
+                text: "Sắp hết hạn",
+                color: "text-orange-600",
+            };
+        } else {
+            return {
+                status: "valid",
+                text: "Còn hiệu lực",
+                color: "text-green-600",
+            };
+        }
+    };
+
+    const getMaintenanceStatus = (nextMaintenanceDate: string | null) => {
+        if (!nextMaintenanceDate) return null;
+
+        const today = new Date();
+        const nextMaintenance = new Date(nextMaintenanceDate);
+        const diffTime = nextMaintenance.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
+            return {
+                status: "overdue",
+                text: "Quá hạn",
+                color: "text-red-600",
+            };
+        } else if (diffDays <= 7) {
+            return {
+                status: "due_soon",
+                text: "Sắp đến hạn",
+                color: "text-orange-600",
+            };
+        } else {
+            return {
+                status: "scheduled",
+                text: "Đã lên lịch",
+                color: "text-green-600",
+            };
+        }
     };
 
     const getStatusBadge = (status: string) => {
@@ -256,6 +316,15 @@ export default function EquipmentDetailPage({
                                             </span>
                                         </div>
                                     )}
+                                    {equipment.court_name && (
+                                        <div className="flex items-center">
+                                            <MapPin className="h-4 w-4 mr-1" />
+                                            <span>
+                                                Sân: {equipment.court_name} (
+                                                {equipment.court_code})
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {equipment.description && (
@@ -269,33 +338,74 @@ export default function EquipmentDetailPage({
                                     </div>
                                 )}
 
+                                {equipment.notes && (
+                                    <div className="mt-4">
+                                        <h3 className="text-base font-medium mb-2">
+                                            Ghi chú
+                                        </h3>
+                                        <p className="text-gray-700">
+                                            {equipment.notes}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="mt-6">
                                     <h3 className="text-base font-medium mb-3">
-                                        Thông tin số lượng
+                                        Thông tin thiết bị
                                     </h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-blue-50 p-3 rounded-lg">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Package className="h-4 w-4 text-blue-600" />
-                                                <span className="text-sm font-medium text-blue-800">
-                                                    Tổng số lượng
-                                                </span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {equipment.serial_number && (
+                                            <div className="bg-blue-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Tag className="h-4 w-4 text-blue-600" />
+                                                    <span className="text-sm font-medium text-blue-800">
+                                                        Số serial
+                                                    </span>
+                                                </div>
+                                                <p className="text-lg font-semibold text-blue-700">
+                                                    {equipment.serial_number}
+                                                </p>
                                             </div>
-                                            <p className="text-xl font-semibold text-blue-700">
-                                                {equipment.quantity}
-                                            </p>
-                                        </div>
-                                        <div className="bg-green-50 p-3 rounded-lg">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <CheckSquare className="h-4 w-4 text-green-600" />
-                                                <span className="text-sm font-medium text-green-800">
-                                                    Số lượng có sẵn
-                                                </span>
+                                        )}
+                                        {equipment.manufacturer && (
+                                            <div className="bg-green-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Package className="h-4 w-4 text-green-600" />
+                                                    <span className="text-sm font-medium text-green-800">
+                                                        Nhà sản xuất
+                                                    </span>
+                                                </div>
+                                                <p className="text-lg font-semibold text-green-700">
+                                                    {equipment.manufacturer}
+                                                </p>
                                             </div>
-                                            <p className="text-xl font-semibold text-green-700">
-                                                {equipment.available_quantity}
-                                            </p>
-                                        </div>
+                                        )}
+                                        {equipment.model && (
+                                            <div className="bg-purple-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Settings className="h-4 w-4 text-purple-600" />
+                                                    <span className="text-sm font-medium text-purple-800">
+                                                        Model
+                                                    </span>
+                                                </div>
+                                                <p className="text-lg font-semibold text-purple-700">
+                                                    {equipment.model}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {equipment.location_detail && (
+                                            <div className="bg-orange-50 p-3 rounded-lg">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <MapPin className="h-4 w-4 text-orange-600" />
+                                                    <span className="text-sm font-medium text-orange-800">
+                                                        Chi tiết vị trí
+                                                    </span>
+                                                </div>
+                                                <p className="text-lg font-semibold text-orange-700">
+                                                    {equipment.location_detail}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>
@@ -303,7 +413,12 @@ export default function EquipmentDetailPage({
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Thông tin tài chính</CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Shield className="h-5 w-5 text-blue-600" />
+                                    <CardTitle>
+                                        Thông tin mua sắm & Bảo hành
+                                    </CardTitle>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -321,17 +436,111 @@ export default function EquipmentDetailPage({
                                     </div>
                                     <div className="flex flex-col space-y-1">
                                         <span className="text-sm text-gray-500">
-                                            Phí thuê (giờ)
+                                            Ngày hết hạn bảo hành
                                         </span>
-                                        <span className="text-lg font-medium">
-                                            {formatCurrency(
-                                                equipment.rental_fee
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-lg font-medium">
+                                                {formatDate(
+                                                    equipment.warranty_expiry
+                                                )}
+                                            </span>
+                                            {equipment.warranty_expiry && (
+                                                <span
+                                                    className={`text-sm font-medium ${
+                                                        getWarrantyStatus(
+                                                            equipment.warranty_expiry
+                                                        )?.color
+                                                    }`}
+                                                >
+                                                    {
+                                                        getWarrantyStatus(
+                                                            equipment.warranty_expiry
+                                                        )?.text
+                                                    }
+                                                </span>
                                             )}
-                                        </span>
+                                        </div>
                                     </div>
+                                    {equipment.installation_date && (
+                                        <div className="flex flex-col space-y-1">
+                                            <span className="text-sm text-gray-500">
+                                                Ngày lắp đặt
+                                            </span>
+                                            <span className="text-lg font-medium">
+                                                {formatDate(
+                                                    equipment.installation_date
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {equipment.qr_code && (
+                                        <div className="flex flex-col space-y-1">
+                                            <span className="text-sm text-gray-500">
+                                                Mã QR
+                                            </span>
+                                            <span className="text-lg font-medium font-mono">
+                                                {equipment.qr_code}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {(equipment.last_maintenance_date ||
+                            equipment.next_maintenance_date) && (
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-center gap-2">
+                                        <Wrench className="h-5 w-5 text-green-600" />
+                                        <CardTitle>Thông tin bảo trì</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {equipment.last_maintenance_date && (
+                                            <div className="flex flex-col space-y-1">
+                                                <span className="text-sm text-gray-500">
+                                                    Bảo trì gần nhất
+                                                </span>
+                                                <span className="text-lg font-medium">
+                                                    {formatDate(
+                                                        equipment.last_maintenance_date
+                                                    )}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {equipment.next_maintenance_date && (
+                                            <div className="flex flex-col space-y-1">
+                                                <span className="text-sm text-gray-500">
+                                                    Bảo trì tiếp theo
+                                                </span>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-lg font-medium">
+                                                        {formatDate(
+                                                            equipment.next_maintenance_date
+                                                        )}
+                                                    </span>
+                                                    <span
+                                                        className={`text-sm font-medium ${
+                                                            getMaintenanceStatus(
+                                                                equipment.next_maintenance_date
+                                                            )?.color
+                                                        }`}
+                                                    >
+                                                        {
+                                                            getMaintenanceStatus(
+                                                                equipment.next_maintenance_date
+                                                            )?.text
+                                                        }
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     {/* Sidebar */}
@@ -369,6 +578,16 @@ export default function EquipmentDetailPage({
                                 <CardTitle>Thông tin khác</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                {equipment.added_by_name && (
+                                    <div className="flex justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Được thêm bởi
+                                        </span>
+                                        <span className="font-medium">
+                                            {equipment.added_by_name}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-500">
                                         Ngày tạo

@@ -112,7 +112,7 @@ export default function EquipmentPage() {
     // Hàm tính tổng giá trị thiết bị
     const calculateTotalValue = (equipmentData: Equipment[]) => {
         return equipmentData.reduce((total, item) => {
-            return total + (item.purchase_price || 0) * item.quantity;
+            return total + (item.purchase_price || 0);
         }, 0);
     };
 

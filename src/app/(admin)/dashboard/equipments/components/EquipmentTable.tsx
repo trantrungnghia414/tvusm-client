@@ -83,11 +83,10 @@ export default function EquipmentTable({
                         <TableHead className="w-[120px]">Mã thiết bị</TableHead>
                         <TableHead className="w-[150px]">Danh mục</TableHead>
                         <TableHead className="w-[100px]">Trạng thái</TableHead>
-                        <TableHead className="w-[100px]">Số lượng</TableHead>
+                        <TableHead className="w-[120px]">Vị trí</TableHead>
                         <TableHead className="w-[120px]">Giá mua</TableHead>
-                        {/* <TableHead className="w-[120px]">Phí thuê</TableHead> */}
                         <TableHead className="w-[120px]">Ngày mua</TableHead>
-                        <TableHead className="w-[120px]">Địa điểm</TableHead>
+                        <TableHead className="w-[120px]">Bảo hành</TableHead>
                         <TableHead className="w-[100px] text-right">
                             Thao tác
                         </TableHead>
@@ -127,7 +126,10 @@ export default function EquipmentTable({
                                     {item.description && (
                                         <span className="text-xs text-muted-foreground line-clamp-1">
                                             {item.description.length > 50
-                                                ? `${item.description.slice(0, 50)}...`
+                                                ? `${item.description.slice(
+                                                      0,
+                                                      50
+                                                  )}...`
                                                 : item.description}
                                         </span>
                                     )}
@@ -143,12 +145,16 @@ export default function EquipmentTable({
                             </TableCell>
                             <TableCell>
                                 <div className="flex flex-col">
-                                    <span className="font-medium">
-                                        {item.quantity}
+                                    <span className="text-sm">
+                                        {item.court_name
+                                            ? `${item.court_name} (${item.court_code})`
+                                            : item.venue_name}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {item.available_quantity} có sẵn
-                                    </span>
+                                    {item.location_detail && (
+                                        <span className="text-xs text-muted-foreground">
+                                            {item.location_detail}
+                                        </span>
+                                    )}
                                 </div>
                             </TableCell>
                             <TableCell>
@@ -156,17 +162,30 @@ export default function EquipmentTable({
                                     ? formatCurrency(item.purchase_price)
                                     : "-"}
                             </TableCell>
-                            {/* <TableCell>
-                                {formatCurrency(item.rental_fee)}
-                            </TableCell> */}
                             <TableCell>
                                 {formatDate(item.purchase_date)}
                             </TableCell>
                             <TableCell>
-                                {item.venue_name ||
-                                    (item.venue_id
-                                        ? `ID: ${item.venue_id}`
-                                        : "Các nhà thi đấu")}
+                                <div className="flex flex-col">
+                                    <span className="text-sm">
+                                        {formatDate(item.warranty_expiry)}
+                                    </span>
+                                    {item.warranty_expiry && (
+                                        <span
+                                            className={`text-xs ${
+                                                new Date(item.warranty_expiry) <
+                                                new Date()
+                                                    ? "text-red-500"
+                                                    : "text-green-500"
+                                            }`}
+                                        >
+                                            {new Date(item.warranty_expiry) <
+                                            new Date()
+                                                ? "Hết hạn"
+                                                : "Còn hạn"}
+                                        </span>
+                                    )}
+                                </div>
                             </TableCell>
                             <TableCell className="text-right">
                                 <DropdownMenu>

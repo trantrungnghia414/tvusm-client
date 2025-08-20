@@ -17,6 +17,7 @@ import { Equipment, EquipmentCategory } from "../types/equipmentTypes";
 import { toast } from "sonner";
 import { fetchApi, getImageUrl } from "@/lib/api";
 import { Plus, ImageIcon, Loader2 } from "lucide-react";
+import LocationPicker from "./LocationPicker";
 import {
     Dialog,
     DialogContent,
@@ -31,6 +32,13 @@ import { useRouter } from "next/navigation";
 interface Venue {
     venue_id: number;
     name: string;
+}
+
+interface Court {
+    court_id: number;
+    name: string;
+    code: string;
+    venue_id: number;
 }
 
 interface EquipmentFormProps {
@@ -60,6 +68,29 @@ export default function EquipmentForm({
     const [venueId, setVenueId] = useState<string>(
         equipment?.venue_id?.toString() || "none"
     );
+    const [courtId, setCourtId] = useState<string>(
+        equipment?.court_id?.toString() || "none"
+    );
+    const [locationDetail, setLocationDetail] = useState(
+        equipment?.location_detail || ""
+    );
+    const [visualLocation, setVisualLocation] = useState<string>("");
+    const [useVisualPicker, setUseVisualPicker] = useState(true);
+
+    // Initialize visual location from existing equipment
+    useEffect(() => {
+        if (equipment?.location_detail) {
+            // Try to match existing location detail to predefined locations
+            setUseVisualPicker(false); // Default to text input for existing equipment
+        }
+    }, [equipment?.location_detail]);
+    const [serialNumber, setSerialNumber] = useState(
+        equipment?.serial_number || ""
+    );
+    const [manufacturer, setManufacturer] = useState(
+        equipment?.manufacturer || ""
+    );
+    const [model, setModel] = useState(equipment?.model || "");
     const [status, setStatus] = useState<
         "available" | "in_use" | "maintenance" | "unavailable"
     >(
@@ -69,28 +100,31 @@ export default function EquipmentForm({
             | "maintenance"
             | "unavailable") || "available"
     );
-    const [quantity, setQuantity] = useState(
-        equipment?.quantity?.toString() || "1"
-    );
-    const [availableQuantity, setAvailableQuantity] = useState(
-        equipment?.available_quantity?.toString() || "1"
-    );
     const [purchaseDate, setPurchaseDate] = useState(
         equipment?.purchase_date || ""
     );
     const [purchasePrice, setPurchasePrice] = useState(
         equipment?.purchase_price?.toString() || ""
     );
-    const [rentalFee, setRentalFee] = useState(
-        equipment?.rental_fee?.toString() || "0"
+    const [warrantyExpiry, setWarrantyExpiry] = useState(
+        equipment?.warranty_expiry || ""
     );
+    const [lastMaintenanceDate, setLastMaintenanceDate] = useState(
+        equipment?.last_maintenance_date || ""
+    );
+    const [nextMaintenanceDate, setNextMaintenanceDate] = useState(
+        equipment?.next_maintenance_date || ""
+    );
+    const [qrCode, setQrCode] = useState(equipment?.qr_code || "");
     // const [imagePreview, setImagePreview] = useState(equipment?.image || null);
 
     // Options
     const [categories, setCategories] = useState<EquipmentCategory[]>([]);
     const [venues, setVenues] = useState<Venue[]>([]);
+    const [courts, setCourts] = useState<Court[]>([]);
     const [isLoadingCategories, setIsLoadingCategories] = useState(false);
     const [isLoadingVenues, setIsLoadingVenues] = useState(false);
+    const [isLoadingCourts, setIsLoadingCourts] = useState(false);
 
     // Danh mục mới
     const [newCategoryDialogOpen, setNewCategoryDialogOpen] = useState(false);
@@ -156,11 +190,93 @@ export default function EquipmentForm({
         }
     }, []);
 
+    // Fetch sân thi đấu theo địa điểm
+    const fetchCourtsData = useCallback(
+        async (venueId: string) => {
+            if (!venueId || venueId === "none") {
+                setCourts([]);
+                setCourtId("none");
+                return;
+            }
+            try {
+                setIsLoadingCourts(true);
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+                const response = await fetchApi(`/courts/venue/${venueId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (!response.ok) {
+                    throw new Error("Không thể tải danh sách sân");
+                }
+
+                const data = await response.json();
+                setCourts(data);
+
+                // Reset court selection when venue changes
+                if (equipment?.venue_id?.toString() !== venueId) {
+                    setCourtId("none");
+                }
+            } catch (error) {
+                console.error("Error fetching courts:", error);
+                toast.error("Không thể tải danh sách sân");
+            } finally {
+                setIsLoadingCourts(false);
+            }
+        },
+        [equipment?.venue_id]
+    );
+
     // Fetch data khi component mount
     useEffect(() => {
         fetchCategoriesData();
         fetchVenuesData();
     }, [fetchCategoriesData, fetchVenuesData]);
+
+    // Fetch courts when venue changes
+    useEffect(() => {
+        fetchCourtsData(venueId);
+    }, [venueId, fetchCourtsData]);
+
+    // Map court type names to visual picker types
+    const getCourtTypeForPicker = () => {
+        if (!courts.length) return "general";
+
+        // Get court type from the selected court or first court
+        const selectedCourt =
+            courts.find((c) => c.court_id.toString() === courtId) || courts[0];
+        if (!selectedCourt) return "general";
+
+        // Map based on court name to determine type
+        const courtName = selectedCourt.name?.toLowerCase() || "";
+
+        if (courtName.includes("bóng đá") || courtName.includes("football"))
+            return "football";
+        if (courtName.includes("bóng rổ") || courtName.includes("basketball"))
+            return "basketball";
+        if (courtName.includes("tennis")) return "tennis";
+        if (
+            courtName.includes("bóng chuyền") ||
+            courtName.includes("volleyball")
+        )
+            return "volleyball";
+        if (courtName.includes("cầu lông") || courtName.includes("badminton"))
+            return "badminton";
+        if (courtName.includes("pickleball") || courtName.includes("pickle"))
+            return "pickleball";
+
+        return "general";
+    };
+
+    // Handle visual location selection
+    const handleVisualLocationSelect = (
+        locationId: string,
+        locationName: string
+    ) => {
+        setVisualLocation(locationId);
+        setLocationDetail(locationName);
+    };
 
     // Xử lý khi upload ảnh
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,27 +391,32 @@ export default function EquipmentForm({
             }
         }
 
+        // Kiểm tra ngày bảo hành
+        if (warrantyExpiry && purchaseDate) {
+            const warrantyDate = new Date(warrantyExpiry);
+            const purchaseDateObj = new Date(purchaseDate);
+
+            if (warrantyDate < purchaseDateObj) {
+                toast.error("Ngày hết hạn bảo hành phải sau ngày mua");
+                return;
+            }
+        }
+
+        // Kiểm tra ngày bảo trì
+        if (nextMaintenanceDate && lastMaintenanceDate) {
+            const nextDate = new Date(nextMaintenanceDate);
+            const lastDate = new Date(lastMaintenanceDate);
+
+            if (nextDate <= lastDate) {
+                toast.error(
+                    "Ngày bảo trì tiếp theo phải sau ngày bảo trì gần nhất"
+                );
+                return;
+            }
+        }
+
         if (!name || !code || !categoryId) {
             toast.error("Vui lòng điền đầy đủ các trường bắt buộc");
-            return;
-        }
-
-        // Kiểm tra số lượng
-        const quantityNum = Number(quantity);
-        const availableQuantityNum = Number(availableQuantity);
-
-        if (isNaN(quantityNum) || quantityNum <= 0) {
-            toast.error("Số lượng phải là số dương");
-            return;
-        }
-
-        if (isNaN(availableQuantityNum) || availableQuantityNum < 0) {
-            toast.error("Số lượng khả dụng phải là số không âm");
-            return;
-        }
-
-        if (availableQuantityNum > quantityNum) {
-            toast.error("Số lượng khả dụng không thể lớn hơn tổng số lượng");
             return;
         }
 
@@ -303,15 +424,23 @@ export default function EquipmentForm({
         formData.append("name", name);
         formData.append("code", code);
         formData.append("category_id", categoryId);
-        formData.append("quantity", quantity);
-        formData.append("available_quantity", availableQuantity);
         formData.append("status", status);
 
         if (description) formData.append("description", description);
         if (purchaseDate) formData.append("purchase_date", purchaseDate);
         if (purchasePrice) formData.append("purchase_price", purchasePrice);
-        if (rentalFee) formData.append("rental_fee", rentalFee);
         if (venueId && venueId !== "none") formData.append("venue_id", venueId);
+        if (courtId && courtId !== "none") formData.append("court_id", courtId);
+        if (locationDetail) formData.append("location_detail", locationDetail);
+        if (serialNumber) formData.append("serial_number", serialNumber);
+        if (manufacturer) formData.append("manufacturer", manufacturer);
+        if (model) formData.append("model", model);
+        if (warrantyExpiry) formData.append("warranty_expiry", warrantyExpiry);
+        if (lastMaintenanceDate)
+            formData.append("last_maintenance_date", lastMaintenanceDate);
+        if (nextMaintenanceDate)
+            formData.append("next_maintenance_date", nextMaintenanceDate);
+        if (qrCode) formData.append("qr_code", qrCode);
 
         // Thêm file ảnh nếu có
         const imageInput = fileInputRef.current?.files?.[0];
@@ -443,84 +572,201 @@ export default function EquipmentForm({
                                         </Button>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="serialNumber"
+                                        className="font-medium"
+                                    >
+                                        Số serial
+                                    </Label>
+                                    <Input
+                                        id="serialNumber"
+                                        value={serialNumber}
+                                        onChange={(e) =>
+                                            setSerialNumber(e.target.value)
+                                        }
+                                        placeholder="Nhập số serial"
+                                    />
+                                </div>
 
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="venue"
+                                        htmlFor="manufacturer"
                                         className="font-medium"
                                     >
-                                        Cơ sở/Địa điểm
+                                        Nhà sản xuất
                                     </Label>
-                                    <Select
-                                        value={venueId}
-                                        onValueChange={setVenueId}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue
-                                                placeholder={
-                                                    isLoadingVenues
-                                                        ? "Đang tải..."
-                                                        : "Chọn cơ sở"
-                                                }
-                                            />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">
-                                                Không chọn
-                                            </SelectItem>
-                                            {venues.map((venue) => (
-                                                <SelectItem
-                                                    key={venue.venue_id}
-                                                    value={venue.venue_id.toString()}
-                                                >
-                                                    {venue.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Input
+                                        id="manufacturer"
+                                        value={manufacturer}
+                                        onChange={(e) =>
+                                            setManufacturer(e.target.value)
+                                        }
+                                        placeholder="Nhập nhà sản xuất"
+                                    />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="quantity"
+                                        htmlFor="model"
                                         className="font-medium"
                                     >
-                                        Tổng số lượng{" "}
-                                        <span className="text-red-500">*</span>
+                                        Model
                                     </Label>
                                     <Input
-                                        id="quantity"
-                                        type="number"
-                                        value={quantity}
+                                        id="model"
+                                        value={model}
                                         onChange={(e) =>
-                                            setQuantity(e.target.value)
+                                            setModel(e.target.value)
                                         }
-                                        min="1"
-                                        required
+                                        placeholder="Nhập model"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="availableQuantity"
+                                        htmlFor="qrCode"
                                         className="font-medium"
                                     >
-                                        Số lượng khả dụng{" "}
-                                        <span className="text-red-500">*</span>
+                                        Mã QR
                                     </Label>
                                     <Input
-                                        id="availableQuantity"
-                                        type="number"
-                                        value={availableQuantity}
+                                        id="qrCode"
+                                        value={qrCode}
                                         onChange={(e) =>
-                                            setAvailableQuantity(e.target.value)
+                                            setQrCode(e.target.value)
                                         }
-                                        min="0"
-                                        max={quantity}
-                                        required
+                                        placeholder="Nhập mã QR"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Location Section */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-medium">
+                                    Vị trí thiết bị
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="venue"
+                                            className="font-medium"
+                                        >
+                                            Địa điểm
+                                        </Label>
+                                        <Select
+                                            value={venueId}
+                                            onValueChange={setVenueId}
+                                            disabled={isLoadingVenues}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn địa điểm" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">
+                                                    Không chọn địa điểm
+                                                </SelectItem>
+                                                {venues.map((venue) => (
+                                                    <SelectItem
+                                                        key={venue.venue_id}
+                                                        value={venue.venue_id.toString()}
+                                                    >
+                                                        {venue.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="court"
+                                            className="font-medium"
+                                        >
+                                            Sân thi đấu
+                                        </Label>
+                                        <Select
+                                            value={courtId}
+                                            onValueChange={setCourtId}
+                                            disabled={
+                                                isLoadingCourts ||
+                                                !venueId ||
+                                                venueId === "none"
+                                            }
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Chọn sân thi đấu" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">
+                                                    Không chọn sân
+                                                </SelectItem>
+                                                {courts.map((court) => (
+                                                    <SelectItem
+                                                        key={court.court_id}
+                                                        value={court.court_id.toString()}
+                                                    >
+                                                        {court.name} (
+                                                        {court.code})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="font-medium">
+                                            Chi tiết vị trí
+                                        </Label>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id="useVisualPicker"
+                                                checked={useVisualPicker}
+                                                onChange={(e) =>
+                                                    setUseVisualPicker(
+                                                        e.target.checked
+                                                    )
+                                                }
+                                                className="rounded"
+                                            />
+                                            <label
+                                                htmlFor="useVisualPicker"
+                                                className="text-sm text-gray-600"
+                                            >
+                                                Chọn vị trí trực quan
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {useVisualPicker ? (
+                                        <LocationPicker
+                                            selectedLocation={visualLocation}
+                                            onLocationSelect={
+                                                handleVisualLocationSelect
+                                            }
+                                            courtType={getCourtTypeForPicker()}
+                                            className="mt-2"
+                                        />
+                                    ) : (
+                                        <Input
+                                            id="locationDetail"
+                                            value={locationDetail}
+                                            onChange={(e) =>
+                                                setLocationDetail(
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="VD: Khu vực phòng thay đồ, góc phải sân..."
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -626,21 +872,65 @@ export default function EquipmentForm({
 
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="rentalFee"
+                                        htmlFor="warrantyExpiry"
                                         className="font-medium"
                                     >
-                                        Phí thuê/giờ (VNĐ)
+                                        Ngày hết hạn bảo hành
                                     </Label>
                                     <Input
-                                        id="rentalFee"
-                                        type="number"
-                                        value={rentalFee}
+                                        id="warrantyExpiry"
+                                        type="date"
+                                        value={warrantyExpiry}
                                         onChange={(e) =>
-                                            setRentalFee(e.target.value)
+                                            setWarrantyExpiry(e.target.value)
                                         }
-                                        min="0"
-                                        placeholder="0"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Maintenance Section */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-medium">
+                                    Bảo trì thiết bị
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="lastMaintenanceDate"
+                                            className="font-medium"
+                                        >
+                                            Ngày bảo trì gần nhất
+                                        </Label>
+                                        <Input
+                                            id="lastMaintenanceDate"
+                                            type="date"
+                                            value={lastMaintenanceDate}
+                                            onChange={(e) =>
+                                                setLastMaintenanceDate(
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="nextMaintenanceDate"
+                                            className="font-medium"
+                                        >
+                                            Ngày bảo trì tiếp theo
+                                        </Label>
+                                        <Input
+                                            id="nextMaintenanceDate"
+                                            type="date"
+                                            value={nextMaintenanceDate}
+                                            onChange={(e) =>
+                                                setNextMaintenanceDate(
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

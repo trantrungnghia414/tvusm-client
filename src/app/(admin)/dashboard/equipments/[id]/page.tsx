@@ -31,11 +31,10 @@ import {
     Package,
     BarChart4,
     Settings,
-    Shield,
-    Wrench,
 } from "lucide-react";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import LocationDisplay from "../components/LocationDisplay";
 
 export default function EquipmentDetailPage({
     params,
@@ -129,6 +128,31 @@ export default function EquipmentDetailPage({
         return format(new Date(dateString), "dd/MM/yyyy", { locale: vi });
     };
 
+    const getCourtType = (
+        courtName: string | null | undefined
+    ):
+        | "football"
+        | "basketball"
+        | "tennis"
+        | "volleyball"
+        | "badminton"
+        | "pickleball"
+        | "general" => {
+        if (!courtName) return "general";
+        const name = courtName.toLowerCase();
+        if (name.includes("bóng đá") || name.includes("football"))
+            return "football";
+        if (name.includes("bóng rổ") || name.includes("basketball"))
+            return "basketball";
+        if (name.includes("tennis")) return "tennis";
+        if (name.includes("bóng chuyền") || name.includes("volleyball"))
+            return "volleyball";
+        if (name.includes("cầu lông") || name.includes("badminton"))
+            return "badminton";
+        if (name.includes("pickleball")) return "pickleball";
+        return "general";
+    };
+
     const getWarrantyStatus = (warrantyDate: string | null) => {
         if (!warrantyDate) return null;
 
@@ -153,35 +177,6 @@ export default function EquipmentDetailPage({
             return {
                 status: "valid",
                 text: "Còn hiệu lực",
-                color: "text-green-600",
-            };
-        }
-    };
-
-    const getMaintenanceStatus = (nextMaintenanceDate: string | null) => {
-        if (!nextMaintenanceDate) return null;
-
-        const today = new Date();
-        const nextMaintenance = new Date(nextMaintenanceDate);
-        const diffTime = nextMaintenance.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays < 0) {
-            return {
-                status: "overdue",
-                text: "Quá hạn",
-                color: "text-red-600",
-            };
-        } else if (diffDays <= 7) {
-            return {
-                status: "due_soon",
-                text: "Sắp đến hạn",
-                color: "text-orange-600",
-            };
-        } else {
-            return {
-                status: "scheduled",
-                text: "Đã lên lịch",
                 color: "text-green-600",
             };
         }
@@ -277,10 +272,10 @@ export default function EquipmentDetailPage({
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Thông tin chính */}
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="md:col-span-2 space-y-4">
                         <Card>
-                            <CardHeader className="pb-3">
-                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <CardHeader>
+                                <div className="flex flex-wrap items-center gap-2">
                                     {getStatusBadge(equipment.status)}
                                 </div>
                                 <CardTitle className="text-2xl">
@@ -288,7 +283,7 @@ export default function EquipmentDetailPage({
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500 mb-4">
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
                                     <div className="flex items-center">
                                         <Tag className="h-4 w-4 mr-1" />
                                         <span>Mã: {equipment.code}</span>
@@ -327,17 +322,6 @@ export default function EquipmentDetailPage({
                                     )}
                                 </div>
 
-                                {equipment.description && (
-                                    <div className="mt-4">
-                                        <h3 className="text-base font-medium mb-2">
-                                            Mô tả
-                                        </h3>
-                                        <p className="text-gray-700">
-                                            {equipment.description}
-                                        </p>
-                                    </div>
-                                )}
-
                                 {equipment.notes && (
                                     <div className="mt-4">
                                         <h3 className="text-base font-medium mb-2">
@@ -350,9 +334,21 @@ export default function EquipmentDetailPage({
                                 )}
 
                                 <div className="mt-6">
-                                    <h3 className="text-base font-medium mb-3">
-                                        Thông tin thiết bị
-                                    </h3>
+                                    {/* Hiển thị vị trí thiết bị */}
+                                    {equipment.location_detail && (
+                                        <div>
+                                            <LocationDisplay
+                                                selectedLocation={
+                                                    equipment.location_detail
+                                                }
+                                                courtType={getCourtType(
+                                                    equipment.court_name
+                                                )}
+                                                className="border border-gray-200 rounded-lg p-4"
+                                            />
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {equipment.serial_number && (
                                             <div className="bg-blue-50 p-3 rounded-lg">
@@ -393,19 +389,6 @@ export default function EquipmentDetailPage({
                                                 </p>
                                             </div>
                                         )}
-                                        {equipment.location_detail && (
-                                            <div className="bg-orange-50 p-3 rounded-lg">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <MapPin className="h-4 w-4 text-orange-600" />
-                                                    <span className="text-sm font-medium text-orange-800">
-                                                        Chi tiết vị trí
-                                                    </span>
-                                                </div>
-                                                <p className="text-lg font-semibold text-orange-700">
-                                                    {equipment.location_detail}
-                                                </p>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </CardContent>
@@ -413,138 +396,43 @@ export default function EquipmentDetailPage({
 
                         <Card>
                             <CardHeader>
-                                <div className="flex items-center gap-2">
-                                    <Shield className="h-5 w-5 text-blue-600" />
-                                    <CardTitle>
-                                        Thông tin mua sắm & Bảo hành
-                                    </CardTitle>
-                                </div>
+                                <CardTitle>Thông tin khác</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="flex flex-col space-y-1">
-                                        <span className="text-sm text-gray-500">
-                                            Giá mua
-                                        </span>
-                                        <span className="text-lg font-medium">
-                                            {equipment.purchase_price
-                                                ? formatCurrency(
-                                                      equipment.purchase_price
-                                                  )
-                                                : "Chưa cập nhật"}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col space-y-1">
-                                        <span className="text-sm text-gray-500">
-                                            Ngày hết hạn bảo hành
-                                        </span>
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-lg font-medium">
-                                                {formatDate(
-                                                    equipment.warranty_expiry
-                                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    {equipment.added_by_name && (
+                                        <div className="text-center">
+                                            <span className="text-sm text-gray-500 block">
+                                                Được thêm bởi
                                             </span>
-                                            {equipment.warranty_expiry && (
-                                                <span
-                                                    className={`text-sm font-medium ${
-                                                        getWarrantyStatus(
-                                                            equipment.warranty_expiry
-                                                        )?.color
-                                                    }`}
-                                                >
-                                                    {
-                                                        getWarrantyStatus(
-                                                            equipment.warranty_expiry
-                                                        )?.text
-                                                    }
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {equipment.installation_date && (
-                                        <div className="flex flex-col space-y-1">
-                                            <span className="text-sm text-gray-500">
-                                                Ngày lắp đặt
-                                            </span>
-                                            <span className="text-lg font-medium">
-                                                {formatDate(
-                                                    equipment.installation_date
-                                                )}
+                                            <span className="font-medium text-base">
+                                                {equipment.added_by_name}
                                             </span>
                                         </div>
                                     )}
-                                    {equipment.qr_code && (
-                                        <div className="flex flex-col space-y-1">
-                                            <span className="text-sm text-gray-500">
-                                                Mã QR
-                                            </span>
-                                            <span className="text-lg font-medium font-mono">
-                                                {equipment.qr_code}
-                                            </span>
-                                        </div>
-                                    )}
+                                    <div className="text-center">
+                                        <span className="text-sm text-gray-500 block">
+                                            Ngày tạo
+                                        </span>
+                                        <span className="font-medium text-base">
+                                            {formatDate(equipment.created_at)}
+                                        </span>
+                                    </div>
+                                    <div className="text-center">
+                                        <span className="text-sm text-gray-500 block">
+                                            Cập nhật lần cuối
+                                        </span>
+                                        <span className="font-medium text-base">
+                                            {formatDate(equipment.updated_at)}
+                                        </span>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
-
-                        {(equipment.last_maintenance_date ||
-                            equipment.next_maintenance_date) && (
-                            <Card>
-                                <CardHeader>
-                                    <div className="flex items-center gap-2">
-                                        <Wrench className="h-5 w-5 text-green-600" />
-                                        <CardTitle>Thông tin bảo trì</CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {equipment.last_maintenance_date && (
-                                            <div className="flex flex-col space-y-1">
-                                                <span className="text-sm text-gray-500">
-                                                    Bảo trì gần nhất
-                                                </span>
-                                                <span className="text-lg font-medium">
-                                                    {formatDate(
-                                                        equipment.last_maintenance_date
-                                                    )}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {equipment.next_maintenance_date && (
-                                            <div className="flex flex-col space-y-1">
-                                                <span className="text-sm text-gray-500">
-                                                    Bảo trì tiếp theo
-                                                </span>
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-lg font-medium">
-                                                        {formatDate(
-                                                            equipment.next_maintenance_date
-                                                        )}
-                                                    </span>
-                                                    <span
-                                                        className={`text-sm font-medium ${
-                                                            getMaintenanceStatus(
-                                                                equipment.next_maintenance_date
-                                                            )?.color
-                                                        }`}
-                                                    >
-                                                        {
-                                                            getMaintenanceStatus(
-                                                                equipment.next_maintenance_date
-                                                            )?.text
-                                                        }
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
                     </div>
 
                     {/* Sidebar */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Ảnh thiết bị</CardTitle>
@@ -575,34 +463,137 @@ export default function EquipmentDetailPage({
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Thông tin khác</CardTitle>
+                                <CardTitle className="text-base">
+                                    Thông tin mua sắm & Bảo hành
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                {equipment.added_by_name && (
-                                    <div className="flex justify-between">
-                                        <span className="text-sm text-gray-500">
-                                            Được thêm bởi
+                            <CardContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="text-center flex flex-col">
+                                        <span className="text-sm text-gray-500 block mb-1">
+                                            Giá mua
                                         </span>
-                                        <span className="font-medium">
-                                            {equipment.added_by_name}
+                                        <span className="font-medium text-base">
+                                            {equipment.purchase_price
+                                                ? formatCurrency(
+                                                      equipment.purchase_price
+                                                  )
+                                                : "Chưa cập nhật"}
                                         </span>
                                     </div>
-                                )}
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Ngày tạo
-                                    </span>
-                                    <span className="font-medium">
-                                        {formatDate(equipment.created_at)}
-                                    </span>
+                                    <div className="text-center flex flex-col justify-center">
+                                        <span className="text-sm text-gray-500 block mb-1">
+                                            Ngày hết hạn bảo hành
+                                        </span>
+                                        <div className="space-y-1">
+                                            <span className="font-medium text-base block">
+                                                {formatDate(
+                                                    equipment.warranty_expiry
+                                                )}
+                                            </span>
+                                            {equipment.warranty_expiry && (
+                                                <span
+                                                    className={`inline-block px-2 py-1 text-xs rounded-full ${
+                                                        getWarrantyStatus(
+                                                            equipment.warranty_expiry
+                                                        )?.color
+                                                    }`}
+                                                >
+                                                    {
+                                                        getWarrantyStatus(
+                                                            equipment.warranty_expiry
+                                                        )?.text
+                                                    }
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {equipment.installation_date && (
+                                        <div className="text-center flex flex-col">
+                                            <span className="text-sm text-gray-500 block mb-1">
+                                                Ngày lắp đặt
+                                            </span>
+                                            <span className="font-medium text-base">
+                                                {formatDate(
+                                                    equipment.installation_date
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {equipment.qr_code && (
+                                        <div className="text-center flex flex-col">
+                                            <span className="text-sm text-gray-500 block mb-1">
+                                                Mã QR
+                                            </span>
+                                            <span className="font-medium text-base font-mono">
+                                                {equipment.qr_code}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="text-sm text-gray-500">
-                                        Cập nhật lần cuối
-                                    </span>
-                                    <span className="font-medium">
-                                        {formatDate(equipment.updated_at)}
-                                    </span>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">
+                                    Thông tin bảo trì
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Bảo trì gần nhất */}
+                                    <div className="text-center flex flex-col">
+                                        <span className="text-sm text-gray-500 block mb-1">
+                                            Bảo trì gần nhất
+                                        </span>
+                                        <span className="font-medium text-base">
+                                            {equipment.last_maintenance_date
+                                                ? format(
+                                                      new Date(
+                                                          equipment.last_maintenance_date
+                                                      ),
+                                                      "dd/MM/yyyy"
+                                                  )
+                                                : "Chưa cập nhật"}
+                                        </span>
+                                    </div>
+
+                                    {/* Bảo trì tiếp theo */}
+                                    <div className="text-center flex flex-col justify-center">
+                                        <span className="text-sm text-gray-500 block mb-1">
+                                            Bảo trì tiếp theo
+                                        </span>
+                                        <div className="space-y-1">
+                                            <span className="font-medium text-base block">
+                                                {equipment.next_maintenance_date
+                                                    ? format(
+                                                          new Date(
+                                                              equipment.next_maintenance_date
+                                                          ),
+                                                          "dd/MM/yyyy"
+                                                      )
+                                                    : "Chưa lên lịch"}
+                                            </span>
+                                            {equipment.next_maintenance_date && (
+                                                <span
+                                                    className={`inline-block px-2 py-1 text-xs rounded-full ${
+                                                        new Date(
+                                                            equipment.next_maintenance_date
+                                                        ) > new Date()
+                                                            ? "bg-green-100 text-green-800"
+                                                            : "bg-red-100 text-red-800"
+                                                    }`}
+                                                >
+                                                    {new Date(
+                                                        equipment.next_maintenance_date
+                                                    ) > new Date()
+                                                        ? "Đã lên lịch"
+                                                        : "Quá hạn"}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

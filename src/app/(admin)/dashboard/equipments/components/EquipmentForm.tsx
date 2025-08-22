@@ -74,23 +74,106 @@ export default function EquipmentForm({
     const [locationDetail, setLocationDetail] = useState(
         equipment?.location_detail || ""
     );
+    const [locationNotes, setLocationNotes] = useState("");
     const [visualLocation, setVisualLocation] = useState<string>("");
-    const [useVisualPicker, setUseVisualPicker] = useState(true);
 
     // Initialize visual location from existing equipment
     useEffect(() => {
         if (equipment?.location_detail) {
-            // Try to match existing location detail to predefined locations
-            setUseVisualPicker(false); // Default to text input for existing equipment
+            // Parse location notes from location_detail if it contains "Ghi chú:"
+            const locationText = equipment.location_detail;
+            const noteIndex = locationText.indexOf(" - Ghi chú: ");
+            if (noteIndex !== -1) {
+                const baseLocation = locationText.substring(0, noteIndex);
+                const notes = locationText.substring(
+                    noteIndex + " - Ghi chú: ".length
+                );
+                setLocationDetail(baseLocation);
+                setLocationNotes(notes);
+
+                // Try to find matching visual location ID
+                // For numbered locations like "1", "2", "3" - convert to corresponding IDs
+                const numberToId: Record<string, string> = {
+                    "1": "one",
+                    "2": "two",
+                    "3": "three",
+                    "4": "four",
+                    "5": "five",
+                    "6": "six",
+                    "7": "seven",
+                    "8": "eight",
+                    "9": "nine",
+                    "10": "ten",
+                    "11": "eleven",
+                    "12": "twelve",
+                    "13": "thirteen",
+                    "14": "fourteen",
+                    "15": "fifteen",
+                    "16": "sixteen",
+                    "17": "seventeen",
+                    "18": "eighteen",
+                    "19": "nineteen",
+                    "20": "twenty",
+                    "21": "twentyone",
+                    "22": "twentytwo",
+                    "23": "twentythree",
+                    "24": "twentyfour",
+                    "25": "twentyfive",
+                };
+
+                if (numberToId[baseLocation]) {
+                    setVisualLocation(numberToId[baseLocation]);
+                }
+            } else if (locationText.startsWith("Ghi chú: ")) {
+                const notes = locationText.substring("Ghi chú: ".length);
+                setLocationDetail("");
+                setLocationNotes(notes);
+            } else {
+                // Simple location without notes
+                setLocationDetail(locationText);
+
+                // Try to find matching visual location ID
+                const numberToId: Record<string, string> = {
+                    "1": "one",
+                    "2": "two",
+                    "3": "three",
+                    "4": "four",
+                    "5": "five",
+                    "6": "six",
+                    "7": "seven",
+                    "8": "eight",
+                    "9": "nine",
+                    "10": "ten",
+                    "11": "eleven",
+                    "12": "twelve",
+                    "13": "thirteen",
+                    "14": "fourteen",
+                    "15": "fifteen",
+                    "16": "sixteen",
+                    "17": "seventeen",
+                    "18": "eighteen",
+                    "19": "nineteen",
+                    "20": "twenty",
+                    "21": "twentyone",
+                    "22": "twentytwo",
+                    "23": "twentythree",
+                    "24": "twentyfour",
+                    "25": "twentyfive",
+                };
+
+                if (numberToId[locationText]) {
+                    setVisualLocation(numberToId[locationText]);
+                }
+            }
         }
     }, [equipment?.location_detail]);
-    const [serialNumber, setSerialNumber] = useState(
-        equipment?.serial_number || ""
-    );
-    const [manufacturer, setManufacturer] = useState(
-        equipment?.manufacturer || ""
-    );
-    const [model, setModel] = useState(equipment?.model || "");
+    // const [serialNumber, setSerialNumber] = useState(
+    //     equipment?.serial_number || ""
+    // );
+    // const [manufacturer, setManufacturer] = useState(
+    //     equipment?.manufacturer || ""
+    // );
+    // const [model, setModel] = useState(equipment?.model || "");
     const [status, setStatus] = useState<
         "available" | "in_use" | "maintenance" | "unavailable"
     >(
@@ -115,7 +198,7 @@ export default function EquipmentForm({
     const [nextMaintenanceDate, setNextMaintenanceDate] = useState(
         equipment?.next_maintenance_date || ""
     );
-    const [qrCode, setQrCode] = useState(equipment?.qr_code || "");
+    // const [qrCode, setQrCode] = useState(equipment?.qr_code || "");
     // const [imagePreview, setImagePreview] = useState(equipment?.image || null);
 
     // Options
@@ -276,6 +359,8 @@ export default function EquipmentForm({
     ) => {
         setVisualLocation(locationId);
         setLocationDetail(locationName);
+        // Không thực hiện hành động tự động nào khác
+        // Chỉ cập nhật state, người dùng phải nhấn "Lưu thay đổi" để submit
     };
 
     // Xử lý khi upload ảnh
@@ -431,16 +516,24 @@ export default function EquipmentForm({
         if (purchasePrice) formData.append("purchase_price", purchasePrice);
         if (venueId && venueId !== "none") formData.append("venue_id", venueId);
         if (courtId && courtId !== "none") formData.append("court_id", courtId);
-        if (locationDetail) formData.append("location_detail", locationDetail);
-        if (serialNumber) formData.append("serial_number", serialNumber);
-        if (manufacturer) formData.append("manufacturer", manufacturer);
-        if (model) formData.append("model", model);
+        // Combine location detail with notes if notes exist
+        let finalLocationDetail = locationDetail;
+        if (locationNotes.trim()) {
+            finalLocationDetail = locationDetail
+                ? `${locationDetail} - Ghi chú: ${locationNotes.trim()}`
+                : `Ghi chú: ${locationNotes.trim()}`;
+        }
+        if (finalLocationDetail)
+            formData.append("location_detail", finalLocationDetail);
+        // if (serialNumber) formData.append("serial_number", serialNumber);
+        // if (manufacturer) formData.append("manufacturer", manufacturer);
+        // if (model) formData.append("model", model);
         if (warrantyExpiry) formData.append("warranty_expiry", warrantyExpiry);
         if (lastMaintenanceDate)
             formData.append("last_maintenance_date", lastMaintenanceDate);
         if (nextMaintenanceDate)
             formData.append("next_maintenance_date", nextMaintenanceDate);
-        if (qrCode) formData.append("qr_code", qrCode);
+        // if (qrCode) formData.append("qr_code", qrCode);
 
         // Thêm file ảnh nếu có
         const imageInput = fileInputRef.current?.files?.[0];
@@ -452,7 +545,7 @@ export default function EquipmentForm({
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="w-full">
             <div className="space-y-6">
                 {/* Thông tin cơ bản */}
                 <Card>
@@ -682,68 +775,6 @@ export default function EquipmentForm({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="serialNumber"
-                                    className="font-medium"
-                                >
-                                    Số serial
-                                </Label>
-                                <Input
-                                    id="serialNumber"
-                                    value={serialNumber}
-                                    onChange={(e) =>
-                                        setSerialNumber(e.target.value)
-                                    }
-                                    placeholder="Nhập số serial"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="manufacturer"
-                                    className="font-medium"
-                                >
-                                    Nhà sản xuất
-                                </Label>
-                                <Input
-                                    id="manufacturer"
-                                    value={manufacturer}
-                                    onChange={(e) =>
-                                        setManufacturer(e.target.value)
-                                    }
-                                    placeholder="Nhập nhà sản xuất"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="model" className="font-medium">
-                                    Model
-                                </Label>
-                                <Input
-                                    id="model"
-                                    value={model}
-                                    onChange={(e) => setModel(e.target.value)}
-                                    placeholder="Nhập model"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="qrCode" className="font-medium">
-                                    Mã QR
-                                </Label>
-                                <Input
-                                    id="qrCode"
-                                    value={qrCode}
-                                    onChange={(e) => setQrCode(e.target.value)}
-                                    placeholder="Nhập mã QR"
-                                />
-                            </div>
-                        </div>
-
                         {/* Location Section */}
                         <div className="space-y-4">
                             <h3 className="text-lg font-medium">
@@ -818,51 +849,45 @@ export default function EquipmentForm({
                             </div>
 
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label className="font-medium">
-                                        Chi tiết vị trí
-                                    </Label>
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="useVisualPicker"
-                                            checked={useVisualPicker}
-                                            onChange={(e) =>
-                                                setUseVisualPicker(
-                                                    e.target.checked
-                                                )
-                                            }
-                                            className="rounded"
-                                        />
-                                        <label
-                                            htmlFor="useVisualPicker"
-                                            className="text-sm text-gray-600"
-                                        >
-                                            Chọn vị trí trực quan
-                                        </label>
-                                    </div>
-                                </div>
+                                <Label className="font-medium">
+                                    Chi tiết vị trí
+                                </Label>
 
-                                {useVisualPicker ? (
-                                    <LocationPicker
-                                        selectedLocation={visualLocation}
-                                        onLocationSelect={
-                                            handleVisualLocationSelect
-                                        }
-                                        courtType={getCourtTypeForPicker()}
-                                        className="mt-2"
-                                    />
-                                ) : (
-                                    <Input
-                                        id="locationDetail"
-                                        value={locationDetail}
-                                        onChange={(e) =>
-                                            setLocationDetail(e.target.value)
-                                        }
-                                        placeholder="VD: Khu vực phòng thay đồ, góc phải sân..."
-                                    />
-                                )}
+                                <LocationPicker
+                                    selectedLocation={visualLocation}
+                                    onLocationSelect={
+                                        handleVisualLocationSelect
+                                    }
+                                    courtType={getCourtTypeForPicker()}
+                                    className="mt-2"
+                                />
                             </div>
+
+                            {/* Location Notes - hiển thị khi đã chọn vị trí */}
+                            {(locationDetail || visualLocation) && (
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="locationNotes"
+                                        className="font-medium"
+                                    >
+                                        Ghi chú thêm về vị trí
+                                    </Label>
+                                    <Textarea
+                                        id="locationNotes"
+                                        value={locationNotes}
+                                        onChange={(e) =>
+                                            setLocationNotes(e.target.value)
+                                        }
+                                        placeholder="VD: Gần cửa ra vào, cạnh kho đồ, vị trí dễ thấy..."
+                                        className="resize-none"
+                                        rows={3}
+                                    />
+                                    <p className="text-xs text-gray-500">
+                                        Ghi chú này sẽ được thêm vào thông tin
+                                        vị trí để dễ dàng tìm kiếm thiết bị
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

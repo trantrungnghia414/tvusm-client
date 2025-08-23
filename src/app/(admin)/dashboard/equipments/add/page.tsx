@@ -71,7 +71,7 @@ export default function AddEquipmentPage() {
 
     return (
         <DashboardLayout activeTab="equipments">
-            <div className="space-y-6">
+            <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Thêm thiết bị mới</h1>
                 </div>

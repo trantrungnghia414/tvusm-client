@@ -121,7 +121,7 @@ export default function EditEquipmentPage({
 
     return (
         <DashboardLayout activeTab="equipments">
-            <div className="space-y-6">
+            <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Chỉnh sửa thiết bị</h1>
                 </div>

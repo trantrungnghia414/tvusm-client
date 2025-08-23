@@ -23,6 +23,8 @@ interface LocationPickerProps {
         | "pickleball"
         | "general";
     className?: string;
+    locationNote?: string;
+    onLocationNoteChange?: (note: string) => void;
 }
 
 // Định nghĩa các vị trí cho từng loại sân
@@ -538,6 +540,8 @@ export default function LocationPicker({
     onLocationSelect,
     courtType = "general",
     className,
+    locationNote,
+    onLocationNoteChange,
 }: LocationPickerProps) {
     const locations = COURT_LOCATIONS[courtType] || COURT_LOCATIONS.general;
 
@@ -555,7 +559,7 @@ export default function LocationPicker({
                 </div>
 
                 {/* Court visualization */}
-                <div className="relative w-full h-60 bg-green-50 border-2 border-green-200 rounded-lg overflow-hidden">
+                <div className="relative w-full max-h-[220px] h-full min-h-[220px] bg-green-50 border-2 border-green-200 rounded-lg overflow-hidden">
                     {/* Court markings */}
                     <div className="absolute inset-2 border-2 border-white rounded"></div>
 
@@ -648,10 +652,9 @@ export default function LocationPicker({
 
                 {/* Selected location display */}
                 {selectedLocation && (
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg shadow-sm">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                            <p className="text-sm font-medium text-blue-900">
+                    <div className="p-2 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg shadow-sm">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-blue-900 flex items-center gap-2 w-full">
                                 📍 Vị trí đã chọn:{" "}
                                 <span className="font-semibold">
                                     {
@@ -660,7 +663,42 @@ export default function LocationPicker({
                                         )?.name
                                     }
                                 </span>
-                            </p>
+                                {/* Ghi chú thêm về vị trí */}
+                                <textarea
+                                    placeholder="Ghi chú thêm..."
+                                    className="bg-white ml-2 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 flex-1 resize-none min-h-[32px] max-h-[128px] overflow-y-auto"
+                                    value={
+                                        typeof locationNote === "string"
+                                            ? locationNote
+                                            : ""
+                                    }
+                                    onChange={(e) => {
+                                        const ta = e.target;
+                                        ta.style.height = "auto";
+                                        // Tính chiều cao tối đa cho 4 hàng
+                                        const lineHeight = 20; // px, tuỳ theo px của text-sm và padding
+                                        const maxRows = 4;
+                                        const maxHeight =
+                                            lineHeight * maxRows + 8; // 8px padding
+                                        ta.style.height =
+                                            Math.min(
+                                                ta.scrollHeight,
+                                                maxHeight
+                                            ) + "px";
+                                        if (onLocationNoteChange)
+                                            onLocationNoteChange(
+                                                e.target.value
+                                            );
+                                    }}
+                                    rows={1}
+                                    style={{
+                                        height: "auto",
+                                        minHeight: 32,
+                                        maxHeight: 128,
+                                        overflowY: "auto",
+                                    }}
+                                />
+                            </span>
                         </div>
                     </div>
                 )}

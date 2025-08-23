@@ -553,7 +553,7 @@ export default function EquipmentForm({
                         {/* Layout 2 cột: Thông tin cơ bản bên trái, Hình ảnh bên phải */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Cột trái: Thông tin cơ bản */}
-                            <div className="space-y-4">
+                            <div className="space-y-2">
                                 <div className="space-y-2">
                                     <Label
                                         htmlFor="name"
@@ -622,14 +622,14 @@ export default function EquipmentForm({
                                         {imagePreview ? (
                                             <div className="relative">
                                                 <div
-                                                    className="mx-auto mb-2 max-h-[200px] rounded"
+                                                    className="mx-auto mb-2 max-h-[100px] rounded"
                                                     style={{
                                                         backgroundImage: `url(${imagePreview})`,
                                                         backgroundSize: "cover",
                                                         backgroundPosition:
                                                             "center",
                                                         width: "100%",
-                                                        height: "200px",
+                                                        height: "100px",
                                                     }}
                                                 />
                                                 <Button
@@ -664,8 +664,8 @@ export default function EquipmentForm({
                                                 </Button>
                                             </div>
                                         ) : (
-                                            <div className="py-6 flex flex-col items-center justify-center text-gray-500">
-                                                <ImageIcon className="h-12 w-12 mb-2" />
+                                            <div className="py-2 flex flex-col items-center justify-center text-gray-500">
+                                                <ImageIcon className="h-10 w-12 mb-2" />
                                                 <p className="mb-1">
                                                     Kéo thả hoặc nhấn chọn ảnh
                                                 </p>
@@ -705,83 +705,81 @@ export default function EquipmentForm({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label
-                                    htmlFor="category"
-                                    className="font-medium"
-                                >
-                                    Danh mục{" "}
-                                    <span className="text-red-500">*</span>
-                                </Label>
-                                <Select
-                                    value={categoryId}
-                                    onValueChange={setCategoryId}
-                                    disabled={isLoadingCategories}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue
-                                            placeholder={
-                                                isLoadingCategories
-                                                    ? "Đang tải..."
-                                                    : "Chọn danh mục"
-                                            }
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {categories.map((category) => (
-                                            <SelectItem
-                                                key={category.category_id}
-                                                value={category.category_id.toString()}
-                                            >
-                                                {category.name}
-                                            </SelectItem>
-                                        ))}
-
-                                        {/* Nút thêm danh mục mới - giống News */}
-                                        <div className="px-2 py-1.5">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                className="w-full text-left text-sm flex items-center gap-2 text-blue-600"
-                                                onClick={() =>
-                                                    setNewCategoryDialogOpen(
-                                                        true
-                                                    )
-                                                }
-                                            >
-                                                <Plus className="h-3 w-3" />
-                                                <span className="font-medium">
-                                                    Thêm danh mục mới
-                                                </span>
-                                            </Button>
-                                        </div>
-                                    </SelectContent>
-                                </Select>
-
-                                {categories.length === 0 && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full mt-2"
-                                        onClick={() =>
-                                            setNewCategoryDialogOpen(true)
-                                        }
-                                    >
-                                        Chưa có danh mục. Thêm mới?
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
+                        {/* Danh mục đã được chuyển vào phần Vị trí thiết bị */}
 
                         {/* Location Section */}
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             <h3 className="text-lg font-medium">
                                 Vị trí thiết bị
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {/* Danh mục */}
+                                <div className="space-y-2 flex gap-2 items-center">
+                                    <Label
+                                        htmlFor="category"
+                                        className="font-medium"
+                                    >
+                                        Danh mục{" "}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select
+                                        value={categoryId}
+                                        onValueChange={setCategoryId}
+                                        disabled={isLoadingCategories}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                placeholder={
+                                                    isLoadingCategories
+                                                        ? "Đang tải..."
+                                                        : "Chọn danh mục"
+                                                }
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((category) => (
+                                                <SelectItem
+                                                    key={category.category_id}
+                                                    value={category.category_id.toString()}
+                                                >
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
+                                            <div className="px-2 py-1.5">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="w-full text-left text-sm flex items-center gap-2 text-blue-600"
+                                                    onClick={() =>
+                                                        setNewCategoryDialogOpen(
+                                                            true
+                                                        )
+                                                    }
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                    <span className="font-medium">
+                                                        Thêm danh mục mới
+                                                    </span>
+                                                </Button>
+                                            </div>
+                                        </SelectContent>
+                                    </Select>
+                                    {categories.length === 0 && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full mt-2"
+                                            onClick={() =>
+                                                setNewCategoryDialogOpen(true)
+                                            }
+                                        >
+                                            Chưa có danh mục. Thêm mới?
+                                        </Button>
+                                    )}
+                                </div>
+                                {/* Địa điểm */}
+                                <div className="space-y-2 flex items-center gap-2">
                                     <Label
                                         htmlFor="venue"
                                         className="font-medium"
@@ -811,8 +809,8 @@ export default function EquipmentForm({
                                         </SelectContent>
                                     </Select>
                                 </div>
-
-                                <div className="space-y-2">
+                                {/* Sân thi đấu */}
+                                <div className="space-y-2 flex items-center gap-2">
                                     <Label
                                         htmlFor="court"
                                         className="font-medium"
@@ -849,9 +847,9 @@ export default function EquipmentForm({
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="font-medium">
+                                {/* <Label className="font-medium">
                                     Chi tiết vị trí
-                                </Label>
+                                </Label> */}
 
                                 <LocationPicker
                                     selectedLocation={visualLocation}
@@ -860,11 +858,13 @@ export default function EquipmentForm({
                                     }
                                     courtType={getCourtTypeForPicker()}
                                     className="mt-2"
+                                    locationNote={locationNotes}
+                                    onLocationNoteChange={setLocationNotes}
                                 />
                             </div>
 
                             {/* Location Notes - hiển thị khi đã chọn vị trí */}
-                            {(locationDetail || visualLocation) && (
+                            {/* {(locationDetail || visualLocation) && (
                                 <div className="space-y-2">
                                     <Label
                                         htmlFor="locationNotes"
@@ -879,7 +879,7 @@ export default function EquipmentForm({
                                             setLocationNotes(e.target.value)
                                         }
                                         placeholder="VD: Gần cửa ra vào, cạnh kho đồ, vị trí dễ thấy..."
-                                        className="resize-none"
+                                        className="resize-y min-h-[40px] overflow-auto"
                                         rows={3}
                                     />
                                     <p className="text-xs text-gray-500">
@@ -887,10 +887,12 @@ export default function EquipmentForm({
                                         vị trí để dễ dàng tìm kiếm thiết bị
                                     </p>
                                 </div>
-                            )}
+                            )} */}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Trạng thái, ngày mua, giá mua, ngày hết hạn bảo hành - 1 hàng ngang */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {/* Trạng thái */}
                             <div className="space-y-2">
                                 <Label htmlFor="status" className="font-medium">
                                     Trạng thái{" "}
@@ -927,7 +929,7 @@ export default function EquipmentForm({
                                     </SelectContent>
                                 </Select>
                             </div>
-
+                            {/* Ngày mua */}
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="purchaseDate"
@@ -964,9 +966,7 @@ export default function EquipmentForm({
                                     </span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Giá mua */}
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="purchasePrice"
@@ -986,7 +986,7 @@ export default function EquipmentForm({
                                     required
                                 />
                             </div>
-
+                            {/* Ngày hết hạn bảo hành */}
                             <div className="space-y-2">
                                 <Label
                                     htmlFor="warrantyExpiry"

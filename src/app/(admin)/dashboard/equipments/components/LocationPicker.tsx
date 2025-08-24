@@ -25,332 +25,133 @@ interface LocationPickerProps {
     className?: string;
     locationNote?: string;
     onLocationNoteChange?: (note: string) => void;
+    courtCode?: string;
 }
 
 // Định nghĩa các vị trí cho từng loại sân
 const COURT_LOCATIONS: Record<string, LocationPoint[]> = {
     football: [
-        // Hàng trên - từ trái sang phải
         { id: "one", name: "1", x: 2, y: 4, zone: "center" },
-        { id: "two", name: "2", x: 15, y: 3, zone: "center" },
-        { id: "three", name: "3", x: 32, y: 2, zone: "center" },
-        { id: "four", name: "4", x: 34, y: 2, zone: "center" },
-        { id: "five", name: "5", x: 50, y: 3, zone: "center" },
-        { id: "six", name: "6", x: 65, y: 2, zone: "center" },
-        { id: "seven", name: "7", x: 67, y: 2, zone: "center" },
-        { id: "eight", name: "8", x: 85, y: 3, zone: "center" },
+        { id: "two", name: "2", x: 15, y: 4, zone: "center" },
+        { id: "three", name: "3", x: 32, y: 4, zone: "center" },
+        { id: "four", name: "4", x: 34, y: 4, zone: "center" },
+        { id: "five", name: "5", x: 50, y: 4, zone: "center" },
+        { id: "six", name: "6", x: 65, y: 4, zone: "center" },
+        { id: "seven", name: "7", x: 67, y: 4, zone: "center" },
+        { id: "eight", name: "8", x: 85, y: 4, zone: "center" },
         { id: "nine", name: "9", x: 98, y: 4, zone: "center" },
-
-        // Bên phải - từ trên xuống dưới
         { id: "ten", name: "10", x: 98, y: 50, zone: "center" },
-
-        // Hàng dưới - từ phải sang trái
         { id: "eleven", name: "11", x: 98, y: 96, zone: "center" },
-        { id: "twelve", name: "12", x: 85, y: 97, zone: "center" },
-        { id: "thirteen", name: "13", x: 67, y: 98, zone: "center" },
-        { id: "fourteen", name: "14", x: 65, y: 98, zone: "center" },
-        { id: "fifteen", name: "15", x: 50, y: 97, zone: "center" },
-        { id: "sixteen", name: "16", x: 34, y: 98, zone: "center" },
-        { id: "seventeen", name: "17", x: 32, y: 98, zone: "center" },
-        { id: "eighteen", name: "18", x: 15, y: 97, zone: "center" },
+        { id: "twelve", name: "12", x: 85, y: 96, zone: "center" },
+        { id: "thirteen", name: "13", x: 67, y: 96, zone: "center" },
+        { id: "fourteen", name: "14", x: 65, y: 96, zone: "center" },
+        { id: "fifteen", name: "15", x: 50, y: 96, zone: "center" },
+        { id: "sixteen", name: "16", x: 34, y: 96, zone: "center" },
+        { id: "seventeen", name: "17", x: 32, y: 96, zone: "center" },
+        { id: "eighteen", name: "18", x: 15, y: 96, zone: "center" },
         { id: "nineteen", name: "19", x: 2, y: 96, zone: "center" },
-
-        // Bên trái - từ dưới lên trên
         { id: "twenty", name: "20", x: 2, y: 50, zone: "center" },
-
-        // Trung tâm - từ trái sang phải
         { id: "twentyone", name: "21", x: 15, y: 50, zone: "center" },
         { id: "twentytwo", name: "22", x: 33, y: 50, zone: "center" },
         { id: "twentythree", name: "23", x: 50, y: 50, zone: "center" },
-        { id: "twentyfour", name: "24", x: 65, y: 50, zone: "center" },
+        { id: "twentyfour", name: "24", x: 66, y: 50, zone: "center" },
         { id: "twentyfive", name: "25", x: 85, y: 50, zone: "center" },
     ],
     basketball: [
-        // Góc sân
-        { id: "corner-tl", name: "Góc trái trên", x: 5, y: 5, zone: "corner" },
-        { id: "corner-tr", name: "Góc phải trên", x: 95, y: 5, zone: "corner" },
-        { id: "corner-bl", name: "Góc trái dưới", x: 5, y: 95, zone: "corner" },
-        {
-            id: "corner-br",
-            name: "Góc phải dưới",
-            x: 95,
-            y: 95,
-            zone: "corner",
-        },
-
-        // Trung tâm
-        { id: "center", name: "Trung tâm sân", x: 50, y: 50, zone: "center" },
-
-        // Rổ bóng
-        { id: "basket-top", name: "Rổ trên", x: 50, y: 8, zone: "goal" },
-        { id: "basket-bottom", name: "Rổ dưới", x: 50, y: 92, zone: "goal" },
-
-        // Vòng tròn ném phạt
-        {
-            id: "freethrow-top",
-            name: "Vòng phạt trên",
-            x: 50,
-            y: 25,
-            zone: "penalty",
-        },
-        {
-            id: "freethrow-bottom",
-            name: "Vòng phạt dưới",
-            x: 50,
-            y: 75,
-            zone: "penalty",
-        },
-
-        // Biên sân
-        { id: "side-left", name: "Biên trái", x: 2, y: 50, zone: "side" },
-        { id: "side-right", name: "Biên phải", x: 98, y: 50, zone: "side" },
-
-        // Khu vực thiết bị
-        {
-            id: "equipment-left",
-            name: "Khu thiết bị trái",
-            x: 15,
-            y: 50,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-right",
-            name: "Khu thiết bị phải",
-            x: 85,
-            y: 50,
-            zone: "equipment",
-        },
+        { id: "one", name: "1", x: 2, y: 4, zone: "center" },
+        { id: "two", name: "2", x: 25, y: 4, zone: "center" },
+        { id: "three", name: "3", x: 50, y: 4, zone: "center" },
+        { id: "four", name: "4", x: 75, y: 4, zone: "center" },
+        { id: "five", name: "5", x: 98, y: 4, zone: "center" },
+        { id: "six", name: "6", x: 98, y: 50, zone: "center" },
+        { id: "seven", name: "7", x: 98, y: 96, zone: "center" },
+        { id: "eight", name: "8", x: 75, y: 96, zone: "center" },
+        { id: "nine", name: "9", x: 50, y: 96, zone: "center" },
+        { id: "ten", name: "10", x: 25, y: 96, zone: "center" },
+        { id: "eleven", name: "11", x: 2, y: 96, zone: "center" },
+        { id: "twelve", name: "12", x: 2, y: 50, zone: "center" },
+        { id: "thirteen", name: "13", x: 15, y: 50, zone: "center" },
+        { id: "fourteen", name: "14", x: 33, y: 50, zone: "center" },
+        { id: "fifteen", name: "15", x: 50, y: 50, zone: "center" },
+        { id: "sixteen", name: "16", x: 66, y: 50, zone: "center" },
+        { id: "seventeen", name: "17", x: 85, y: 50, zone: "center" },
     ],
     tennis: [
-        // Góc sân
-        { id: "corner-tl", name: "Góc trái trên", x: 5, y: 5, zone: "corner" },
-        { id: "corner-tr", name: "Góc phải trên", x: 95, y: 5, zone: "corner" },
-        { id: "corner-bl", name: "Góc trái dưới", x: 5, y: 95, zone: "corner" },
-        {
-            id: "corner-br",
-            name: "Góc phải dưới",
-            x: 95,
-            y: 95,
-            zone: "corner",
-        },
-
-        // Trung tâm
-        { id: "center", name: "Trung tâm sân", x: 50, y: 50, zone: "center" },
-
-        // Lưới
-        { id: "net-left", name: "Lưới trái", x: 20, y: 50, zone: "center" },
-        {
-            id: "net-center",
-            name: "Trung tâm lưới",
-            x: 50,
-            y: 50,
-            zone: "center",
-        },
-        { id: "net-right", name: "Lưới phải", x: 80, y: 50, zone: "center" },
-
-        // Vùng phục vụ
-        {
-            id: "service-tl",
-            name: "Ô phục vụ trái trên",
-            x: 25,
-            y: 25,
-            zone: "penalty",
-        },
-        {
-            id: "service-tr",
-            name: "Ô phục vụ phải trên",
-            x: 75,
-            y: 25,
-            zone: "penalty",
-        },
-        {
-            id: "service-bl",
-            name: "Ô phục vụ trái dưới",
-            x: 25,
-            y: 75,
-            zone: "penalty",
-        },
-        {
-            id: "service-br",
-            name: "Ô phục vụ phải dưới",
-            x: 75,
-            y: 75,
-            zone: "penalty",
-        },
-
-        // Khu vực thiết bị
-        {
-            id: "equipment-left",
-            name: "Khu thiết bị trái",
-            x: 10,
-            y: 50,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-right",
-            name: "Khu thiết bị phải",
-            x: 90,
-            y: 50,
-            zone: "equipment",
-        },
+        { id: "one", name: "1", x: 2, y: 4, zone: "center" },
+        { id: "two", name: "2", x: 25, y: 4, zone: "center" },
+        { id: "three", name: "3", x: 50, y: 4, zone: "center" },
+        { id: "four", name: "4", x: 75, y: 4, zone: "center" },
+        { id: "five", name: "5", x: 98, y: 4, zone: "center" },
+        { id: "six", name: "6", x: 98, y: 50, zone: "center" },
+        { id: "seven", name: "7", x: 98, y: 96, zone: "center" },
+        { id: "eight", name: "8", x: 75, y: 96, zone: "center" },
+        { id: "nine", name: "9", x: 50, y: 96, zone: "center" },
+        { id: "ten", name: "10", x: 25, y: 96, zone: "center" },
+        { id: "eleven", name: "11", x: 2, y: 96, zone: "center" },
+        { id: "twelve", name: "12", x: 2, y: 50, zone: "center" },
+        { id: "thirteen", name: "13", x: 15, y: 50, zone: "center" },
+        { id: "fourteen", name: "14", x: 33, y: 50, zone: "center" },
+        { id: "fifteen", name: "15", x: 50, y: 50, zone: "center" },
+        { id: "sixteen", name: "16", x: 66, y: 50, zone: "center" },
+        { id: "seventeen", name: "17", x: 85, y: 50, zone: "center" },
     ],
     volleyball: [
-        // Góc sân
-        { id: "corner-tl", name: "Góc trái trên", x: 5, y: 5, zone: "corner" },
-        { id: "corner-tr", name: "Góc phải trên", x: 95, y: 5, zone: "corner" },
-        { id: "corner-bl", name: "Góc trái dưới", x: 5, y: 95, zone: "corner" },
-        {
-            id: "corner-br",
-            name: "Góc phải dưới",
-            x: 95,
-            y: 95,
-            zone: "corner",
-        },
-
-        // Trung tâm và lưới
-        {
-            id: "net-center",
-            name: "Trung tâm lưới",
-            x: 50,
-            y: 50,
-            zone: "center",
-        },
-        { id: "net-left", name: "Lưới trái", x: 10, y: 50, zone: "center" },
-        { id: "net-right", name: "Lưới phải", x: 90, y: 50, zone: "center" },
-
-        // Vùng tấn công
-        {
-            id: "attack-top",
-            name: "Vùng tấn công trên",
-            x: 50,
-            y: 25,
-            zone: "penalty",
-        },
-        {
-            id: "attack-bottom",
-            name: "Vùng tấn công dưới",
-            x: 50,
-            y: 75,
-            zone: "penalty",
-        },
-
-        // Khu vực thiết bị
-        {
-            id: "equipment-tl",
-            name: "Khu thiết bị trái trên",
-            x: 15,
-            y: 15,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-tr",
-            name: "Khu thiết bị phải trên",
-            x: 85,
-            y: 15,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-bl",
-            name: "Khu thiết bị trái dưới",
-            x: 15,
-            y: 85,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-br",
-            name: "Khu thiết bị phải dưới",
-            x: 85,
-            y: 85,
-            zone: "equipment",
-        },
+        { id: "one", name: "1", x: 2, y: 4, zone: "center" },
+        { id: "two", name: "2", x: 16, y: 4, zone: "center" },
+        { id: "three", name: "3", x: 30, y: 4, zone: "center" },
+        { id: "four", name: "4", x: 44, y: 4, zone: "center" },
+        { id: "five", name: "5", x: 50, y: 4, zone: "center" },
+        { id: "six", name: "6", x: 56, y: 4, zone: "center" },
+        { id: "seven", name: "7", x: 70, y: 4, zone: "center" },
+        { id: "eight", name: "8", x: 84, y: 4, zone: "center" },
+        { id: "nine", name: "9", x: 98, y: 4, zone: "center" },
+        { id: "ten", name: "10", x: 98, y: 50, zone: "center" },
+        { id: "eleven", name: "11", x: 98, y: 96, zone: "center" },
+        { id: "twelve", name: "12", x: 84, y: 96, zone: "center" },
+        { id: "thirteen", name: "13", x: 70, y: 96, zone: "center" },
+        { id: "fourteen", name: "14", x: 56, y: 96, zone: "center" },
+        { id: "fifteen", name: "15", x: 50, y: 96, zone: "center" },
+        { id: "sixteen", name: "16", x: 44, y: 96, zone: "center" },
+        { id: "seventeen", name: "17", x: 30, y: 96, zone: "center" },
+        { id: "eighteen", name: "18", x: 16, y: 96, zone: "center" },
+        { id: "nineteen", name: "19", x: 2, y: 96, zone: "center" },
+        { id: "twenty", name: "20", x: 2, y: 50, zone: "center" },
+        { id: "twentyone", name: "21", x: 16, y: 50, zone: "center" },
+        { id: "twentytwo", name: "22", x: 30, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 44, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 50, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 56, y: 50, zone: "center" },
+        { id: "twentyfour", name: "24", x: 70, y: 50, zone: "center" },
+        { id: "twentyfive", name: "25", x: 84, y: 50, zone: "center" },
     ],
     badminton: [
-        // Góc sân
-        { id: "corner-tl", name: "Góc trái trên", x: 5, y: 5, zone: "corner" },
-        { id: "corner-tr", name: "Góc phải trên", x: 95, y: 5, zone: "corner" },
-        { id: "corner-bl", name: "Góc trái dưới", x: 5, y: 95, zone: "corner" },
-        {
-            id: "corner-br",
-            name: "Góc phải dưới",
-            x: 95,
-            y: 95,
-            zone: "corner",
-        },
-
-        // Lưới
-        {
-            id: "net-center",
-            name: "Trung tâm lưới",
-            x: 50,
-            y: 50,
-            zone: "center",
-        },
-        { id: "net-left", name: "Lưới trái", x: 15, y: 50, zone: "center" },
-        { id: "net-right", name: "Lưới phải", x: 85, y: 50, zone: "center" },
-
-        // Vùng phục vụ
-        {
-            id: "service-tl",
-            name: "Ô phục vụ trái trên",
-            x: 25,
-            y: 25,
-            zone: "penalty",
-        },
-        {
-            id: "service-tr",
-            name: "Ô phục vụ phải trên",
-            x: 75,
-            y: 25,
-            zone: "penalty",
-        },
-        {
-            id: "service-bl",
-            name: "Ô phục vụ trái dưới",
-            x: 25,
-            y: 75,
-            zone: "penalty",
-        },
-        {
-            id: "service-br",
-            name: "Ô phục vụ phải dưới",
-            x: 75,
-            y: 75,
-            zone: "penalty",
-        },
-
-        // Biên sân
-        { id: "side-left", name: "Biên trái", x: 2, y: 50, zone: "side" },
-        { id: "side-right", name: "Biên phải", x: 98, y: 50, zone: "side" },
-
-        // Khu vực thiết bị
-        {
-            id: "equipment-left",
-            name: "Khu thiết bị trái",
-            x: 10,
-            y: 30,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-right",
-            name: "Khu thiết bị phải",
-            x: 90,
-            y: 30,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-bl",
-            name: "Khu thiết bị trái dưới",
-            x: 10,
-            y: 70,
-            zone: "equipment",
-        },
-        {
-            id: "equipment-br",
-            name: "Khu thiết bị phải dưới",
-            x: 90,
-            y: 70,
-            zone: "equipment",
-        },
+        { id: "one", name: "1", x: 2, y: 4, zone: "center" },
+        { id: "two", name: "2", x: 16, y: 4, zone: "center" },
+        { id: "three", name: "3", x: 30, y: 4, zone: "center" },
+        { id: "four", name: "4", x: 44, y: 4, zone: "center" },
+        { id: "five", name: "5", x: 50, y: 4, zone: "center" },
+        { id: "six", name: "6", x: 56, y: 4, zone: "center" },
+        { id: "seven", name: "7", x: 70, y: 4, zone: "center" },
+        { id: "eight", name: "8", x: 84, y: 4, zone: "center" },
+        { id: "nine", name: "9", x: 98, y: 4, zone: "center" },
+        { id: "ten", name: "10", x: 98, y: 50, zone: "center" },
+        { id: "eleven", name: "11", x: 98, y: 96, zone: "center" },
+        { id: "twelve", name: "12", x: 84, y: 96, zone: "center" },
+        { id: "thirteen", name: "13", x: 70, y: 96, zone: "center" },
+        { id: "fourteen", name: "14", x: 56, y: 96, zone: "center" },
+        { id: "fifteen", name: "15", x: 50, y: 96, zone: "center" },
+        { id: "sixteen", name: "16", x: 44, y: 96, zone: "center" },
+        { id: "seventeen", name: "17", x: 30, y: 96, zone: "center" },
+        { id: "eighteen", name: "18", x: 16, y: 96, zone: "center" },
+        { id: "nineteen", name: "19", x: 2, y: 96, zone: "center" },
+        { id: "twenty", name: "20", x: 2, y: 50, zone: "center" },
+        { id: "twentyone", name: "21", x: 16, y: 50, zone: "center" },
+        { id: "twentytwo", name: "22", x: 30, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 44, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 50, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 56, y: 50, zone: "center" },
+        { id: "twentyfour", name: "24", x: 70, y: 50, zone: "center" },
+        { id: "twentyfive", name: "25", x: 84, y: 50, zone: "center" },
     ],
     pickleball: [
         // Góc sân
@@ -438,83 +239,6 @@ const COURT_LOCATIONS: Record<string, LocationPoint[]> = {
             zone: "equipment",
         },
     ],
-    general: [
-        // Góc
-        {
-            id: "corner-tl",
-            name: "Góc trái trên",
-            x: 10,
-            y: 10,
-            zone: "corner",
-        },
-        {
-            id: "corner-tr",
-            name: "Góc phải trên",
-            x: 90,
-            y: 10,
-            zone: "corner",
-        },
-        {
-            id: "corner-bl",
-            name: "Góc trái dưới",
-            x: 10,
-            y: 90,
-            zone: "corner",
-        },
-        {
-            id: "corner-br",
-            name: "Góc phải dưới",
-            x: 90,
-            y: 90,
-            zone: "corner",
-        },
-
-        // Trung tâm
-        { id: "center", name: "Trung tâm", x: 50, y: 50, zone: "center" },
-        {
-            id: "center-left",
-            name: "Trung tâm trái",
-            x: 25,
-            y: 50,
-            zone: "center",
-        },
-        {
-            id: "center-right",
-            name: "Trung tâm phải",
-            x: 75,
-            y: 50,
-            zone: "center",
-        },
-        {
-            id: "center-top",
-            name: "Trung tâm trên",
-            x: 50,
-            y: 25,
-            zone: "center",
-        },
-        {
-            id: "center-bottom",
-            name: "Trung tâm dưới",
-            x: 50,
-            y: 75,
-            zone: "center",
-        },
-
-        // Biên
-        { id: "side-left", name: "Biên trái", x: 5, y: 50, zone: "side" },
-        { id: "side-right", name: "Biên phải", x: 95, y: 50, zone: "side" },
-        { id: "side-top", name: "Biên trên", x: 50, y: 5, zone: "side" },
-        { id: "side-bottom", name: "Biên dưới", x: 50, y: 95, zone: "side" },
-
-        // Khu vực thiết bị
-        {
-            id: "equipment-center",
-            name: "Khu thiết bị trung tâm",
-            x: 50,
-            y: 50,
-            zone: "equipment",
-        },
-    ],
 };
 
 const ZONE_COLORS = {
@@ -542,10 +266,53 @@ export default function LocationPicker({
     className,
     locationNote,
     onLocationNoteChange,
+    courtCode,
 }: LocationPickerProps) {
     const locations = COURT_LOCATIONS[courtType] || COURT_LOCATIONS.general;
 
+    // Xác định các ô được phép chọn theo courtCode
+    let enabledLocationIds: string[] | undefined = undefined;
+    if (courtCode === "BD5-01") {
+        enabledLocationIds = [
+            "one",
+            "two",
+            "three",
+            "seventeen",
+            "eighteen",
+            "nineteen",
+            "twenty",
+            "twentyone",
+            "twentytwo",
+        ];
+    } else if (courtCode === "BD5-02") {
+        enabledLocationIds = [
+            "four",
+            "five",
+            "six",
+            "twentytwo",
+            "twentythree",
+            "twentyfour",
+            "fourteen",
+            "fifteen",
+            "sixteen",
+        ];
+    } else if (courtCode === "BD5-03") {
+        enabledLocationIds = [
+            "seven",
+            "eight",
+            "nine",
+            "ten",
+            "eleven",
+            "twelve",
+            "thirteen",
+            "twentyfour",
+            "twentyfive",
+        ];
+    }
+
     const handleLocationClick = (location: LocationPoint) => {
+        if (enabledLocationIds && !enabledLocationIds.includes(location.id))
+            return;
         onLocationSelect(location.id, location.name);
     };
 
@@ -629,6 +396,9 @@ export default function LocationPicker({
                         const baseColors = isSelected
                             ? ZONE_SELECTED_COLORS[location.zone]
                             : ZONE_COLORS[location.zone];
+                        const isDisabled =
+                            enabledLocationIds &&
+                            !enabledLocationIds.includes(location.id);
 
                         return (
                             <button
@@ -636,15 +406,18 @@ export default function LocationPicker({
                                 type="button"
                                 onClick={() => handleLocationClick(location)}
                                 className={cn(
-                                    "absolute w-4 h-4 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
+                                    "absolute w-4 h-4 rounded-full border-2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
                                     baseColors,
-                                    isSelected && "scale-125 shadow-lg"
+                                    isSelected && "scale-125 shadow-lg",
+                                    isDisabled &&
+                                        "opacity-40 cursor-not-allowed hover:scale-100"
                                 )}
                                 style={{
                                     left: `${location.x}%`,
                                     top: `${location.y}%`,
                                 }}
                                 title={location.name}
+                                disabled={isDisabled}
                             />
                         );
                     })}

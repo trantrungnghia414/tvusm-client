@@ -324,12 +324,12 @@ export default function EquipmentForm({
 
     // Map court type names to visual picker types
     const getCourtTypeForPicker = () => {
-        if (!courts.length) return "general";
+        if (!courts.length) return "football";
 
         // Get court type from the selected court or first court
         const selectedCourt =
             courts.find((c) => c.court_id.toString() === courtId) || courts[0];
-        if (!selectedCourt) return "general";
+        if (!selectedCourt) return "football";
 
         // Map based on court name to determine type
         const courtName = selectedCourt.name?.toLowerCase() || "";
@@ -349,7 +349,7 @@ export default function EquipmentForm({
         if (courtName.includes("pickleball") || courtName.includes("pickle"))
             return "pickleball";
 
-        return "general";
+        return "football";
     };
 
     // Handle visual location selection
@@ -846,21 +846,27 @@ export default function EquipmentForm({
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                {/* <Label className="font-medium">
-                                    Chi tiết vị trí
-                                </Label> */}
-
+                            <div className="space-y-2 relative">
+                                {/* Disable LocationPicker if venue or court not selected */}
                                 <LocationPicker
                                     selectedLocation={visualLocation}
-                                    onLocationSelect={
-                                        handleVisualLocationSelect
-                                    }
+                                    onLocationSelect={handleVisualLocationSelect}
                                     courtType={getCourtTypeForPicker()}
-                                    className="mt-2"
+                                    className={"mt-2 "+ ((venueId === "none" || !venueId || courtId === "none" || !courtId) ? "pointer-events-none opacity-60" : "")}
                                     locationNote={locationNotes}
                                     onLocationNoteChange={setLocationNotes}
+                                    courtCode={(() => {
+                                        const selectedCourt = courts.find(
+                                            (c) => c.court_id.toString() === courtId
+                                        );
+                                        return selectedCourt ? selectedCourt.code : undefined;
+                                    })()}
                                 />
+                                {(venueId === "none" || !venueId || courtId === "none" || !courtId) && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10 rounded-lg select-none">
+                                        <span className="text-gray-500 font-medium">Chọn địa điểm và sân thi đấu để chọn vị trí</span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Location Notes - hiển thị khi đã chọn vị trí */}

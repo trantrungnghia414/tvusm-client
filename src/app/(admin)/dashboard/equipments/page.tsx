@@ -112,7 +112,7 @@ export default function EquipmentPage() {
     // Hàm tính tổng giá trị thiết bị
     const calculateTotalValue = (equipmentData: Equipment[]) => {
         return equipmentData.reduce((total, item) => {
-            return total + (item.purchase_price || 0);
+            return total + (Number(item.purchase_price) || 0);
         }, 0);
     };
 
@@ -185,6 +185,17 @@ export default function EquipmentPage() {
             setFilteredEquipment(updatedEquipment);
 
             // Cập nhật lại thống kê nếu đây là thiết bị cuối cùng
+            // if (updatedEquipment.length === 0) {
+            //     setStats({
+            //         total: 0,
+            //         available: 0,
+            //         in_use: 0,
+            //         maintenance: 0,
+            //         unavailable: 0,
+            //         categories_count: 0,
+            //         total_value: 0,
+            //     });
+            // }
             if (updatedEquipment.length === 0) {
                 setStats({
                     total: 0,
@@ -195,6 +206,26 @@ export default function EquipmentPage() {
                     categories_count: 0,
                     total_value: 0,
                 });
+            } else {
+                setStats((prev) => ({
+                    ...prev,
+                    total: updatedEquipment.length,
+                    available: updatedEquipment.filter(
+                        (item) => item.status === "available"
+                    ).length,
+                    in_use: updatedEquipment.filter(
+                        (item) => item.status === "in_use"
+                    ).length,
+                    maintenance: updatedEquipment.filter(
+                        (item) => item.status === "maintenance"
+                    ).length,
+                    unavailable: updatedEquipment.filter(
+                        (item) => item.status === "unavailable"
+                    ).length,
+                    categories_count:
+                        calculateUniqueCategories(updatedEquipment),
+                    total_value: calculateTotalValue(updatedEquipment),
+                }));
             }
 
             toast.success("Xóa thiết bị thành công");
@@ -259,20 +290,62 @@ export default function EquipmentPage() {
             }
 
             // Cập nhật state
-            setEquipment(
-                equipment.map((item) =>
+            // setEquipment(
+            //     equipment.map((item) =>
+            //         item.equipment_id === equipmentId
+            //             ? {
+            //                   ...item,
+            //                   status: newStatus as
+            //                       | "available"
+            //                       | "in_use"
+            //                       | "maintenance"
+            //                       | "unavailable",
+            //               }
+            //             : item
+            //     )
+            // );
+            // Cập nhật state equipment và filteredEquipment
+            setEquipment((prev) =>
+                prev.map((item) =>
                     item.equipment_id === equipmentId
-                        ? {
-                              ...item,
-                              status: newStatus as
-                                  | "available"
-                                  | "in_use"
-                                  | "maintenance"
-                                  | "unavailable",
-                          }
+                        ? { ...item, status: newStatus as Equipment["status"] }
                         : item
                 )
             );
+            setFilteredEquipment((prev) =>
+                prev.map((item) =>
+                    item.equipment_id === equipmentId
+                        ? { ...item, status: newStatus as Equipment["status"] }
+                        : item
+                )
+            );
+
+            // Cập nhật lại thống kê EquipmentStats
+            setStats((prevStats) => {
+                const oldItem =
+                    equipment.find(
+                        (item) => item.equipment_id === equipmentId
+                    ) ||
+                    filteredEquipment.find(
+                        (item) => item.equipment_id === equipmentId
+                    );
+
+                if (!oldItem) return prevStats;
+
+                const validKeys = [
+                    "available",
+                    "in_use",
+                    "maintenance",
+                    "unavailable",
+                ] as const;
+                const newStats = { ...prevStats };
+
+                if (validKeys.includes(oldItem.status))
+                    newStats[oldItem.status]--;
+                if (validKeys.includes(newStatus as Equipment["status"]))
+                    newStats[newStatus as Equipment["status"]]++;
+                return newStats;
+            });
 
             toast.success("Cập nhật trạng thái thành công");
         } catch (error) {

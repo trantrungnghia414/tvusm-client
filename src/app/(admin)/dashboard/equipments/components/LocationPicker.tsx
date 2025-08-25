@@ -119,39 +119,40 @@ const COURT_LOCATIONS: Record<string, LocationPoint[]> = {
         { id: "twentyone", name: "21", x: 16, y: 50, zone: "center" },
         { id: "twentytwo", name: "22", x: 30, y: 50, zone: "center" },
         { id: "twentythree", name: "23", x: 44, y: 50, zone: "center" },
-        { id: "twentythree", name: "23", x: 50, y: 50, zone: "center" },
-        { id: "twentythree", name: "23", x: 56, y: 50, zone: "center" },
-        { id: "twentyfour", name: "24", x: 70, y: 50, zone: "center" },
-        { id: "twentyfive", name: "25", x: 84, y: 50, zone: "center" },
+        { id: "twentyfour", name: "24", x: 50, y: 50, zone: "center" },
+        { id: "twentyfive", name: "25", x: 56, y: 50, zone: "center" },
+        { id: "twentysix", name: "26", x: 70, y: 50, zone: "center" },
+        { id: "twentyseven", name: "27", x: 84, y: 50, zone: "center" },
     ],
     badminton: [
         { id: "one", name: "1", x: 2, y: 4, zone: "center" },
-        { id: "two", name: "2", x: 16, y: 4, zone: "center" },
-        { id: "three", name: "3", x: 30, y: 4, zone: "center" },
-        { id: "four", name: "4", x: 44, y: 4, zone: "center" },
-        { id: "five", name: "5", x: 50, y: 4, zone: "center" },
-        { id: "six", name: "6", x: 56, y: 4, zone: "center" },
-        { id: "seven", name: "7", x: 70, y: 4, zone: "center" },
-        { id: "eight", name: "8", x: 84, y: 4, zone: "center" },
-        { id: "nine", name: "9", x: 98, y: 4, zone: "center" },
-        { id: "ten", name: "10", x: 98, y: 50, zone: "center" },
-        { id: "eleven", name: "11", x: 98, y: 96, zone: "center" },
-        { id: "twelve", name: "12", x: 84, y: 96, zone: "center" },
-        { id: "thirteen", name: "13", x: 70, y: 96, zone: "center" },
-        { id: "fourteen", name: "14", x: 56, y: 96, zone: "center" },
-        { id: "fifteen", name: "15", x: 50, y: 96, zone: "center" },
-        { id: "sixteen", name: "16", x: 44, y: 96, zone: "center" },
-        { id: "seventeen", name: "17", x: 30, y: 96, zone: "center" },
-        { id: "eighteen", name: "18", x: 16, y: 96, zone: "center" },
-        { id: "nineteen", name: "19", x: 2, y: 96, zone: "center" },
-        { id: "twenty", name: "20", x: 2, y: 50, zone: "center" },
-        { id: "twentyone", name: "21", x: 16, y: 50, zone: "center" },
-        { id: "twentytwo", name: "22", x: 30, y: 50, zone: "center" },
-        { id: "twentythree", name: "23", x: 44, y: 50, zone: "center" },
-        { id: "twentythree", name: "23", x: 50, y: 50, zone: "center" },
-        { id: "twentythree", name: "23", x: 56, y: 50, zone: "center" },
-        { id: "twentyfour", name: "24", x: 70, y: 50, zone: "center" },
-        { id: "twentyfive", name: "25", x: 84, y: 50, zone: "center" },
+        { id: "two", name: "2", x: 24, y: 4, zone: "center" },
+        { id: "three", name: "3", x: 26, y: 4, zone: "center" },
+        { id: "four", name: "4", x: 49, y: 4, zone: "center" },
+        { id: "five", name: "5", x: 51, y: 4, zone: "center" },
+        { id: "six", name: "6", x: 74, y: 4, zone: "center" },
+        { id: "seven", name: "7", x: 76, y: 4, zone: "center" },
+        { id: "eight", name: "8", x: 98, y: 4, zone: "center" },
+        { id: "nine", name: "9", x: 98, y: 50, zone: "center" },
+        { id: "ten", name: "10", x: 98, y: 96, zone: "center" },
+        { id: "eleven", name: "11", x: 76, y: 96, zone: "center" },
+        { id: "twelve", name: "12", x: 74, y: 96, zone: "center" },
+        { id: "thirteen", name: "13", x: 51, y: 96, zone: "center" },
+        { id: "fourteen", name: "14", x: 49, y: 96, zone: "center" },
+        { id: "fifteen", name: "15", x: 26, y: 96, zone: "center" },
+        { id: "sixteen", name: "16", x: 24, y: 96, zone: "center" },
+        { id: "seventeen", name: "17", x: 2, y: 96, zone: "center" },
+        { id: "eighteen", name: "18", x: 2, y: 50, zone: "center" },
+        { id: "nineteen", name: "19", x: 13, y: 50, zone: "center" },
+        { id: "twenty", name: "20", x: 24, y: 50, zone: "center" },
+        { id: "twentyone", name: "21", x: 26, y: 50, zone: "center" },
+        { id: "twentytwo", name: "22", x: 38, y: 50, zone: "center" },
+        { id: "twentythree", name: "23", x: 49, y: 50, zone: "center" },
+        { id: "twentyfour", name: "24", x: 51, y: 50, zone: "center" },
+        { id: "twentyfive", name: "25", x: 62, y: 50, zone: "center" },
+        { id: "twentysix", name: "26", x: 74, y: 50, zone: "center" },
+        { id: "twentyseven", name: "27", x: 76, y: 50, zone: "center" },
+        { id: "twentyeight", name: "28", x: 87, y: 50, zone: "center" },
     ],
     pickleball: [
         // Góc sân
@@ -308,6 +309,46 @@ export default function LocationPicker({
             "twentyfour",
             "twentyfive",
         ];
+    } else if (courtCode === "CL-01") {
+        enabledLocationIds = [
+            "one",
+            "two",
+            "sixteen",
+            "seventeen",
+            "eighteen",
+            "nineteen",
+            "twenty",
+        ];
+    } else if (courtCode === "CL-02") {
+        enabledLocationIds = [
+            "three",
+            "four",
+            "twentyone",
+            "twentytwo",
+            "twentythree",
+            "fourteen",
+            "fifteen",
+        ];
+    } else if (courtCode === "CL-03") {
+        enabledLocationIds = [
+            "five",
+            "six",
+            "twentyfour",
+            "twentyfive",
+            "twentysix",
+            "twelve",
+            "thirteen",
+        ];
+    } else if (courtCode === "CL-04") {
+        enabledLocationIds = [
+            "seven",
+            "eight",
+            "nine",
+            "ten",
+            "eleven",
+            "twentyseven",
+            "twentyeight",
+        ];
     }
 
     const handleLocationClick = (location: LocationPoint) => {
@@ -355,9 +396,7 @@ export default function LocationPicker({
                         </>
                     )}
 
-                    {(courtType === "tennis" ||
-                        courtType === "badminton" ||
-                        courtType === "pickleball") && (
+                    {(courtType === "tennis" || courtType === "pickleball") && (
                         <>
                             {/* Net */}
                             <div className="absolute top-2 bottom-2 left-1/2 w-1 bg-gray-400 transform -translate-x-px"></div>
@@ -375,6 +414,108 @@ export default function LocationPicker({
                                     <div className="absolute bottom-1/3 left-2 right-2 h-0.5 bg-white"></div>
                                 </>
                             )}
+                        </>
+                    )}
+
+                    {/* Badminton: Net lines cho từng sân */}
+                    {courtType === "badminton" && (
+                        <>
+                            {/* Net CL-01: nối 18 và 20 */}
+                            <div
+                                className="absolute h-0.5 bg-gray-400"
+                                style={{
+                                    left: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "eighteen"
+                                        )?.x
+                                    }%`,
+                                    top: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "eighteen"
+                                        )?.y
+                                    }%`,
+                                    width: `${Math.abs(
+                                        (COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twenty"
+                                        )?.x ?? 0) -
+                                            (COURT_LOCATIONS.badminton.find(
+                                                (l) => l.id === "eighteen"
+                                            )?.x ?? 0)
+                                    )}%`,
+                                }}
+                            ></div>
+                            {/* Net CL-02: nối 21 và 23 */}
+                            <div
+                                className="absolute h-0.5 bg-gray-400"
+                                style={{
+                                    left: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentyone"
+                                        )?.x
+                                    }%`,
+                                    top: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentyone"
+                                        )?.y
+                                    }%`,
+                                    width: `${Math.abs(
+                                        (COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentythree"
+                                        )?.x ?? 0) -
+                                            (COURT_LOCATIONS.badminton.find(
+                                                (l) => l.id === "twentyone"
+                                            )?.x ?? 0)
+                                    )}%`,
+                                }}
+                            ></div>
+                            {/* Net CL-03: nối 24 và 26 */}
+                            <div
+                                className="absolute h-0.5 bg-gray-400"
+                                style={{
+                                    left: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentyfour"
+                                        )?.x
+                                    }%`,
+                                    top: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentyfour"
+                                        )?.y
+                                    }%`,
+                                    width: `${Math.abs(
+                                        (COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentysix"
+                                        )?.x ?? 0) -
+                                            (COURT_LOCATIONS.badminton.find(
+                                                (l) => l.id === "twentyfour"
+                                            )?.x ?? 0)
+                                    )}%`,
+                                }}
+                            ></div>
+                            {/* Net CL-04: nối 27 và 9 */}
+                            <div
+                                className="absolute h-0.5 bg-gray-400"
+                                style={{
+                                    left: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentyseven"
+                                        )?.x
+                                    }%`,
+                                    top: `${
+                                        COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "twentyseven"
+                                        )?.y
+                                    }%`,
+                                    width: `${Math.abs(
+                                        (COURT_LOCATIONS.badminton.find(
+                                            (l) => l.id === "nine"
+                                        )?.x ?? 0) -
+                                            (COURT_LOCATIONS.badminton.find(
+                                                (l) => l.id === "twentyseven"
+                                            )?.x ?? 0)
+                                    )}%`,
+                                }}
+                            ></div>
                         </>
                     )}
 

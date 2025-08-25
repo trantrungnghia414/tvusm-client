@@ -128,31 +128,6 @@ export default function EquipmentDetailPage({
         return format(new Date(dateString), "dd/MM/yyyy", { locale: vi });
     };
 
-    const getCourtType = (
-        courtName: string | null | undefined
-    ):
-        | "football"
-        | "basketball"
-        | "tennis"
-        | "volleyball"
-        | "badminton"
-        | "pickleball"
-        | "general" => {
-        if (!courtName) return "general";
-        const name = courtName.toLowerCase();
-        if (name.includes("bóng đá") || name.includes("football"))
-            return "football";
-        if (name.includes("bóng rổ") || name.includes("basketball"))
-            return "basketball";
-        if (name.includes("tennis")) return "tennis";
-        if (name.includes("bóng chuyền") || name.includes("volleyball"))
-            return "volleyball";
-        if (name.includes("cầu lông") || name.includes("badminton"))
-            return "badminton";
-        if (name.includes("pickleball")) return "pickleball";
-        return "general";
-    };
-
     const getWarrantyStatus = (warrantyDate: string | null) => {
         if (!warrantyDate) return null;
 
@@ -341,9 +316,70 @@ export default function EquipmentDetailPage({
                                                 selectedLocation={
                                                     equipment.location_detail
                                                 }
-                                                courtType={getCourtType(
-                                                    equipment.court_name
-                                                )}
+                                                courtType={
+                                                    // Sửa đoạn này để luôn truyền đúng "badminton" nếu là sân cầu lông
+                                                    (() => {
+                                                        const name =
+                                                            equipment.court_name?.toLowerCase() ||
+                                                            "";
+                                                        const code =
+                                                            equipment.court_code?.toLowerCase() ||
+                                                            "";
+                                                        if (
+                                                            name.includes(
+                                                                "cầu lông"
+                                                            ) ||
+                                                            name.includes(
+                                                                "badminton"
+                                                            ) ||
+                                                            code.startsWith(
+                                                                "cl-"
+                                                            )
+                                                        ) {
+                                                            return "badminton";
+                                                        }
+                                                        if (
+                                                            name.includes(
+                                                                "bóng đá"
+                                                            ) ||
+                                                            name.includes(
+                                                                "football"
+                                                            )
+                                                        )
+                                                            return "football";
+                                                        if (
+                                                            name.includes(
+                                                                "bóng rổ"
+                                                            ) ||
+                                                            name.includes(
+                                                                "basketball"
+                                                            )
+                                                        )
+                                                            return "basketball";
+                                                        if (
+                                                            name.includes(
+                                                                "tennis"
+                                                            )
+                                                        )
+                                                            return "tennis";
+                                                        if (
+                                                            name.includes(
+                                                                "bóng chuyền"
+                                                            ) ||
+                                                            name.includes(
+                                                                "volleyball"
+                                                            )
+                                                        )
+                                                            return "volleyball";
+                                                        if (
+                                                            name.includes(
+                                                                "pickleball"
+                                                            )
+                                                        )
+                                                            return "pickleball";
+                                                        return "general";
+                                                    })()
+                                                }
                                                 className="border border-gray-200 rounded-lg p-4"
                                             />
                                         </div>

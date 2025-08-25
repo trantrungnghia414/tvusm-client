@@ -53,7 +53,7 @@ export default function EquipmentStats({ stats }: EquipmentStatsProps) {
         },
         {
             title: "Tổng giá trị",
-            value: formatCurrency(stats.total_value),
+            value: formatCurrency(Number(stats.total_value) || 0),
             icon: DollarSign,
             color: "text-indigo-600",
             bgColor: "bg-indigo-50",

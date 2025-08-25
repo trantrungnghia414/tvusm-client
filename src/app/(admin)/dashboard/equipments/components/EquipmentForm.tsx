@@ -331,6 +331,11 @@ export default function EquipmentForm({
             courts.find((c) => c.court_id.toString() === courtId) || courts[0];
         if (!selectedCourt) return "football";
 
+        // Ưu tiên kiểm tra mã sân cho cầu lông
+        if (["CL-01", "CL-02", "CL-03", "CL-04"].includes(selectedCourt.code)) {
+            return "badminton";
+        }
+
         // Map based on court name to determine type
         const courtName = selectedCourt.name?.toLowerCase() || "";
 
@@ -850,50 +855,44 @@ export default function EquipmentForm({
                                 {/* Disable LocationPicker if venue or court not selected */}
                                 <LocationPicker
                                     selectedLocation={visualLocation}
-                                    onLocationSelect={handleVisualLocationSelect}
+                                    onLocationSelect={
+                                        handleVisualLocationSelect
+                                    }
                                     courtType={getCourtTypeForPicker()}
-                                    className={"mt-2 "+ ((venueId === "none" || !venueId || courtId === "none" || !courtId) ? "pointer-events-none opacity-60" : "")}
+                                    className={
+                                        "mt-2 " +
+                                        (venueId === "none" ||
+                                        !venueId ||
+                                        courtId === "none" ||
+                                        !courtId
+                                            ? "pointer-events-none opacity-60"
+                                            : "")
+                                    }
                                     locationNote={locationNotes}
                                     onLocationNoteChange={setLocationNotes}
                                     courtCode={(() => {
                                         const selectedCourt = courts.find(
-                                            (c) => c.court_id.toString() === courtId
+                                            (c) =>
+                                                c.court_id.toString() ===
+                                                courtId
                                         );
-                                        return selectedCourt ? selectedCourt.code : undefined;
+                                        return selectedCourt
+                                            ? selectedCourt.code
+                                            : undefined;
                                     })()}
                                 />
-                                {(venueId === "none" || !venueId || courtId === "none" || !courtId) && (
+                                {(venueId === "none" ||
+                                    !venueId ||
+                                    courtId === "none" ||
+                                    !courtId) && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10 rounded-lg select-none">
-                                        <span className="text-gray-500 font-medium">Chọn địa điểm và sân thi đấu để chọn vị trí</span>
+                                        <span className="text-gray-500 font-medium">
+                                            Chọn địa điểm và sân thi đấu để chọn
+                                            vị trí
+                                        </span>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Location Notes - hiển thị khi đã chọn vị trí */}
-                            {/* {(locationDetail || visualLocation) && (
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="locationNotes"
-                                        className="font-medium"
-                                    >
-                                        Ghi chú thêm về vị trí
-                                    </Label>
-                                    <Textarea
-                                        id="locationNotes"
-                                        value={locationNotes}
-                                        onChange={(e) =>
-                                            setLocationNotes(e.target.value)
-                                        }
-                                        placeholder="VD: Gần cửa ra vào, cạnh kho đồ, vị trí dễ thấy..."
-                                        className="resize-y min-h-[40px] overflow-auto"
-                                        rows={3}
-                                    />
-                                    <p className="text-xs text-gray-500">
-                                        Ghi chú này sẽ được thêm vào thông tin
-                                        vị trí để dễ dàng tìm kiếm thiết bị
-                                    </p>
-                                </div>
-                            )} */}
                         </div>
 
                         {/* Trạng thái, ngày mua, giá mua, ngày hết hạn bảo hành - 1 hàng ngang */}

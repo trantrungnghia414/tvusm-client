@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FileDown, Database } from "lucide-react";
+import { Plus, FileDown, Database, AlertTriangle } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 import { toast } from "sonner";
 import { Equipment } from "../types/equipmentTypes";
@@ -349,6 +349,15 @@ export default function EquipmentActions({
             <Button onClick={onAddEquipment}>
                 <Plus className="mr-2 h-4 w-4" />
                 Thêm thiết bị
+            </Button>
+
+            {/* Nút báo cáo sự cố */}
+            <Button
+                variant="outline"
+                onClick={() => router.push("/dashboard/equipments/report")}
+            >
+                <AlertTriangle className="mr-2 h-4 w-4 text-red-500" />
+                Báo cáo sự cố
             </Button>
 
             {/* Thêm nút chuyển sang trang quản lý danh mục */}

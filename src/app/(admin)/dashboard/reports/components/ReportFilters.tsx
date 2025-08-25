@@ -19,7 +19,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { DateRange } from "react-day-picker"; // ✅ Import DateRange từ react-day-picker
+import { DateRange } from "react-day-picker";
 import {
     ReportFilters as FilterType,
     ExportOptions,
@@ -32,6 +32,7 @@ interface ReportFiltersProps {
     onExport: (options: ExportOptions) => void;
     onRefresh: () => void;
     venues?: Array<{ venue_id: number; name: string }>;
+    customers?: Array<{ user_id: number; full_name: string }>;
     loading?: boolean;
 }
 
@@ -41,6 +42,7 @@ export default function ReportFilters({
     onExport,
     onRefresh,
     venues = [],
+    customers = [],
     loading = false,
 }: ReportFiltersProps) {
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -49,7 +51,6 @@ export default function ReportFilters({
     );
     const [includeCharts, setIncludeCharts] = useState(true);
 
-    // ✅ Sửa lỗi: Cập nhật union type để bao gồm DateRangeType
     const handleFilterChange = (
         key: keyof FilterType,
         value: string | number | undefined | DateRangeType
@@ -81,6 +82,9 @@ export default function ReportFilters({
         const lastMonth = new Date(today);
         lastMonth.setMonth(lastMonth.getMonth() - 1);
 
+        const lastQuarter = new Date(today);
+        lastQuarter.setMonth(lastQuarter.getMonth() - 3);
+
         const lastYear = new Date(today);
         lastYear.setFullYear(lastYear.getFullYear() - 1);
 
@@ -88,18 +92,17 @@ export default function ReportFilters({
             { label: "Hôm qua", value: { from: yesterday, to: yesterday } },
             { label: "7 ngày qua", value: { from: lastWeek, to: today } },
             { label: "30 ngày qua", value: { from: lastMonth, to: today } },
+            { label: "3 tháng qua", value: { from: lastQuarter, to: today } },
             { label: "1 năm qua", value: { from: lastYear, to: today } },
         ];
     };
 
-    // ✅ Sửa lỗi: Cập nhật handler để match với DateRangePicker signature
     const handleDateRangeChange = (dateRange: DateRange | undefined) => {
         if (!dateRange) {
             handleFilterChange("dateRange", undefined);
             return;
         }
 
-        // Convert DateRange to DateRangeType chỉ khi có đầy đủ from và to
         if (dateRange.from && dateRange.to) {
             const convertedRange: DateRangeType = {
                 from: dateRange.from,
@@ -107,12 +110,10 @@ export default function ReportFilters({
             };
             handleFilterChange("dateRange", convertedRange);
         } else {
-            // Nếu chỉ có một trong hai, set undefined
             handleFilterChange("dateRange", undefined);
         }
     };
 
-    // ✅ Convert function để transform DateRangeType sang DateRange
     const convertToDateRange = (
         dateRangeType: DateRangeType | undefined
     ): DateRange | undefined => {
@@ -132,7 +133,7 @@ export default function ReportFilters({
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                     {/* Report Type */}
                     <div className="space-y-2">
                         <Label htmlFor="reportType">Loại báo cáo</Label>
@@ -146,19 +147,18 @@ export default function ReportFilters({
                                 <SelectValue placeholder="Chọn loại báo cáo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="overview">
-                                    Tổng quan
+                                <SelectItem value="revenue">
+                                    Doanh thu
+                                </SelectItem>
+                                <SelectItem value="customers">
+                                    Khách hàng
+                                </SelectItem>
+                                <SelectItem value="venues">
+                                    Sân thi đấu
                                 </SelectItem>
                                 <SelectItem value="bookings">
                                     Đặt sân
                                 </SelectItem>
-                                <SelectItem value="revenue">
-                                    Doanh thu
-                                </SelectItem>
-                                <SelectItem value="users">
-                                    Người dùng
-                                </SelectItem>
-                                <SelectItem value="venues">Địa điểm</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -182,6 +182,9 @@ export default function ReportFilters({
                                 </SelectItem>
                                 <SelectItem value="monthly">
                                     Theo tháng
+                                </SelectItem>
+                                <SelectItem value="quarterly">
+                                    Theo quý
                                 </SelectItem>
                                 <SelectItem value="yearly">Theo năm</SelectItem>
                             </SelectContent>
@@ -221,11 +224,43 @@ export default function ReportFilters({
                         </Select>
                     </div>
 
+                    {/* Customer Filter */}
+                    <div className="space-y-2">
+                        <Label htmlFor="customer">Khách hàng</Label>
+                        <Select
+                            value={filters.customerId?.toString() || "all"}
+                            onValueChange={(value) =>
+                                handleFilterChange(
+                                    "customerId",
+                                    value === "all"
+                                        ? undefined
+                                        : parseInt(value)
+                                )
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Tất cả khách hàng" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    Tất cả khách hàng
+                                </SelectItem>
+                                {customers.map((customer) => (
+                                    <SelectItem
+                                        key={customer.user_id}
+                                        value={customer.user_id.toString()}
+                                    >
+                                        {customer.full_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     {/* Date Range */}
                     <div className="space-y-2">
                         <Label>Khoảng thời gian</Label>
                         <DateRangePicker
-                            // ✅ Sửa lỗi: Convert DateRangeType sang DateRange
                             value={convertToDateRange(filters.dateRange)}
                             onChange={handleDateRangeChange}
                             presets={getDateRangePresets()}

@@ -17,6 +17,8 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    ComposedChart,
+    Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartDataPoint } from "../types/reportTypes";
@@ -24,11 +26,13 @@ import { ChartDataPoint } from "../types/reportTypes";
 interface ReportChartProps {
     title: string;
     data: ChartDataPoint[];
-    type: "area" | "bar" | "line" | "pie";
+    type: "area" | "bar" | "line" | "pie" | "composed";
     height?: number;
     color?: string;
     loading?: boolean;
     description?: string;
+    secondaryColor?: string;
+    showLegend?: boolean;
 }
 
 const COLORS = [
@@ -50,6 +54,8 @@ export default function ReportChart({
     color = "#3B82F6",
     loading = false,
     description,
+    secondaryColor = "#10B981",
+    showLegend = false,
 }: ReportChartProps) {
     const formatValue = (value: number): string => {
         if (value >= 1000000) {
@@ -61,7 +67,13 @@ export default function ReportChart({
         return value.toLocaleString();
     };
 
-    // ✅ Sửa lỗi: Thay đổi return type và thêm fallback
+    const formatCurrency = (value: number): string => {
+        return new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+        }).format(value);
+    };
+
     const renderChart = (): React.ReactElement => {
         switch (type) {
             case "area":
@@ -84,6 +96,7 @@ export default function ReportChart({
                                 "Giá trị",
                             ]}
                         />
+                        {showLegend && <Legend />}
                         <Area
                             type="monotone"
                             dataKey="value"
@@ -115,6 +128,7 @@ export default function ReportChart({
                                 "Giá trị",
                             ]}
                         />
+                        {showLegend && <Legend />}
                         <Bar
                             dataKey="value"
                             fill={color}
@@ -143,6 +157,7 @@ export default function ReportChart({
                                 "Giá trị",
                             ]}
                         />
+                        {showLegend && <Legend />}
                         <Line
                             type="monotone"
                             dataKey="value"
@@ -151,6 +166,56 @@ export default function ReportChart({
                             dot={{ fill: color, strokeWidth: 2, r: 4 }}
                         />
                     </LineChart>
+                );
+
+            case "composed":
+                return (
+                    <ComposedChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 12 }}
+                            tickLine={false}
+                        />
+                        <YAxis
+                            yAxisId="left"
+                            tick={{ fontSize: 12 }}
+                            tickLine={false}
+                            tickFormatter={formatCurrency}
+                        />
+                        <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            tick={{ fontSize: 12 }}
+                            tickLine={false}
+                            tickFormatter={formatValue}
+                        />
+                        <Tooltip
+                            formatter={(value: number, name: string) => [
+                                name === "value"
+                                    ? formatCurrency(value)
+                                    : formatValue(value),
+                                name === "value" ? "Doanh thu" : "Số lượng",
+                            ]}
+                        />
+                        <Legend />
+                        <Bar
+                            yAxisId="left"
+                            dataKey="value"
+                            fill={color}
+                            radius={[4, 4, 0, 0]}
+                            name="Doanh thu"
+                        />
+                        <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="secondaryValue"
+                            stroke={secondaryColor}
+                            strokeWidth={2}
+                            dot={{ fill: secondaryColor, strokeWidth: 2, r: 4 }}
+                            name="Số lượng"
+                        />
+                    </ComposedChart>
                 );
 
             case "pie":
@@ -181,11 +246,11 @@ export default function ReportChart({
                         <Tooltip
                             formatter={(value: number) => formatValue(value)}
                         />
+                        {showLegend && <Legend />}
                     </PieChart>
                 );
 
             default:
-                // ✅ Sửa lỗi: Thay vì return null, return một chart mặc định
                 return (
                     <div className="flex items-center justify-center h-full">
                         <div className="text-center">
@@ -231,7 +296,6 @@ export default function ReportChart({
         );
     }
 
-    // ✅ Sửa lỗi: Kiểm tra dữ liệu trước khi render
     if (!data || data.length === 0) {
         return (
             <Card>

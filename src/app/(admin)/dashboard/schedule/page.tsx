@@ -21,6 +21,13 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     ArrowLeft,
     Calendar as CalendarIcon,
     Clock,
@@ -28,6 +35,10 @@ import {
     Phone,
     ChevronLeft,
     ChevronRight,
+    User,
+    Mail,
+    CreditCard,
+    FileText,
 } from "lucide-react";
 import {
     format,
@@ -119,6 +130,9 @@ export default function SchedulePage() {
     const [selectedCourt, setSelectedCourt] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [fetchingSchedule, setFetchingSchedule] = useState(false);
+    const [selectedBooking, setSelectedBooking] =
+        useState<ScheduleBooking | null>(null);
+    const [showBookingDialog, setShowBookingDialog] = useState(false);
 
     // Time slots from 6:00 to 22:00 (every hour)
     const timeSlots = React.useMemo(() => {
@@ -331,7 +345,7 @@ export default function SchedulePage() {
                 return "bg-yellow-100 border-yellow-300 text-yellow-800";
             case "confirmed":
                 // ✅ Đã xác nhận - xanh dương
-                return "bg-blue-100 border-blue-300 text-blue-800";
+                return "bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200";
             case "completed":
                 // ✅ Hoàn thành - xanh lá đậm
                 return "bg-green-100 border-green-300 text-green-800";
@@ -359,9 +373,48 @@ export default function SchedulePage() {
         }
     };
 
-    // Handle booking click
-    const handleBookingClick = (bookingId: number) => {
-        router.push(`/dashboard/bookings/${bookingId}`);
+    // Handle slot click - show booking details or do nothing for empty slots
+    const handleSlotClick = (booking: ScheduleBooking | undefined) => {
+        if (booking) {
+            // Có booking - hiển thị thông tin
+            setSelectedBooking(booking);
+            setShowBookingDialog(true);
+        }
+        // Nếu không có booking (slot trống) - không làm gì
+    };
+
+    // Get payment status text and color
+    const getPaymentStatusText = (paymentStatus: string) => {
+        switch (paymentStatus) {
+            case "pending":
+                return "Chờ thanh toán";
+            case "paid":
+                return "Đã thanh toán";
+            case "refunded":
+                return "Đã hoàn tiền";
+            default:
+                return paymentStatus;
+        }
+    };
+
+    const getPaymentStatusColor = (paymentStatus: string) => {
+        switch (paymentStatus) {
+            case "pending":
+                return "text-yellow-600 bg-yellow-50 border-yellow-200";
+            case "paid":
+                return "text-green-600 bg-green-50 border-green-200";
+            case "refunded":
+                return "text-gray-600 bg-gray-50 border-gray-200";
+            default:
+                return "text-gray-600 bg-gray-50 border-gray-200";
+        }
+    };
+
+    // Navigate to booking detail page
+    const handleViewBookingDetail = () => {
+        if (selectedBooking) {
+            router.push(`/dashboard/bookings/${selectedBooking.booking_id}`);
+        }
     };
 
     // Week navigation
@@ -595,10 +648,10 @@ export default function SchedulePage() {
                                         <div className="w-3 h-3 rounded bg-green-50 border-2 border-green-200"></div>
                                         <span>Trống</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5">
+                                    {/* <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded bg-yellow-100 border border-yellow-300"></div>
                                         <span>Chờ xác nhận</span>
-                                    </div>
+                                    </div> */}
                                     <div className="flex items-center gap-1.5">
                                         <div className="w-3 h-3 rounded bg-blue-100 border border-blue-300"></div>
                                         <span>Đã xác nhận</span>
@@ -682,8 +735,8 @@ export default function SchedulePage() {
                                                             // ✅ Booking card
                                                             <div
                                                                 onClick={() =>
-                                                                    handleBookingClick(
-                                                                        booking.booking_id
+                                                                    handleSlotClick(
+                                                                        booking
                                                                     )
                                                                 }
                                                                 className={`h-full p-2 cursor-pointer hover:shadow-md transition-all border-l-4 ${slotColor}`}
@@ -736,16 +789,21 @@ export default function SchedulePage() {
                                                         ) : booking ? (
                                                             // ✅ Continuation of booking
                                                             <div
-                                                                className={`h-full border-l-4 ${slotColor} flex items-center justify-center`}
+                                                                onClick={() =>
+                                                                    handleSlotClick(
+                                                                        booking
+                                                                    )
+                                                                }
+                                                                className={`h-full border-l-4 cursor-pointer hover:shadow-sm transition-all ${slotColor} flex items-center justify-center`}
                                                             >
                                                                 <span className="text-xs opacity-70">
-                                                                    ↕
+                                                                    Đã đặt
                                                                 </span>
                                                             </div>
                                                         ) : (
-                                                            // ✅ Available slot
+                                                            // ✅ Available slot - không có click handler
                                                             <div
-                                                                className={`h-full border-2 border-dashed cursor-pointer ${slotColor} flex items-center justify-center hover:shadow-sm transition-all`}
+                                                                className={`h-full border-2 border-dashed ${slotColor} flex items-center justify-center hover:shadow-sm transition-all`}
                                                             >
                                                                 <span className="text-xs opacity-50">
                                                                     Trống
@@ -776,38 +834,188 @@ export default function SchedulePage() {
                     </Card>
                 )}
 
-                {/* Legend */}
-                {/* <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm">
-                            Chú thích màu sắc
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-green-50 border-2 border-green-200"></div>
-                                <span>Trống</span>
+                {/* Booking Details Dialog */}
+                <Dialog
+                    open={showBookingDialog}
+                    onOpenChange={setShowBookingDialog}
+                >
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <User className="h-5 w-5" />
+                                Chi tiết đặt sân
+                            </DialogTitle>
+                            <DialogDescription>
+                                Thông tin chi tiết về lịch đặt sân
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        {selectedBooking && (
+                            <div className="space-y-4">
+                                {/* Customer Info */}
+                                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                                    <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                                        <User className="h-4 w-4" />
+                                        Thông tin khách hàng
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Họ tên:
+                                            </span>
+                                            <span className="font-medium">
+                                                {selectedBooking.customer_name}
+                                            </span>
+                                        </div>
+                                        {selectedBooking.customer_phone && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600 flex items-center gap-1">
+                                                    <Phone className="h-3 w-3" />
+                                                    Điện thoại:
+                                                </span>
+                                                <span className="font-medium">
+                                                    {
+                                                        selectedBooking.customer_phone
+                                                    }
+                                                </span>
+                                            </div>
+                                        )}
+                                        {selectedBooking.customer_email && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600 flex items-center gap-1">
+                                                    <Mail className="h-3 w-3" />
+                                                    Email:
+                                                </span>
+                                                <span className="font-medium text-xs">
+                                                    {
+                                                        selectedBooking.customer_email
+                                                    }
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Booking Info */}
+                                <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+                                    <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        Thông tin đặt sân
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Ngày:
+                                            </span>
+                                            <span className="font-medium">
+                                                {format(
+                                                    new Date(
+                                                        selectedBooking.date
+                                                    ),
+                                                    "dd/MM/yyyy",
+                                                    { locale: vi }
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Giờ:
+                                            </span>
+                                            <span className="font-medium">
+                                                {selectedBooking.start_time} -{" "}
+                                                {selectedBooking.end_time}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Trạng thái:
+                                            </span>
+                                            <Badge
+                                                className={`text-xs ${getSlotColor(
+                                                    selectedBooking
+                                                )}`}
+                                                variant="secondary"
+                                            >
+                                                {getStatusText(
+                                                    selectedBooking.status
+                                                )}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Payment Info */}
+                                <div className="bg-green-50 p-4 rounded-lg space-y-3">
+                                    <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                                        <CreditCard className="h-4 w-4" />
+                                        Thanh toán
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Tổng tiền:
+                                            </span>
+                                            <span className="font-bold text-green-600">
+                                                {formatCurrency(
+                                                    selectedBooking.total_amount
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                                Trạng thái:
+                                            </span>
+                                            <Badge
+                                                className={`text-xs ${getPaymentStatusColor(
+                                                    selectedBooking.payment_status
+                                                )}`}
+                                                variant="outline"
+                                            >
+                                                {getPaymentStatusText(
+                                                    selectedBooking.payment_status
+                                                )}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Notes */}
+                                {selectedBooking.notes && (
+                                    <div className="bg-yellow-50 p-4 rounded-lg space-y-2">
+                                        <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
+                                            <FileText className="h-4 w-4" />
+                                            Ghi chú
+                                        </h4>
+                                        <p className="text-sm text-gray-700">
+                                            {selectedBooking.notes}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex gap-2 pt-2">
+                                    <Button
+                                        onClick={handleViewBookingDetail}
+                                        className="flex-1"
+                                        size="sm"
+                                    >
+                                        Xem chi tiết
+                                    </Button>
+                                    <Button
+                                        onClick={() =>
+                                            setShowBookingDialog(false)
+                                        }
+                                        variant="outline"
+                                        className="flex-1"
+                                        size="sm"
+                                    >
+                                        Đóng
+                                    </Button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-yellow-100 border border-yellow-300"></div>
-                                <span>Chờ xác nhận</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
-                                <span>Đã xác nhận</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
-                                <span>Hoàn thành</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
-                                <span>Đã hủy</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card> */}
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </DashboardLayout>
     );

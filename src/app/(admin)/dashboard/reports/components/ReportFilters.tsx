@@ -1,10 +1,9 @@
-// client/src/app/(admin)/dashboard/reports/components/ReportFilters.tsx
 "use client";
 
-import React, { useState } from "react";
-import { Filter, Download, RefreshCw } from "lucide-react";
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
 import {
     Select,
     SelectContent,
@@ -12,205 +11,211 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { DateRange } from "react-day-picker";
-import {
-    ReportFilters as FilterType,
-    ExportOptions,
-    DateRangeType,
-} from "../types/reportTypes";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
 interface ReportFiltersProps {
-    filters: FilterType;
-    onFiltersChange: (filters: FilterType) => void;
-    onExport: (options: ExportOptions) => void;
-    onRefresh: () => void;
-    venues?: Array<{ venue_id: number; name: string }>;
-    customers?: Array<{ user_id: number; full_name: string }>;
-    loading?: boolean;
+    reportPeriod: string;
+    startDate: Date | undefined;
+    endDate: Date | undefined;
+    selectedCourtType: string;
+    selectedVenue: string;
+    selectedCourt: string; // Bỏ optional
+    courtTypes: Array<{ type_id: number; name: string }>;
+    venues: Array<{ venue_id: number; name: string }>;
+    courts: Array<{ court_id: number; name: string; venue_id: number }>; // Bỏ optional
+    onPeriodChange: (period: string) => void;
+    onStartDateChange: (date: Date | undefined) => void;
+    onEndDateChange: (date: Date | undefined) => void;
+    onCourtTypeChange: (typeId: string) => void;
+    onVenueChange: (venueId: string) => void;
+    onCourtChange: (courtId: string) => void; // Bỏ optional
 }
 
 export default function ReportFilters({
-    filters,
-    onFiltersChange,
-    onExport,
-    onRefresh,
-    venues = [],
-    customers = [],
-    loading = false,
+    reportPeriod,
+    startDate,
+    endDate,
+    selectedCourtType,
+    selectedVenue,
+    selectedCourt,
+    courtTypes,
+    venues,
+    courts,
+    onPeriodChange,
+    onStartDateChange,
+    onEndDateChange,
+    onCourtTypeChange,
+    onVenueChange,
+    onCourtChange,
 }: ReportFiltersProps) {
-    const [exportDialogOpen, setExportDialogOpen] = useState(false);
-    const [exportFormat, setExportFormat] = useState<"pdf" | "excel" | "csv">(
-        "pdf"
-    );
-    const [includeCharts, setIncludeCharts] = useState(true);
+    // Lọc courts theo venue đã chọn
+    const filteredCourts = React.useMemo(() => {
+        if (!courts || courts.length === 0) return [];
 
-    const handleFilterChange = (
-        key: keyof FilterType,
-        value: string | number | undefined | DateRangeType
-    ) => {
-        onFiltersChange({
-            ...filters,
-            [key]: value,
-        });
-    };
-
-    const handleExport = () => {
-        onExport({
-            format: exportFormat,
-            includeCharts,
-            dateRange: filters.dateRange,
-            reportType: filters.reportType,
-        });
-        setExportDialogOpen(false);
-    };
-
-    const getDateRangePresets = () => {
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const lastWeek = new Date(today);
-        lastWeek.setDate(lastWeek.getDate() - 7);
-
-        const lastMonth = new Date(today);
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-
-        const lastQuarter = new Date(today);
-        lastQuarter.setMonth(lastQuarter.getMonth() - 3);
-
-        const lastYear = new Date(today);
-        lastYear.setFullYear(lastYear.getFullYear() - 1);
-
-        return [
-            { label: "Hôm qua", value: { from: yesterday, to: yesterday } },
-            { label: "7 ngày qua", value: { from: lastWeek, to: today } },
-            { label: "30 ngày qua", value: { from: lastMonth, to: today } },
-            { label: "3 tháng qua", value: { from: lastQuarter, to: today } },
-            { label: "1 năm qua", value: { from: lastYear, to: today } },
-        ];
-    };
-
-    const handleDateRangeChange = (dateRange: DateRange | undefined) => {
-        if (!dateRange) {
-            handleFilterChange("dateRange", undefined);
-            return;
+        if (selectedVenue === "all") {
+            return courts;
         }
+        return courts.filter(
+            (court) => court.venue_id.toString() === selectedVenue
+        );
+    }, [courts, selectedVenue]);
 
-        if (dateRange.from && dateRange.to) {
-            const convertedRange: DateRangeType = {
-                from: dateRange.from,
-                to: dateRange.to,
-            };
-            handleFilterChange("dateRange", convertedRange);
-        } else {
-            handleFilterChange("dateRange", undefined);
+    // Reset court selection khi venue thay đổi
+    React.useEffect(() => {
+        if (selectedVenue !== "all" && selectedCourt !== "all") {
+            const courtExists = filteredCourts.some(
+                (court) => court.court_id.toString() === selectedCourt
+            );
+            if (!courtExists) {
+                onCourtChange("all");
+            }
         }
-    };
-
-    const convertToDateRange = (
-        dateRangeType: DateRangeType | undefined
-    ): DateRange | undefined => {
-        if (!dateRangeType) return undefined;
-        return {
-            from: dateRangeType.from,
-            to: dateRangeType.to,
-        };
-    };
+    }, [selectedVenue, selectedCourt, filteredCourts, onCourtChange]);
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Filter className="h-5 w-5" />
-                    Bộ lọc báo cáo
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                    {/* Report Type */}
+            <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                    {/* Period Selection */}
                     <div className="space-y-2">
-                        <Label htmlFor="reportType">Loại báo cáo</Label>
+                        <label className="text-sm font-medium text-gray-700">
+                            Thời gian
+                        </label>
                         <Select
-                            value={filters.reportType}
-                            onValueChange={(value: FilterType["reportType"]) =>
-                                handleFilterChange("reportType", value)
-                            }
+                            value={reportPeriod}
+                            onValueChange={onPeriodChange}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Chọn loại báo cáo" />
+                                <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="revenue">
-                                    Doanh thu
-                                </SelectItem>
-                                <SelectItem value="customers">
-                                    Khách hàng
-                                </SelectItem>
-                                <SelectItem value="venues">
-                                    Sân thi đấu
-                                </SelectItem>
-                                <SelectItem value="bookings">
-                                    Đặt sân
+                                <SelectItem value="7d">7 ngày qua</SelectItem>
+                                <SelectItem value="30d">30 ngày qua</SelectItem>
+                                <SelectItem value="90d">90 ngày qua</SelectItem>
+                                <SelectItem value="1y">Năm nay</SelectItem>
+                                <SelectItem value="all">
+                                    Toàn thời gian
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Period */}
+                    {/* Start Date */}
                     <div className="space-y-2">
-                        <Label htmlFor="period">Chu kỳ</Label>
+                        <label className="text-sm font-medium text-gray-700">
+                            Từ ngày
+                        </label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {startDate ? (
+                                        format(startDate, "dd/MM/yyyy", {
+                                            locale: vi,
+                                        })
+                                    ) : (
+                                        <span>Chọn ngày</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={startDate}
+                                    onSelect={onStartDateChange}
+                                    initialFocus
+                                    locale={vi}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
+                    {/* End Date */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                            Đến ngày
+                        </label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-left font-normal"
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {endDate ? (
+                                        format(endDate, "dd/MM/yyyy", {
+                                            locale: vi,
+                                        })
+                                    ) : (
+                                        <span>Chọn ngày</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={endDate}
+                                    onSelect={onEndDateChange}
+                                    initialFocus
+                                    locale={vi}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
+                    {/* Court Type Filter */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">
+                            Loại sân
+                        </label>
                         <Select
-                            value={filters.period}
-                            onValueChange={(value: FilterType["period"]) =>
-                                handleFilterChange("period", value)
-                            }
+                            value={selectedCourtType}
+                            onValueChange={onCourtTypeChange}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Chọn chu kỳ" />
+                                <SelectValue placeholder="Tất cả loại sân" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="daily">Theo ngày</SelectItem>
-                                <SelectItem value="weekly">
-                                    Theo tuần
+                                <SelectItem value="all">
+                                    Tất cả loại sân
                                 </SelectItem>
-                                <SelectItem value="monthly">
-                                    Theo tháng
-                                </SelectItem>
-                                <SelectItem value="quarterly">
-                                    Theo quý
-                                </SelectItem>
-                                <SelectItem value="yearly">Theo năm</SelectItem>
+                                {courtTypes.map((type) => (
+                                    <SelectItem
+                                        key={type.type_id}
+                                        value={type.type_id.toString()}
+                                    >
+                                        {type.name}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Venue Filter */}
                     <div className="space-y-2">
-                        <Label htmlFor="venue">Địa điểm</Label>
+                        <label className="text-sm font-medium text-gray-700">
+                            Nhà thi đấu
+                        </label>
                         <Select
-                            value={filters.venueId?.toString() || "all"}
-                            onValueChange={(value) =>
-                                handleFilterChange(
-                                    "venueId",
-                                    value === "all"
-                                        ? undefined
-                                        : parseInt(value)
-                                )
-                            }
+                            value={selectedVenue}
+                            onValueChange={onVenueChange}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Tất cả địa điểm" />
+                                <SelectValue placeholder="Tất cả nhà thi đấu" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">
-                                    Tất cả địa điểm
+                                    Tất cả nhà thi đấu
                                 </SelectItem>
                                 {venues.map((venue) => (
                                     <SelectItem
@@ -224,141 +229,31 @@ export default function ReportFilters({
                         </Select>
                     </div>
 
-                    {/* Customer Filter */}
+                    {/* Court Filter */}
                     <div className="space-y-2">
-                        <Label htmlFor="customer">Khách hàng</Label>
+                        <label className="text-sm font-medium text-gray-700">
+                            Sân thể thao
+                        </label>
                         <Select
-                            value={filters.customerId?.toString() || "all"}
-                            onValueChange={(value) =>
-                                handleFilterChange(
-                                    "customerId",
-                                    value === "all"
-                                        ? undefined
-                                        : parseInt(value)
-                                )
-                            }
+                            value={selectedCourt}
+                            onValueChange={onCourtChange}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Tất cả khách hàng" />
+                                <SelectValue placeholder="Tất cả sân" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    Tất cả khách hàng
-                                </SelectItem>
-                                {customers.map((customer) => (
+                                <SelectItem value="all">Tất cả sân</SelectItem>
+                                {filteredCourts.map((court) => (
                                     <SelectItem
-                                        key={customer.user_id}
-                                        value={customer.user_id.toString()}
+                                        key={court.court_id}
+                                        value={court.court_id.toString()}
                                     >
-                                        {customer.full_name}
+                                        {court.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-
-                    {/* Date Range */}
-                    <div className="space-y-2">
-                        <Label>Khoảng thời gian</Label>
-                        <DateRangePicker
-                            value={convertToDateRange(filters.dateRange)}
-                            onChange={handleDateRangeChange}
-                            presets={getDateRangePresets()}
-                        />
-                    </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                        onClick={onRefresh}
-                        disabled={loading}
-                        variant="outline"
-                        className="flex items-center gap-2"
-                    >
-                        <RefreshCw
-                            className={`h-4 w-4 ${
-                                loading ? "animate-spin" : ""
-                            }`}
-                        />
-                        Làm mới
-                    </Button>
-
-                    <Popover
-                        open={exportDialogOpen}
-                        onOpenChange={setExportDialogOpen}
-                    >
-                        <PopoverTrigger asChild>
-                            <Button className="flex items-center gap-2">
-                                <Download className="h-4 w-4" />
-                                Xuất báo cáo
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                            <div className="space-y-4">
-                                <h4 className="font-medium">
-                                    Tùy chọn xuất báo cáo
-                                </h4>
-
-                                <div className="space-y-2">
-                                    <Label>Định dạng</Label>
-                                    <Select
-                                        value={exportFormat}
-                                        onValueChange={(
-                                            value: "pdf" | "excel" | "csv"
-                                        ) => setExportFormat(value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="pdf">
-                                                PDF
-                                            </SelectItem>
-                                            <SelectItem value="excel">
-                                                Excel
-                                            </SelectItem>
-                                            <SelectItem value="csv">
-                                                CSV
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        id="includeCharts"
-                                        checked={includeCharts}
-                                        onChange={(e) =>
-                                            setIncludeCharts(e.target.checked)
-                                        }
-                                        className="rounded"
-                                    />
-                                    <Label htmlFor="includeCharts">
-                                        Bao gồm biểu đồ
-                                    </Label>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <Button
-                                        onClick={handleExport}
-                                        className="flex-1"
-                                    >
-                                        Xuất báo cáo
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() =>
-                                            setExportDialogOpen(false)
-                                        }
-                                    >
-                                        Hủy
-                                    </Button>
-                                </div>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
                 </div>
             </CardContent>
         </Card>

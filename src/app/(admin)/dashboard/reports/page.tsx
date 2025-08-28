@@ -83,8 +83,7 @@ export default function ReportsPage() {
     );
     const [endDate, setEndDate] = useState<Date | undefined>(new Date());
     const [selectedCourtType, setSelectedCourtType] = useState("all");
-    const [selectedVenue, setSelectedVenue] = useState("all");
-    const [selectedCourt, setSelectedCourt] = useState("all"); // Thêm state cho court
+    const [selectedCourt, setSelectedCourt] = useState("all");
 
     // Data states
     const [stats, setStats] = useState<ReportsStats>({
@@ -109,11 +108,8 @@ export default function ReportsPage() {
     const [courtTypes, setCourtTypes] = useState<
         Array<{ type_id: number; name: string }>
     >([]);
-    const [venues, setVenues] = useState<
-        Array<{ venue_id: number; name: string }>
-    >([]);
     const [courts, setCourts] = useState<
-        Array<{ court_id: number; name: string; venue_id: number }>
+        Array<{ court_id: number; name: string; type_id: number }>
     >([]);
 
     // Handle period change
@@ -122,6 +118,11 @@ export default function ReportsPage() {
         const now = new Date();
 
         switch (period) {
+            case "all":
+                // Toàn thời gian - không giới hạn startDate và endDate
+                setStartDate(undefined);
+                setEndDate(undefined);
+                break;
             case "7d":
                 setStartDate(subDays(now, 7));
                 setEndDate(now);
@@ -146,7 +147,8 @@ export default function ReportsPage() {
 
     // Fetch report data from API
     const fetchReportData = useCallback(async () => {
-        if (!startDate || !endDate) return;
+        // Chỉ kiểm tra startDate và endDate khi không phải "toàn thời gian"
+        if (reportPeriod !== "all" && (!startDate || !endDate)) return;
 
         try {
             setRefreshing(true);
@@ -157,13 +159,16 @@ export default function ReportsPage() {
                 return;
             }
 
-            const params = new URLSearchParams({
-                start_date: format(startDate, "yyyy-MM-dd"),
-                end_date: format(endDate, "yyyy-MM-dd"),
-                court_type: selectedCourtType,
-                venue: selectedVenue,
-                court: selectedCourt, // Thêm court parameter
-            });
+            const params = new URLSearchParams();
+
+            // Chỉ thêm tham số ngày khi không phải "toàn thời gian"
+            if (reportPeriod !== "all" && startDate && endDate) {
+                params.append("start_date", format(startDate, "yyyy-MM-dd"));
+                params.append("end_date", format(endDate, "yyyy-MM-dd"));
+            }
+
+            params.append("court_type", selectedCourtType);
+            params.append("court", selectedCourt);
 
             // Fetch all reports in parallel
             const [
@@ -234,8 +239,8 @@ export default function ReportsPage() {
         startDate,
         endDate,
         selectedCourtType,
-        selectedVenue,
         selectedCourt,
+        reportPeriod,
         router,
     ]);
 
@@ -253,27 +258,16 @@ export default function ReportsPage() {
             if (filterRes.ok) {
                 const data = await filterRes.json();
                 setCourtTypes(data.courtTypes || []);
-                setVenues(data.venues || []);
                 setCourts(data.courts || []);
             } else {
                 // Fallback: lấy từ các endpoint riêng lẻ
-                const [courtTypesRes, venuesRes] = await Promise.all([
-                    fetchApi("/court-types", {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                    fetchApi("/venues", {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                ]);
+                const courtTypesRes = await fetchApi("/court-types", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
 
                 if (courtTypesRes.ok) {
                     const data = await courtTypesRes.json();
                     setCourtTypes(data);
-                }
-
-                if (venuesRes.ok) {
-                    const data = await venuesRes.json();
-                    setVenues(data);
                 }
 
                 // Fetch courts separately
@@ -384,17 +378,14 @@ export default function ReportsPage() {
                     startDate={startDate}
                     endDate={endDate}
                     selectedCourtType={selectedCourtType}
-                    selectedVenue={selectedVenue}
-                    selectedCourt={selectedCourt} // Truyền selectedCourt
+                    selectedCourt={selectedCourt}
                     courtTypes={courtTypes}
-                    venues={venues}
-                    courts={courts} // Truyền courts data
+                    courts={courts}
                     onPeriodChange={handlePeriodChange}
                     onStartDateChange={setStartDate}
                     onEndDateChange={setEndDate}
                     onCourtTypeChange={setSelectedCourtType}
-                    onVenueChange={setSelectedVenue}
-                    onCourtChange={setSelectedCourt} // Truyền handler
+                    onCourtChange={setSelectedCourt}
                 />
 
                 {/* Overview Stats */}

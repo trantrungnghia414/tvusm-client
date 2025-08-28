@@ -25,17 +25,14 @@ interface ReportFiltersProps {
     startDate: Date | undefined;
     endDate: Date | undefined;
     selectedCourtType: string;
-    selectedVenue: string;
-    selectedCourt: string; // Bỏ optional
+    selectedCourt: string;
     courtTypes: Array<{ type_id: number; name: string }>;
-    venues: Array<{ venue_id: number; name: string }>;
-    courts: Array<{ court_id: number; name: string; venue_id: number }>; // Bỏ optional
+    courts: Array<{ court_id: number; name: string; type_id: number }>;
     onPeriodChange: (period: string) => void;
     onStartDateChange: (date: Date | undefined) => void;
     onEndDateChange: (date: Date | undefined) => void;
     onCourtTypeChange: (typeId: string) => void;
-    onVenueChange: (venueId: string) => void;
-    onCourtChange: (courtId: string) => void; // Bỏ optional
+    onCourtChange: (courtId: string) => void;
 }
 
 export default function ReportFilters({
@@ -43,33 +40,30 @@ export default function ReportFilters({
     startDate,
     endDate,
     selectedCourtType,
-    selectedVenue,
     selectedCourt,
     courtTypes,
-    venues,
     courts,
     onPeriodChange,
     onStartDateChange,
     onEndDateChange,
     onCourtTypeChange,
-    onVenueChange,
     onCourtChange,
 }: ReportFiltersProps) {
-    // Lọc courts theo venue đã chọn
+    // Lọc courts theo loại sân đã chọn
     const filteredCourts = React.useMemo(() => {
         if (!courts || courts.length === 0) return [];
 
-        if (selectedVenue === "all") {
+        if (selectedCourtType === "all") {
             return courts;
         }
         return courts.filter(
-            (court) => court.venue_id.toString() === selectedVenue
+            (court) => court.type_id.toString() === selectedCourtType
         );
-    }, [courts, selectedVenue]);
+    }, [courts, selectedCourtType]);
 
-    // Reset court selection khi venue thay đổi
+    // Reset court selection khi court type thay đổi
     React.useEffect(() => {
-        if (selectedVenue !== "all" && selectedCourt !== "all") {
+        if (selectedCourtType !== "all" && selectedCourt !== "all") {
             const courtExists = filteredCourts.some(
                 (court) => court.court_id.toString() === selectedCourt
             );
@@ -77,12 +71,21 @@ export default function ReportFilters({
                 onCourtChange("all");
             }
         }
-    }, [selectedVenue, selectedCourt, filteredCourts, onCourtChange]);
+    }, [selectedCourtType, selectedCourt, filteredCourts, onCourtChange]);
+
+    // Reset court type khi chọn sân cụ thể
+    const handleCourtChange = (courtId: string) => {
+        if (courtId !== "all") {
+            // Tìm court được chọn và reset court type về "all"
+            onCourtTypeChange("all");
+        }
+        onCourtChange(courtId);
+    };
 
     return (
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {/* Period Selection */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
@@ -96,18 +99,21 @@ export default function ReportFilters({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">
+                                    Toàn thời gian
+                                </SelectItem>
                                 <SelectItem value="7d">7 ngày qua</SelectItem>
                                 <SelectItem value="30d">30 ngày qua</SelectItem>
                                 <SelectItem value="90d">90 ngày qua</SelectItem>
                                 <SelectItem value="1y">Năm nay</SelectItem>
-                                <SelectItem value="all">
-                                    Toàn thời gian
+                                <SelectItem value="custom">
+                                    Tùy chỉnh
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Start Date */}
+                    {/* Start Date - Luôn hiển thị nhưng disabled khi không chọn custom */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
                             Từ ngày
@@ -116,7 +122,12 @@ export default function ReportFilters({
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    className="w-full justify-start text-left font-normal"
+                                    className={`w-full justify-start text-left font-normal ${
+                                        reportPeriod !== "custom"
+                                            ? "opacity-50 cursor-not-allowed"
+                                            : ""
+                                    }`}
+                                    disabled={reportPeriod !== "custom"}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {startDate ? (
@@ -128,19 +139,22 @@ export default function ReportFilters({
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={startDate}
-                                    onSelect={onStartDateChange}
-                                    initialFocus
-                                    locale={vi}
-                                />
-                            </PopoverContent>
+                            {reportPeriod === "custom" && (
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={startDate}
+                                        onSelect={onStartDateChange}
+                                        initialFocus
+                                        locale={vi}
+                                        disabled={(date) => date > new Date()}
+                                    />
+                                </PopoverContent>
+                            )}
                         </Popover>
                     </div>
 
-                    {/* End Date */}
+                    {/* End Date - Luôn hiển thị nhưng disabled khi không chọn custom */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
                             Đến ngày
@@ -149,7 +163,12 @@ export default function ReportFilters({
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
-                                    className="w-full justify-start text-left font-normal"
+                                    className={`w-full justify-start text-left font-normal ${
+                                        reportPeriod !== "custom"
+                                            ? "opacity-50 cursor-not-allowed"
+                                            : ""
+                                    }`}
+                                    disabled={reportPeriod !== "custom"}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {endDate ? (
@@ -161,15 +180,18 @@ export default function ReportFilters({
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={endDate}
-                                    onSelect={onEndDateChange}
-                                    initialFocus
-                                    locale={vi}
-                                />
-                            </PopoverContent>
+                            {reportPeriod === "custom" && (
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={endDate}
+                                        onSelect={onEndDateChange}
+                                        initialFocus
+                                        locale={vi}
+                                        disabled={(date) => date > new Date()}
+                                    />
+                                </PopoverContent>
+                            )}
                         </Popover>
                     </div>
 
@@ -201,34 +223,6 @@ export default function ReportFilters({
                         </Select>
                     </div>
 
-                    {/* Venue Filter */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-700">
-                            Nhà thi đấu
-                        </label>
-                        <Select
-                            value={selectedVenue}
-                            onValueChange={onVenueChange}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Tất cả nhà thi đấu" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    Tất cả nhà thi đấu
-                                </SelectItem>
-                                {venues.map((venue) => (
-                                    <SelectItem
-                                        key={venue.venue_id}
-                                        value={venue.venue_id.toString()}
-                                    >
-                                        {venue.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                     {/* Court Filter */}
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700">
@@ -236,7 +230,7 @@ export default function ReportFilters({
                         </label>
                         <Select
                             value={selectedCourt}
-                            onValueChange={onCourtChange}
+                            onValueChange={handleCourtChange}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Tất cả sân" />

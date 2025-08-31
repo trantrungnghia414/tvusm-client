@@ -66,7 +66,7 @@ export default function BookingDetailPage() {
                 }
 
                 const data = await response.json();
-                
+
                 // Transform data to match interface
                 const transformedBooking: Booking = {
                     booking_id: data.booking_id,
@@ -77,24 +77,34 @@ export default function BookingDetailPage() {
                     end_time: data.end_time,
                     total_amount: data.total_amount || data.total_price || 0,
                     status: data.status,
-                    payment_status: data.payment_status || "pending",
+                    payment_status: data.payment_status || "unpaid",
                     notes: data.notes,
                     created_at: data.created_at,
                     updated_at: data.updated_at,
-                    user: data.user ? {
-                        user_id: data.user.user_id,
-                        username: data.user.username,
-                        email: data.user.email,
-                        fullname: data.user.fullname || data.user.name,
-                        phone: data.user.phone,
-                    } : undefined,
-                    court: data.court ? {
-                        court_id: data.court.court_id,
-                        name: data.court.name,
-                        type_name: data.court.type_name || data.court.court_type?.name || "",
-                        venue_name: data.court.venue_name || data.court.venue?.name || "",
-                        hourly_rate: data.court.hourly_rate || 0,
-                    } : undefined,
+                    user: data.user
+                        ? {
+                              user_id: data.user.user_id,
+                              username: data.user.username,
+                              email: data.user.email,
+                              fullname: data.user.fullname || data.user.name,
+                              phone: data.user.phone,
+                          }
+                        : undefined,
+                    court: data.court
+                        ? {
+                              court_id: data.court.court_id,
+                              name: data.court.name,
+                              type_name:
+                                  data.court.type_name ||
+                                  data.court.court_type?.name ||
+                                  "",
+                              venue_name:
+                                  data.court.venue_name ||
+                                  data.court.venue?.name ||
+                                  "",
+                              hourly_rate: data.court.hourly_rate || 0,
+                          }
+                        : undefined,
                 };
 
                 setBooking(transformedBooking);
@@ -143,7 +153,9 @@ export default function BookingDetailPage() {
         }
     };
 
-    const handleUpdateStatus = async (status: "pending" | "confirmed" | "completed" | "cancelled") => {
+    const handleUpdateStatus = async (
+        status: "pending" | "confirmed" | "completed" | "cancelled"
+    ) => {
         if (!booking) return;
 
         try {
@@ -165,7 +177,9 @@ export default function BookingDetailPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || "Không thể cập nhật trạng thái");
+                throw new Error(
+                    errorData.message || "Không thể cập nhật trạng thái"
+                );
             }
 
             setBooking({ ...booking, status });
@@ -173,7 +187,9 @@ export default function BookingDetailPage() {
         } catch (error) {
             console.error("Error updating status:", error);
             toast.error(
-                error instanceof Error ? error.message : "Không thể cập nhật trạng thái"
+                error instanceof Error
+                    ? error.message
+                    : "Không thể cập nhật trạng thái"
             );
         }
     };
@@ -224,10 +240,16 @@ export default function BookingDetailPage() {
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                Chi tiết đặt sân #{booking.booking_id.toString().padStart(4, "0")}
+                                Chi tiết đặt sân #
+                                {booking.booking_id.toString().padStart(4, "0")}
                             </h1>
                             <p className="text-gray-600">
-                                Tạo lúc {format(new Date(booking.created_at), "dd/MM/yyyy HH:mm", { locale: vi })}
+                                Tạo lúc{" "}
+                                {format(
+                                    new Date(booking.created_at),
+                                    "dd/MM/yyyy HH:mm",
+                                    { locale: vi }
+                                )}
                             </p>
                         </div>
                     </div>
@@ -235,7 +257,11 @@ export default function BookingDetailPage() {
                     <div className="flex items-center gap-3">
                         <Button
                             variant="outline"
-                            onClick={() => router.push(`/dashboard/bookings/${booking.booking_id}/edit`)}
+                            onClick={() =>
+                                router.push(
+                                    `/dashboard/bookings/${booking.booking_id}/edit`
+                                )
+                            }
                         >
                             <Edit className="h-4 w-4 mr-2" />
                             Chỉnh sửa
@@ -265,32 +291,55 @@ export default function BookingDetailPage() {
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-sm text-gray-500">Sân thể thao</p>
-                                        <p className="font-medium">{booking.court?.name || "N/A"}</p>
-                                        <p className="text-sm text-gray-600">{booking.court?.type_name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500">Địa điểm</p>
-                                        <p className="font-medium">{booking.court?.venue_name || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500">Ngày đặt</p>
+                                        <p className="text-sm text-gray-500">
+                                            Sân thể thao
+                                        </p>
                                         <p className="font-medium">
-                                            {format(new Date(booking.date), "EEEE, dd/MM/yyyy", { locale: vi })}
+                                            {booking.court?.name || "N/A"}
+                                        </p>
+                                        <p className="text-sm text-gray-600">
+                                            {booking.court?.type_name}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-500">Thời gian</p>
+                                        <p className="text-sm text-gray-500">
+                                            Địa điểm
+                                        </p>
                                         <p className="font-medium">
-                                            {booking.start_time} - {booking.end_time}
+                                            {booking.court?.venue_name || "N/A"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500">
+                                            Ngày đặt
+                                        </p>
+                                        <p className="font-medium">
+                                            {format(
+                                                new Date(booking.date),
+                                                "EEEE, dd/MM/yyyy",
+                                                { locale: vi }
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500">
+                                            Thời gian
+                                        </p>
+                                        <p className="font-medium">
+                                            {booking.start_time} -{" "}
+                                            {booking.end_time}
                                         </p>
                                     </div>
                                 </div>
 
                                 {booking.notes && (
                                     <div>
-                                        <p className="text-sm text-gray-500">Ghi chú</p>
-                                        <p className="font-medium">{booking.notes}</p>
+                                        <p className="text-sm text-gray-500">
+                                            Ghi chú
+                                        </p>
+                                        <p className="font-medium">
+                                            {booking.notes}
+                                        </p>
                                     </div>
                                 )}
                             </CardContent>
@@ -308,18 +357,27 @@ export default function BookingDetailPage() {
                                 <CardContent className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <p className="text-sm text-gray-500">Tên khách hàng</p>
+                                            <p className="text-sm text-gray-500">
+                                                Tên khách hàng
+                                            </p>
                                             <p className="font-medium">
-                                                {booking.user.fullname || booking.user.username}
+                                                {booking.user.fullname ||
+                                                    booking.user.username}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-sm text-gray-500">Tên đăng nhập</p>
-                                            <p className="font-medium">{booking.user.username}</p>
+                                            <p className="text-sm text-gray-500">
+                                                Tên đăng nhập
+                                            </p>
+                                            <p className="font-medium">
+                                                {booking.user.username}
+                                            </p>
                                         </div>
                                         {booking.user.email && (
                                             <div>
-                                                <p className="text-sm text-gray-500">Email</p>
+                                                <p className="text-sm text-gray-500">
+                                                    Email
+                                                </p>
                                                 <p className="font-medium flex items-center gap-2">
                                                     <Mail className="h-4 w-4" />
                                                     {booking.user.email}
@@ -328,7 +386,9 @@ export default function BookingDetailPage() {
                                         )}
                                         {booking.user.phone && (
                                             <div>
-                                                <p className="text-sm text-gray-500">Số điện thoại</p>
+                                                <p className="text-sm text-gray-500">
+                                                    Số điện thoại
+                                                </p>
                                                 <p className="font-medium flex items-center gap-2">
                                                     <Phone className="h-4 w-4" />
                                                     {booking.user.phone}
@@ -350,14 +410,20 @@ export default function BookingDetailPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <p className="text-sm text-gray-500 mb-2">Trạng thái đặt sân</p>
-                                    <BookingStatusBadge status={booking.status} />
+                                    <p className="text-sm text-gray-500 mb-2">
+                                        Trạng thái đặt sân
+                                    </p>
+                                    <BookingStatusBadge
+                                        status={booking.status}
+                                    />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500 mb-2">Trạng thái thanh toán</p>
-                                    <BookingStatusBadge 
-                                        status={booking.status} 
-                                        paymentStatus={booking.payment_status} 
+                                    <p className="text-sm text-gray-500 mb-2">
+                                        Trạng thái thanh toán
+                                    </p>
+                                    <BookingStatusBadge
+                                        status={booking.status}
+                                        paymentStatus={booking.payment_status}
                                     />
                                 </div>
                             </CardContent>
@@ -374,13 +440,21 @@ export default function BookingDetailPage() {
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Giá theo giờ:</span>
-                                        <span>{formatCurrency(booking.court?.hourly_rate || 0)}</span>
+                                        <span className="text-gray-600">
+                                            Giá theo giờ:
+                                        </span>
+                                        <span>
+                                            {formatCurrency(
+                                                booking.court?.hourly_rate || 0
+                                            )}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between font-medium text-lg border-t pt-2">
                                         <span>Tổng cộng:</span>
                                         <span className="text-green-600">
-                                            {formatCurrency(booking.total_amount)}
+                                            {formatCurrency(
+                                                booking.total_amount
+                                            )}
                                         </span>
                                     </div>
                                 </div>
@@ -396,7 +470,9 @@ export default function BookingDetailPage() {
                                 {booking.status === "pending" && (
                                     <Button
                                         className="w-full"
-                                        onClick={() => handleUpdateStatus("confirmed")}
+                                        onClick={() =>
+                                            handleUpdateStatus("confirmed")
+                                        }
                                     >
                                         <CheckCircle2 className="h-4 w-4 mr-2" />
                                         Xác nhận đặt sân
@@ -406,25 +482,35 @@ export default function BookingDetailPage() {
                                 {booking.status === "confirmed" && (
                                     <Button
                                         className="w-full"
-                                        onClick={() => handleUpdateStatus("completed")}
+                                        onClick={() =>
+                                            handleUpdateStatus("completed")
+                                        }
                                     >
                                         <CheckCircle2 className="h-4 w-4 mr-2" />
                                         Hoàn thành
                                     </Button>
                                 )}
 
-                                {["pending", "confirmed"].includes(booking.status) && (
+                                {["pending", "confirmed"].includes(
+                                    booking.status
+                                ) && (
                                     <Button
                                         variant="outline"
                                         className="w-full text-red-600 border-red-300 hover:bg-red-50"
-                                        onClick={() => handleUpdateStatus("cancelled")}
+                                        onClick={() =>
+                                            handleUpdateStatus("cancelled")
+                                        }
                                     >
                                         <XCircle className="h-4 w-4 mr-2" />
                                         Hủy đặt sân
                                     </Button>
                                 )}
 
-                                <Button variant="outline" className="w-full" disabled>
+                                <Button
+                                    variant="outline"
+                                    className="w-full"
+                                    disabled
+                                >
                                     <Download className="h-4 w-4 mr-2" />
                                     Tải hóa đơn
                                 </Button>
@@ -435,12 +521,18 @@ export default function BookingDetailPage() {
             </div>
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Xác nhận xóa đặt sân</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            Xác nhận xóa đặt sân
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Bạn có chắc chắn muốn xóa đặt sân này? Hành động này không thể hoàn tác.
+                            Bạn có chắc chắn muốn xóa đặt sân này? Hành động này
+                            không thể hoàn tác.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -15,7 +15,7 @@ import {
 
 interface BookingStatusBadgeProps {
     status: "pending" | "confirmed" | "completed" | "cancelled";
-    paymentStatus?: "pending" | "paid" | "refunded";
+    paymentStatus?: "unpaid" | "partial" | "paid" | "refunded";
     size?: "sm" | "default" | "lg";
 }
 
@@ -97,12 +97,18 @@ export default function BookingStatusBadge({
         const paymentIconSize = getIconSize("sm");
 
         switch (paymentStatus) {
-            case "pending":
+            case "unpaid":
                 return {
                     label: "Chưa thanh toán",
+                    className: "bg-red-100 text-red-800 border-red-200",
+                    icon: <CreditCard className={paymentIconSize} />,
+                };
+            case "partial":
+                return {
+                    label: "Thanh toán thất bại",
                     className:
                         "bg-orange-100 text-orange-800 border-orange-200",
-                    icon: <CreditCard className={paymentIconSize} />,
+                    icon: <AlertTriangle className={paymentIconSize} />,
                 };
             case "paid":
                 return {

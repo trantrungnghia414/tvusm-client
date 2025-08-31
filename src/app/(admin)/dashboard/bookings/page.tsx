@@ -25,7 +25,7 @@ interface RawBookingData {
     total_amount?: number;
     total_price?: number;
     status: "pending" | "confirmed" | "completed" | "cancelled";
-    payment_status?: "pending" | "paid" | "refunded";
+    payment_status?: "unpaid" | "partial" | "paid" | "refunded";
     notes?: string;
     created_at: string;
     updated_at: string;
@@ -68,6 +68,7 @@ interface RawCourtData {
 interface RawStatsData {
     totalBookings?: number;
     todayBookings?: number;
+    todayBookingsCreated?: number; // Thêm field mới
     pendingBookings?: number;
     totalRevenue?: number;
     monthlyRevenue?: number;
@@ -82,6 +83,7 @@ export default function BookingsPage() {
     const [stats, setStats] = useState<BookingStatsType>({
         total_bookings: 0,
         today_bookings: 0,
+        today_bookings_created: 0, // Thêm field mới
         pending_bookings: 0,
         total_revenue: 0,
         monthly_revenue: 0,
@@ -135,7 +137,7 @@ export default function BookingsPage() {
                     total_amount:
                         booking.total_amount || booking.total_price || 0,
                     status: booking.status,
-                    payment_status: booking.payment_status || "pending",
+                    payment_status: booking.payment_status || "unpaid",
                     notes: booking.notes || "",
                     created_at: booking.created_at,
                     updated_at: booking.updated_at,
@@ -194,6 +196,7 @@ export default function BookingsPage() {
                 setStats({
                     total_bookings: data.totalBookings || 0,
                     today_bookings: data.todayBookings || 0,
+                    today_bookings_created: data.todayBookingsCreated || 0, // Mapping field mới
                     pending_bookings: data.pendingBookings || 0,
                     total_revenue: data.totalRevenue || 0,
                     monthly_revenue: data.monthlyRevenue || 0,
@@ -401,7 +404,7 @@ export default function BookingsPage() {
 
     const handleUpdatePaymentStatus = async (
         bookingId: number,
-        paymentStatus: "pending" | "paid" | "refunded"
+        paymentStatus: "unpaid" | "partial" | "paid" | "refunded"
     ) => {
         try {
             const token = localStorage.getItem("token");
@@ -497,9 +500,7 @@ export default function BookingsPage() {
 
                 {/* Results Summary */}
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>
-                        Hiện có {bookings.length} đặt sân
-                    </span>
+                    <span>Hiện có {bookings.length} đặt sân</span>
                 </div>
 
                 {/* Table */}

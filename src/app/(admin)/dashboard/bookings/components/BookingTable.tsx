@@ -67,7 +67,7 @@ interface BookingTableProps {
     ) => void;
     onUpdatePaymentStatus: (
         bookingId: number,
-        status: "pending" | "paid" | "refunded"
+        status: "unpaid" | "partial" | "paid" | "refunded"
     ) => void;
     loading?: boolean;
 }
@@ -475,18 +475,30 @@ export default function BookingTable({
                                                             "paid"
                                                                 ? "bg-green-100 text-green-800"
                                                                 : booking.payment_status ===
-                                                                  "pending"
-                                                                ? "bg-yellow-100 text-yellow-800"
-                                                                : "bg-red-100 text-red-800"
+                                                                  "unpaid"
+                                                                ? "bg-red-100 text-red-800"
+                                                                : booking.payment_status ===
+                                                                  "partial"
+                                                                ? "bg-orange-100 text-orange-800"
+                                                                : booking.payment_status ===
+                                                                  "refunded"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : "bg-yellow-100 text-yellow-800"
                                                         }`}
                                                     >
                                                         {booking.payment_status ===
                                                         "paid"
                                                             ? "Đã thanh toán"
                                                             : booking.payment_status ===
-                                                              "pending"
-                                                            ? "Chờ thanh toán"
-                                                            : "Chưa thanh toán"}
+                                                              "unpaid"
+                                                            ? "Chưa thanh toán"
+                                                            : booking.payment_status ===
+                                                              "partial"
+                                                            ? "Thanh toán thất bại"
+                                                            : booking.payment_status ===
+                                                              "refunded"
+                                                            ? "Đã hoàn tiền"
+                                                            : "Chờ xử lý"}
                                                     </span>
                                                 </div>
                                             )}
@@ -612,7 +624,7 @@ export default function BookingTable({
                                                 )}
 
                                                 {booking.payment_status ===
-                                                    "pending" &&
+                                                    "unpaid" &&
                                                     booking.status !==
                                                         "cancelled" && (
                                                         <>

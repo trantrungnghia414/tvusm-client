@@ -19,7 +19,7 @@ export interface Booking {
     end_time: string;
     total_amount: number;
     status: "pending" | "confirmed" | "completed" | "cancelled";
-    payment_status: "pending" | "paid" | "refunded";
+    payment_status: "unpaid" | "partial" | "paid" | "refunded";
     notes: string;
     created_at: string;
     updated_at: string;
@@ -47,7 +47,8 @@ export interface Booking {
 
 export interface BookingStats {
     total_bookings: number;
-    today_bookings: number;
+    today_bookings: number; // Số booking có ngày chơi là hôm nay (dựa trên field date)
+    today_bookings_created: number; // Số booking được tạo hôm nay (dựa trên created_at)
     pending_bookings: number;
     total_revenue: number;
     monthly_revenue: number;
@@ -72,6 +73,6 @@ export interface UpdateBookingDto {
     start_time?: string;
     end_time?: string;
     status?: "pending" | "confirmed" | "completed" | "cancelled";
-    payment_status?: "pending" | "paid" | "refunded";
+    payment_status?: "unpaid" | "partial" | "paid" | "refunded";
     notes?: string;
 }

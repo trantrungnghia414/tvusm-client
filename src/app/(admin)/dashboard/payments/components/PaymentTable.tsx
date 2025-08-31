@@ -1,7 +1,7 @@
 // client/src/app/(admin)/dashboard/payments/components/PaymentTable.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -37,8 +37,9 @@ import {
     CheckCircle2,
     XCircle,
     RotateCcw,
-    Copy,
     ExternalLink,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { Payment } from "../types/payment";
 import PaymentStatusBadge from "./PaymentStatusBadge";
@@ -46,7 +47,6 @@ import PaymentMethodBadge from "./PaymentMethodBadge";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import { toast } from "sonner";
 
 interface PaymentTableProps {
     payments: Payment[];
@@ -70,6 +70,25 @@ export default function PaymentTable({
         null
     );
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Calculate pagination values
+    const totalPages = Math.ceil(payments.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    // Get current page payments
+    const currentPayments = useMemo(() => {
+        return payments.slice(startIndex, endIndex);
+    }, [payments, startIndex, endIndex]);
+
+    // Reset to first page when payments change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [payments.length]);
+
     const handleDeleteClick = (paymentId: number) => {
         setSelectedPaymentId(paymentId);
         setDeleteDialogOpen(true);
@@ -81,11 +100,6 @@ export default function PaymentTable({
             setDeleteDialogOpen(false);
             setSelectedPaymentId(null);
         }
-    };
-
-    const handleCopyTransactionId = (transactionId: string) => {
-        navigator.clipboard.writeText(transactionId);
-        toast.success("Đã sao chép mã giao dịch");
     };
 
     const getPaymentType = (payment: Payment) => {
@@ -205,7 +219,7 @@ export default function PaymentTable({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {payments.map((payment) => {
+                                {currentPayments.map((payment) => {
                                     const relatedInfo = getRelatedInfo(payment);
 
                                     return (
@@ -220,29 +234,6 @@ export default function PaymentTable({
                                                         .toString()
                                                         .padStart(6, "0")}
                                                 </div>
-                                                {payment.transaction_id && (
-                                                    <div className="flex items-center gap-1 mt-1">
-                                                        <span className="text-xs text-gray-500">
-                                                            {payment.transaction_id.slice(
-                                                                0,
-                                                                10
-                                                            )}
-                                                            ...
-                                                        </span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-4 w-4 p-0"
-                                                            onClick={() =>
-                                                                handleCopyTransactionId(
-                                                                    payment.transaction_id!
-                                                                )
-                                                            }
-                                                        >
-                                                            <Copy className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                )}
                                             </TableCell>
 
                                             <TableCell>
@@ -468,6 +459,85 @@ export default function PaymentTable({
                             </TableBody>
                         </Table>
                     </div>
+
+                    {/* Pagination */}
+                    {payments.length > itemsPerPage && (
+                        <div className="flex items-center justify-between px-6 py-4 border-t">
+                            <div className="text-sm text-gray-700">
+                                Hiển thị {startIndex + 1} đến{" "}
+                                {Math.min(endIndex, payments.length)} trong tổng
+                                số {payments.length} giao dịch
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        setCurrentPage(currentPage - 1)
+                                    }
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="h-4 w-4 mr-1" />
+                                    Trước
+                                </Button>
+
+                                <div className="flex items-center space-x-1">
+                                    {Array.from(
+                                        { length: Math.min(5, totalPages) },
+                                        (_, i) => {
+                                            let pageNumber;
+                                            if (totalPages <= 5) {
+                                                pageNumber = i + 1;
+                                            } else if (currentPage <= 3) {
+                                                pageNumber = i + 1;
+                                            } else if (
+                                                currentPage >=
+                                                totalPages - 2
+                                            ) {
+                                                pageNumber = totalPages - 4 + i;
+                                            } else {
+                                                pageNumber =
+                                                    currentPage - 2 + i;
+                                            }
+
+                                            return (
+                                                <Button
+                                                    key={pageNumber}
+                                                    variant={
+                                                        currentPage ===
+                                                        pageNumber
+                                                            ? "default"
+                                                            : "outline"
+                                                    }
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setCurrentPage(
+                                                            pageNumber
+                                                        )
+                                                    }
+                                                    className="min-w-[32px]"
+                                                >
+                                                    {pageNumber}
+                                                </Button>
+                                            );
+                                        }
+                                    )}
+                                </div>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        setCurrentPage(currentPage + 1)
+                                    }
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Sau
+                                    <ChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

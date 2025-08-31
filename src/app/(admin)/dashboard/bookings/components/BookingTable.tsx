@@ -1,7 +1,7 @@
 // client/src/app/(admin)/dashboard/bookings/components/BookingTable.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -45,9 +45,10 @@ import {
     Calendar,
     User,
     Building,
-    CreditCard,
     Hash,
     Timer,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { Booking } from "../types/booking";
 import BookingStatusBadge from "./BookingStatusBadge";
@@ -82,6 +83,23 @@ export default function BookingTable({
 }: BookingTableProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Calculate pagination
+    const totalPages = Math.ceil(bookings.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentBookings = useMemo(() => {
+        return bookings.slice(startIndex, endIndex);
+    }, [bookings, startIndex, endIndex]);
+
+    // Reset to first page when bookings change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [bookings.length]);
 
     const handleDeleteClick = (bookingId: number) => {
         setBookingToDelete(bookingId);
@@ -312,7 +330,7 @@ export default function BookingTable({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {bookings.map((booking) => {
+                        {currentBookings.map((booking) => {
                             const duration = calculateDuration(
                                 booking.start_time,
                                 booking.end_time
@@ -438,18 +456,6 @@ export default function BookingTable({
                                                     /giờ
                                                 </div>
                                             )}
-                                            <div className="flex items-center gap-1">
-                                                <CreditCard className="h-3 w-3 text-gray-400" />
-                                                <span className="text-xs text-gray-500">
-                                                    {booking.payment_status ===
-                                                    "paid"
-                                                        ? "Đã thanh toán"
-                                                        : booking.payment_status ===
-                                                          "pending"
-                                                        ? "Chờ thanh toán"
-                                                        : "Đã hoàn tiền"}
-                                                </span>
-                                            </div>
                                         </div>
                                     </TableCell>
 
@@ -458,11 +464,32 @@ export default function BookingTable({
                                         <div className="space-y-2">
                                             <BookingStatusBadge
                                                 status={booking.status}
-                                                paymentStatus={
-                                                    booking.payment_status
-                                                }
                                                 size="sm"
                                             />
+                                            {/* Hiển thị payment status */}
+                                            {booking.payment_status && (
+                                                <div className="text-xs">
+                                                    <span
+                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                            booking.payment_status ===
+                                                            "paid"
+                                                                ? "bg-green-100 text-green-800"
+                                                                : booking.payment_status ===
+                                                                  "pending"
+                                                                ? "bg-yellow-100 text-yellow-800"
+                                                                : "bg-red-100 text-red-800"
+                                                        }`}
+                                                    >
+                                                        {booking.payment_status ===
+                                                        "paid"
+                                                            ? "Đã thanh toán"
+                                                            : booking.payment_status ===
+                                                              "pending"
+                                                            ? "Chờ thanh toán"
+                                                            : "Chưa thanh toán"}
+                                                    </span>
+                                                </div>
+                                            )}
                                             {booking.notes && (
                                                 <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded max-w-[100px] truncate">
                                                     {booking.notes}
@@ -630,6 +657,74 @@ export default function BookingTable({
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination */}
+            {bookings.length > itemsPerPage && (
+                <div className="flex items-center justify-between px-2 py-4">
+                    <div className="text-sm text-gray-700">
+                        Hiển thị {startIndex + 1} đến{" "}
+                        {Math.min(endIndex, bookings.length)} trong tổng số{" "}
+                        {bookings.length} kết quả
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Trước
+                        </Button>
+
+                        <div className="flex items-center space-x-1">
+                            {Array.from(
+                                { length: Math.min(5, totalPages) },
+                                (_, i) => {
+                                    let pageNumber;
+                                    if (totalPages <= 5) {
+                                        pageNumber = i + 1;
+                                    } else if (currentPage <= 3) {
+                                        pageNumber = i + 1;
+                                    } else if (currentPage >= totalPages - 2) {
+                                        pageNumber = totalPages - 4 + i;
+                                    } else {
+                                        pageNumber = currentPage - 2 + i;
+                                    }
+
+                                    return (
+                                        <Button
+                                            key={pageNumber}
+                                            variant={
+                                                currentPage === pageNumber
+                                                    ? "default"
+                                                    : "outline"
+                                            }
+                                            size="sm"
+                                            onClick={() =>
+                                                setCurrentPage(pageNumber)
+                                            }
+                                            className="min-w-[32px]"
+                                        >
+                                            {pageNumber}
+                                        </Button>
+                                    );
+                                }
+                            )}
+                        </div>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            Sau
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog

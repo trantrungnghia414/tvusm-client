@@ -515,10 +515,7 @@ export default function PaymentsPage() {
 
                 {/* Results Summary */}
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>
-                        Hiển thị {filteredPayments.length} trên{" "}
-                        {payments.length} giao dịch
-                    </span>
+                    <span>Hiện có {payments.length} giao dịch</span>
                     <span>
                         Tổng giá trị hiển thị: {calculateDisplayTotal()}
                     </span>

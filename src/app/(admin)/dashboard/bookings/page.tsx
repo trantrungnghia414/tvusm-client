@@ -498,22 +498,7 @@ export default function BookingsPage() {
                 {/* Results Summary */}
                 <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>
-                        Hiển thị {filteredBookings.length} trên{" "}
-                        {bookings.length} đặt sân
-                    </span>
-                    <span>
-                        Tổng doanh thu:{" "}
-                        {filteredBookings
-                            .reduce((sum, booking) => {
-                                // ✅ Đảm bảo total_amount là number
-                                const amount =
-                                    typeof booking.total_amount === "string"
-                                        ? parseFloat(booking.total_amount) || 0
-                                        : booking.total_amount || 0;
-                                return sum + amount;
-                            }, 0)
-                            .toLocaleString("vi-VN")}
-                        đ
+                        Hiện có {bookings.length} đặt sân
                     </span>
                 </div>
 

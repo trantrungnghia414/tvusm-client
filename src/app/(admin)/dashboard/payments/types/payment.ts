@@ -28,6 +28,12 @@ export interface Payment {
         booking_date: string;
         start_time: string;
         end_time: string;
+        court?: {
+            court_id: number;
+            name: string;
+            code: string;
+            type_id: number;
+        };
     };
     rental?: {
         rental_id: number;

@@ -19,6 +19,30 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { formatCurrency } from "@/lib/utils"; // ✅ Thêm import formatCurrency
 
 // Raw data interfaces for API responses
+interface CourtType {
+    type_id: number;
+    name: string;
+    description?: string;
+    standard_size?: string;
+    image?: string;
+}
+
+interface Court {
+    court_id: number;
+    name: string;
+    code: string;
+    type_id: number;
+    venue_id: number;
+    venue_name?: string;
+    type_name?: string;
+    description?: string;
+    hourly_rate: number;
+    status: "available" | "booked" | "maintenance";
+    is_indoor: boolean;
+    image?: string;
+    court_level?: number;
+}
+
 interface RawPaymentData {
     payment_id: number;
     booking_id?: number;
@@ -47,6 +71,12 @@ interface RawPaymentData {
         booking_date: string;
         start_time: string;
         end_time: string;
+        court?: {
+            court_id: number;
+            name: string;
+            code: string;
+            type_id: number;
+        };
     };
     rental?: {
         rental_id: number;
@@ -98,21 +128,59 @@ export default function PaymentsPage() {
         online_payments: 0,
     });
 
-    // Filter states
-    const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [methodFilter, setMethodFilter] = useState("all");
-    const [typeFilter, setTypeFilter] = useState("all");
+    // Filter states - New design (removed quickFilter)
     const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
-    const [amountFilter, setAmountFilter] = useState<{
-        min?: number;
-        max?: number;
-    }>({});
-    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [timeSlotFilter, setTimeSlotFilter] = useState("all");
+    const [courtTypeFilter, setCourtTypeFilter] = useState("all");
+    const [courtFilter, setCourtFilter] = useState("all");
+    const [methodFilter, setMethodFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
+
+    // Data for filters
+    const [courtTypes, setCourtTypes] = useState<CourtType[]>([]);
+    const [courts, setCourts] = useState<Court[]>([]);
 
     // UI states
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Fetch court types
+    const fetchCourtTypes = useCallback(async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await fetchApi("/court-types", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setCourtTypes(data);
+            }
+        } catch (error) {
+            console.error("Error fetching court types:", error);
+        }
+    }, []);
+
+    // Fetch courts
+    const fetchCourts = useCallback(async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await fetchApi("/courts", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setCourts(data);
+            }
+        } catch (error) {
+            console.error("Error fetching courts:", error);
+        }
+    }, []);
 
     // Fetch payments data
     const fetchPayments = useCallback(async () => {
@@ -210,84 +278,167 @@ export default function PaymentsPage() {
     useEffect(() => {
         const fetchAllData = async () => {
             setLoading(true);
-            await Promise.all([fetchPayments(), fetchStats()]);
+            await Promise.all([
+                fetchPayments(),
+                fetchStats(),
+                fetchCourtTypes(),
+                fetchCourts(),
+            ]);
             setLoading(false);
         };
 
         fetchAllData();
-    }, [fetchPayments, fetchStats]);
+    }, [fetchPayments, fetchStats, fetchCourtTypes, fetchCourts]);
 
-    // Filter payments
+    // Helper function để kiểm tra time slot (cải tiến cho format mới)
+    const isInTimeSlot = (startTime: string, endTime: string, slot: string) => {
+        if (slot === "all") return true;
+
+        // Xử lý format mới: "06:00-07:00"
+        if (slot.includes("-")) {
+            const [slotStart, slotEnd] = slot.split("-");
+            const [slotStartHour] = slotStart.split(":").map(Number);
+            const [slotEndHour] = slotEnd.split(":").map(Number);
+
+            const [bookingStartHour] = startTime.split(":").map(Number);
+            const [bookingEndHour] = endTime.split(":").map(Number);
+
+            // Kiểm tra xem booking có overlap với time slot không
+            return (
+                (bookingStartHour >= slotStartHour &&
+                    bookingStartHour < slotEndHour) ||
+                (bookingEndHour > slotStartHour &&
+                    bookingEndHour <= slotEndHour) ||
+                (bookingStartHour <= slotStartHour &&
+                    bookingEndHour >= slotEndHour)
+            );
+        }
+
+        // Fallback cho format cũ (để backward compatibility)
+        const start = parseInt(startTime.split(":")[0]);
+        const end = parseInt(endTime.split(":")[0]);
+
+        switch (slot) {
+            case "morning":
+                return start >= 6 && start < 12;
+            case "afternoon":
+                return start >= 12 && start < 18;
+            case "evening":
+                return start >= 18 && start < 22;
+            case "current": {
+                const currentHour = new Date().getHours();
+                return start <= currentHour && currentHour < end;
+            }
+            default:
+                return true;
+        }
+    };
+
+    // Filter payments với logic mới (đúng thứ tự: ngày → giờ → loại sân → sân → phương thức → trạng thái)
     const filteredPayments = React.useMemo(() => {
         let result = [...payments];
 
-        // Search filter
-        if (searchTerm) {
-            const search = searchTerm.toLowerCase();
-            result = result.filter(
-                (payment) =>
-                    payment.payment_id.toString().includes(search) ||
-                    payment.transaction_id?.toLowerCase().includes(search) ||
-                    payment.user?.fullname?.toLowerCase().includes(search) ||
-                    payment.user?.username?.toLowerCase().includes(search) ||
-                    payment.user?.email?.toLowerCase().includes(search)
-            );
+        // Chỉ lấy booking payments
+        result = result.filter((payment) => payment.booking_id);
+
+        // 1. Date filter (cải thiện xử lý timezone)
+        if (dateFilter) {
+            // Tạo ngày theo timezone địa phương để tránh lỗi chênh lệch múi giờ
+            const year = dateFilter.getFullYear();
+            const month = String(dateFilter.getMonth() + 1).padStart(2, "0");
+            const day = String(dateFilter.getDate()).padStart(2, "0");
+            const filterDateString = `${year}-${month}-${day}`;
+
+            result = result.filter((payment) => {
+                if (payment.booking) {
+                    const bookingDate =
+                        payment.booking.booking_date.split("T")[0];
+                    return bookingDate === filterDateString;
+                }
+                return false;
+            });
         }
 
-        // Status filter
-        if (statusFilter !== "all") {
-            result = result.filter(
-                (payment) => payment.status === statusFilter
-            );
+        // 2. Time slot filter
+        if (timeSlotFilter !== "all") {
+            result = result.filter((payment) => {
+                if (payment.booking) {
+                    return isInTimeSlot(
+                        payment.booking.start_time,
+                        payment.booking.end_time,
+                        timeSlotFilter
+                    );
+                }
+                return false;
+            });
         }
 
-        // Payment method filter
+        // 3. Court Type filter
+        if (courtTypeFilter !== "all") {
+            result = result.filter((payment) => {
+                if (payment.booking) {
+                    // Ưu tiên sử dụng booking.court nếu có
+                    if (payment.booking.court) {
+                        return payment.booking.court.type_id.toString() === courtTypeFilter;
+                    }
+                    // Fallback: tìm court bằng court_name
+                    else if (payment.booking.court_name) {
+                        const court = courts.find(
+                            (c) => c.name === payment.booking!.court_name
+                        );
+                        return (
+                            court && court.type_id.toString() === courtTypeFilter
+                        );
+                    }
+                }
+                return false;
+            });
+        }
+
+        // 4. Court filter
+        if (courtFilter !== "all") {
+            result = result.filter((payment) => {
+                if (payment.booking) {
+                    // Ưu tiên sử dụng booking.court nếu có
+                    if (payment.booking.court) {
+                        return payment.booking.court.court_id.toString() === courtFilter;
+                    }
+                    // Fallback: tìm court bằng court_name
+                    else if (payment.booking.court_name) {
+                        const court = courts.find(
+                            (c) => c.name === payment.booking!.court_name
+                        );
+                        return court && court.court_id.toString() === courtFilter;
+                    }
+                }
+                return false;
+            });
+        }
+
+        // 5. Method filter
         if (methodFilter !== "all") {
             result = result.filter(
                 (payment) => payment.payment_method === methodFilter
             );
         }
 
-        // Type filter
-        if (typeFilter !== "all") {
-            if (typeFilter === "booking") {
-                result = result.filter((payment) => payment.booking_id);
-            } else if (typeFilter === "rental") {
-                result = result.filter((payment) => payment.rental_id);
-            }
-        }
-
-        // Date filter
-        if (dateFilter) {
-            const filterDate = dateFilter.toISOString().split("T")[0];
+        // 6. Status filter
+        if (statusFilter !== "all") {
             result = result.filter(
-                (payment) =>
-                    payment.created_at.startsWith(filterDate) ||
-                    (payment.paid_at && payment.paid_at.startsWith(filterDate))
-            );
-        }
-
-        // Amount filter
-        if (amountFilter.min !== undefined) {
-            result = result.filter(
-                (payment) => payment.amount >= amountFilter.min!
-            );
-        }
-        if (amountFilter.max !== undefined) {
-            result = result.filter(
-                (payment) => payment.amount <= amountFilter.max!
+                (payment) => payment.status === statusFilter
             );
         }
 
         return result;
     }, [
         payments,
-        searchTerm,
-        statusFilter,
-        methodFilter,
-        typeFilter,
         dateFilter,
-        amountFilter,
+        timeSlotFilter,
+        courtTypeFilter,
+        courtFilter,
+        methodFilter,
+        statusFilter,
+        courts,
     ]);
 
     // Handle refresh
@@ -300,12 +451,12 @@ export default function PaymentsPage() {
 
     // Handle clear filters
     const handleClearFilters = () => {
-        setSearchTerm("");
-        setStatusFilter("all");
-        setMethodFilter("all");
-        setTypeFilter("all");
         setDateFilter(undefined);
-        setAmountFilter({});
+        setTimeSlotFilter("all");
+        setCourtTypeFilter("all");
+        setCourtFilter("all");
+        setMethodFilter("all");
+        setStatusFilter("all");
         toast.success("Đã xóa tất cả bộ lọc");
     };
 
@@ -496,21 +647,21 @@ export default function PaymentsPage() {
 
                 {/* Filters */}
                 <PaymentFilters
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    statusFilter={statusFilter}
-                    setStatusFilter={setStatusFilter}
-                    methodFilter={methodFilter}
-                    setMethodFilter={setMethodFilter}
-                    typeFilter={typeFilter}
-                    setTypeFilter={setTypeFilter}
                     dateFilter={dateFilter}
                     setDateFilter={setDateFilter}
-                    amountFilter={amountFilter}
-                    setAmountFilter={setAmountFilter}
+                    timeSlotFilter={timeSlotFilter}
+                    setTimeSlotFilter={setTimeSlotFilter}
+                    courtTypeFilter={courtTypeFilter}
+                    setCourtTypeFilter={setCourtTypeFilter}
+                    courtFilter={courtFilter}
+                    setCourtFilter={setCourtFilter}
+                    methodFilter={methodFilter}
+                    setMethodFilter={setMethodFilter}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    courtTypes={courtTypes}
+                    courts={courts}
                     onClearFilters={handleClearFilters}
-                    showAdvanced={showAdvanced}
-                    setShowAdvanced={setShowAdvanced}
                 />
 
                 {/* Results Summary */}

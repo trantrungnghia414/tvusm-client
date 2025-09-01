@@ -110,9 +110,18 @@ export default function PaymentTable({
 
     const getRelatedInfo = (payment: Payment) => {
         if (payment.booking && payment.booking_id) {
+            // Ưu tiên sử dụng court name từ booking.court
+            let courtName =
+                payment.booking.court?.name || payment.booking.court_name;
+
+            // Nếu vẫn không có, sử dụng fallback
+            if (!courtName) {
+                courtName = `Booking ID: ${payment.booking_id}`;
+            }
+
             return {
                 type: "Đặt sân",
-                name: payment.booking.court_name,
+                name: courtName,
                 detail: `${format(
                     new Date(payment.booking.booking_date),
                     "dd/MM/yyyy"
@@ -123,7 +132,9 @@ export default function PaymentTable({
         if (payment.rental && payment.rental_id) {
             return {
                 type: "Thuê thiết bị",
-                name: payment.rental.equipment_name,
+                name:
+                    payment.rental.equipment_name ||
+                    `Rental ID: ${payment.rental_id}`,
                 detail: `${format(
                     new Date(payment.rental.start_date),
                     "dd/MM/yyyy"
@@ -254,16 +265,40 @@ export default function PaymentTable({
                                                 <div className="font-medium">
                                                     {getPaymentType(payment)}
                                                 </div>
-                                                {relatedInfo && (
+                                                {relatedInfo ? (
                                                     <div className="text-sm text-gray-600">
-                                                        <div className="font-medium">
+                                                        <div className="font-medium text-blue-600">
+                                                            🏟️{" "}
                                                             {relatedInfo.name}
                                                         </div>
                                                         <div className="text-xs">
                                                             {relatedInfo.detail}
                                                         </div>
                                                     </div>
-                                                )}
+                                                ) : // Fallback khi không có relatedInfo
+                                                payment.booking_id ? (
+                                                    <div className="text-sm text-gray-500">
+                                                        <div className="font-medium">
+                                                            🏟️ Booking ID:{" "}
+                                                            {payment.booking_id}
+                                                        </div>
+                                                        <div className="text-xs">
+                                                            (Thiếu thông tin
+                                                            sân)
+                                                        </div>
+                                                    </div>
+                                                ) : payment.rental_id ? (
+                                                    <div className="text-sm text-gray-500">
+                                                        <div className="font-medium">
+                                                            🔧 Rental ID:{" "}
+                                                            {payment.rental_id}
+                                                        </div>
+                                                        <div className="text-xs">
+                                                            (Thiếu thông tin
+                                                            thiết bị)
+                                                        </div>
+                                                    </div>
+                                                ) : null}
                                             </TableCell>
 
                                             <TableCell>

@@ -379,7 +379,10 @@ export default function PaymentsPage() {
                 if (payment.booking) {
                     // Ưu tiên sử dụng booking.court nếu có
                     if (payment.booking.court) {
-                        return payment.booking.court.type_id.toString() === courtTypeFilter;
+                        return (
+                            payment.booking.court.type_id.toString() ===
+                            courtTypeFilter
+                        );
                     }
                     // Fallback: tìm court bằng court_name
                     else if (payment.booking.court_name) {
@@ -387,7 +390,8 @@ export default function PaymentsPage() {
                             (c) => c.name === payment.booking!.court_name
                         );
                         return (
-                            court && court.type_id.toString() === courtTypeFilter
+                            court &&
+                            court.type_id.toString() === courtTypeFilter
                         );
                     }
                 }
@@ -401,14 +405,19 @@ export default function PaymentsPage() {
                 if (payment.booking) {
                     // Ưu tiên sử dụng booking.court nếu có
                     if (payment.booking.court) {
-                        return payment.booking.court.court_id.toString() === courtFilter;
+                        return (
+                            payment.booking.court.court_id.toString() ===
+                            courtFilter
+                        );
                     }
                     // Fallback: tìm court bằng court_name
                     else if (payment.booking.court_name) {
                         const court = courts.find(
                             (c) => c.name === payment.booking!.court_name
                         );
-                        return court && court.court_id.toString() === courtFilter;
+                        return (
+                            court && court.court_id.toString() === courtFilter
+                        );
                     }
                 }
                 return false;

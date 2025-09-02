@@ -114,10 +114,17 @@ export default function ReportsPage() {
 
             const params = new URLSearchParams();
             if (isCustomDate && startDate && endDate) {
+                console.log("🔍 Frontend sending dates:", {
+                    startDate,
+                    endDate,
+                });
                 params.append("startDate", startDate);
                 params.append("endDate", endDate);
-            } else {
+            } else if (!isCustomDate) {
                 params.append("period", period);
+            } else {
+                // Không fetch nếu custom date nhưng chưa đủ ngày
+                return;
             }
 
             const response = await fetchApi(
@@ -139,7 +146,7 @@ export default function ReportsPage() {
             console.error("Error fetching dashboard stats:", error);
             toast.error("Không thể tải dữ liệu thống kê");
         }
-    }, [period, startDate, endDate, isCustomDate]);
+    }, [period, isCustomDate, startDate, endDate]);
 
     // Fetch customer data
     const fetchCustomerData = useCallback(async () => {
@@ -151,8 +158,11 @@ export default function ReportsPage() {
             if (isCustomDate && startDate && endDate) {
                 params.append("startDate", startDate);
                 params.append("endDate", endDate);
-            } else {
+            } else if (!isCustomDate) {
                 params.append("period", period);
+            } else {
+                // Không fetch nếu custom date nhưng chưa đủ ngày
+                return;
             }
             params.append("limit", "10");
 
@@ -170,7 +180,7 @@ export default function ReportsPage() {
         } catch (error) {
             console.error("Error fetching customer data:", error);
         }
-    }, [period, startDate, endDate, isCustomDate]);
+    }, [period, isCustomDate, startDate, endDate]);
 
     // Fetch court usage data
     const fetchCourtUsageData = useCallback(async () => {
@@ -182,8 +192,11 @@ export default function ReportsPage() {
             if (isCustomDate && startDate && endDate) {
                 params.append("startDate", startDate);
                 params.append("endDate", endDate);
-            } else {
+            } else if (!isCustomDate) {
                 params.append("period", period);
+            } else {
+                // Không fetch nếu custom date nhưng chưa đủ ngày
+                return;
             }
 
             const response = await fetchApi(
@@ -200,9 +213,26 @@ export default function ReportsPage() {
         } catch (error) {
             console.error("Error fetching court usage data:", error);
         }
-    }, [period, startDate, endDate, isCustomDate]);
+    }, [period, isCustomDate, startDate, endDate]);
 
-    // Initial data fetch
+    // Manual fetch function cho custom date
+    const handleManualFetch = async () => {
+        if (isCustomDate && (!startDate || !endDate)) {
+            toast.error("Vui lòng chọn cả ngày bắt đầu và ngày kết thúc");
+            return;
+        }
+
+        setLoading(true);
+        await Promise.all([
+            fetchDashboardStats(),
+            fetchCustomerData(),
+            fetchCourtUsageData(),
+        ]);
+        setLoading(false);
+        toast.success("Đã cập nhật dữ liệu");
+    };
+
+    // Initial data fetch và khi period thay đổi (không bao gồm date changes)
     useEffect(() => {
         const fetchAllData = async () => {
             setLoading(true);
@@ -214,8 +244,12 @@ export default function ReportsPage() {
             setLoading(false);
         };
 
-        fetchAllData();
-    }, [fetchDashboardStats, fetchCustomerData, fetchCourtUsageData]);
+        // Chỉ fetch khi period thay đổi (không phải custom date)
+        if (!isCustomDate) {
+            fetchAllData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [period]); // Chỉ period dependency
 
     // Handle period change
     const handlePeriodChange = (value: string) => {
@@ -293,7 +327,7 @@ export default function ReportsPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="-mt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="">
                                 <Label className="mb-2">Khoảng thời gian</Label>
                                 <Select
@@ -406,6 +440,19 @@ export default function ReportsPage() {
                                         ) + 1}{" "}
                                         ngày
                                     </p>
+                                )}
+                            </div>
+
+                            {/* Button Áp dụng cho custom date */}
+                            <div className="flex items-center">
+                                {isCustomDate && (
+                                    <Button
+                                        onClick={handleManualFetch}
+                                        disabled={!startDate || !endDate}
+                                        className="w-full"
+                                    >
+                                        Áp dụng
+                                    </Button>
                                 )}
                             </div>
                         </div>

@@ -10,15 +10,14 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
-import { formatCurrency } from "@/lib/utils";
 
-interface RevenueData {
+interface BookingData {
     date: string;
-    revenue: number;
+    bookings: number;
 }
 
-interface RevenueChartProps {
-    data: RevenueData[];
+interface BookingChartProps {
+    data: BookingData[];
 }
 
 interface TooltipProps {
@@ -42,8 +41,8 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
         return (
             <div className="bg-white p-3 border rounded-lg shadow-md">
                 <p className="text-sm text-gray-600">{formattedDate}</p>
-                <p className="text-sm font-semibold text-blue-600">
-                    Doanh thu: {formatCurrency(payload[0].value)}
+                <p className="text-sm font-semibold text-green-600">
+                    Lượt đặt: {payload[0].value} lượt
                 </p>
             </div>
         );
@@ -51,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     return null;
 };
 
-export default function RevenueChart({ data }: RevenueChartProps) {
+export default function BookingChart({ data }: BookingChartProps) {
     if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-64 text-gray-500">
@@ -82,25 +81,15 @@ export default function RevenueChart({ data }: RevenueChartProps) {
                         }}
                         className="text-xs"
                     />
-                    <YAxis
-                        tickFormatter={(value) => {
-                            if (value >= 1000000) {
-                                return `${(value / 1000000).toFixed(1)}M`;
-                            } else if (value >= 1000) {
-                                return `${(value / 1000).toFixed(0)}K`;
-                            }
-                            return value.toString();
-                        }}
-                        className="text-xs"
-                    />
+                    <YAxis className="text-xs" />
                     <Tooltip content={<CustomTooltip />} />
                     <Line
                         type="monotone"
-                        dataKey="revenue"
-                        stroke="#2563eb"
+                        dataKey="bookings"
+                        stroke="#16a34a"
                         strokeWidth={2}
-                        dot={{ fill: "#2563eb", strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, stroke: "#2563eb", strokeWidth: 2 }}
+                        dot={{ fill: "#16a34a", strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: "#16a34a", strokeWidth: 2 }}
                     />
                 </LineChart>
             </ResponsiveContainer>

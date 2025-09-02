@@ -14,37 +14,51 @@ import { formatCurrency } from "@/lib/utils";
 
 interface DashboardStats {
     period: string;
-    revenue: {
-        total: number;
-        growth: number;
-        target?: number;
-        achievement?: number;
+    revenue?: {
+        total?: number | null;
+        growth?: number | null;
+        target?: number | null;
+        achievement?: number | null;
     };
-    bookings: {
-        total: number;
-        growth: number;
-        avgValue: number;
+    bookings?: {
+        total?: number | null;
+        growth?: number | null;
+        avgValue?: number | null;
     };
-    customers: {
-        total: number;
-        active: number;
-        new: number;
-        retention: number;
+    customers?: {
+        total?: number | null;
+        active?: number | null;
+        new?: number | null;
+        retention?: number | null;
     };
-    courts: {
-        totalCourts: number;
-        avgUtilization: number;
-        topPerformer: string;
+    courts?: {
+        totalCourts?: number | null;
+        avgUtilization?: number | null;
+        topPerformer?: string | null;
     };
 }
 
 interface StatsCardsProps {
-    stats: DashboardStats;
+    stats?: DashboardStats | null;
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
+    // Thêm debug logging
+    console.log("StatsCards received stats:", stats);
+    console.log("Revenue total:", stats?.revenue?.total);
+    console.log("Revenue growth:", stats?.revenue?.growth);
+
+    // Hàm xử lý số an toàn
+    const safeNumber = (value: unknown, defaultValue = 0) => {
+        if (value === null || value === undefined || isNaN(Number(value))) {
+            return defaultValue;
+        }
+        return Number(value) || defaultValue;
+    };
+
     const formatGrowth = (growth: number) => {
-        const isPositive = growth >= 0;
+        const safeGrowth = safeNumber(growth);
+        const isPositive = safeGrowth >= 0;
         const Icon = isPositive ? TrendingUp : TrendingDown;
         const colorClass = isPositive ? "text-green-600" : "text-red-600";
 
@@ -52,41 +66,54 @@ export default function StatsCards({ stats }: StatsCardsProps) {
             <div className={`flex items-center gap-1 ${colorClass}`}>
                 <Icon className="h-4 w-4" />
                 <span className="text-sm font-medium">
-                    {Math.abs(growth).toFixed(1)}%
+                    {Math.abs(safeGrowth).toFixed(1)}%
                 </span>
             </div>
         );
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Revenue Card */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-gray-700">
                         Tổng doanh thu
                     </CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <div className="p-2.5 bg-green-100 rounded-xl">
+                        <DollarSign className="h-5 w-5 text-green-600" />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">
-                        {formatCurrency(stats.revenue.total)}
+                <CardContent className="pt-0 -mt-8">
+                    <div className="text-2xl font-bold text-gray-900 mb-3">
+                        {formatCurrency(safeNumber(stats?.revenue?.total))}
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                        {formatGrowth(stats.revenue.growth)}
-                        <p className="text-xs text-muted-foreground">
-                            so với kỳ trước
-                        </p>
+                    <div className="flex items-center justify-between mb-2">
+                        {formatGrowth(safeNumber(stats?.revenue?.growth))}
+                        <p className="text-xs text-gray-500">so với kỳ trước</p>
                     </div>
-                    {stats.revenue.target && (
-                        <div className="mt-2 pt-2 border-t">
-                            <p className="text-xs text-muted-foreground">
-                                Mục tiêu: {formatCurrency(stats.revenue.target)}
-                            </p>
-                            {stats.revenue.achievement && (
-                                <p className="text-xs font-medium">
-                                    Đạt {stats.revenue.achievement.toFixed(1)}%
-                                </p>
+                    {stats?.revenue?.target && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-gray-500">Mục tiêu</span>
+                                <span className="font-medium text-gray-700">
+                                    {formatCurrency(
+                                        safeNumber(stats.revenue.target)
+                                    )}
+                                </span>
+                            </div>
+                            {stats?.revenue?.achievement && (
+                                <div className="flex justify-between items-center text-xs mt-1">
+                                    <span className="text-gray-500">
+                                        Hoàn thành
+                                    </span>
+                                    <span className="font-semibold text-green-600">
+                                        {safeNumber(
+                                            stats.revenue.achievement
+                                        ).toFixed(1)}
+                                        %
+                                    </span>
+                                </div>
                             )}
                         </div>
                     )}
@@ -94,65 +121,51 @@ export default function StatsCards({ stats }: StatsCardsProps) {
             </Card>
 
             {/* Bookings Card */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm bg-gradient-to-br from-blue-50 to-sky-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-gray-700">
                         Lượt đặt sân
                     </CardTitle>
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div className="p-2.5 bg-blue-100 rounded-xl">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">
-                        {stats.bookings.total.toLocaleString()}
+                <CardContent className="pt-0 -mt-8">
+                    <div className="text-2xl font-bold text-gray-900 mb-3">
+                        {safeNumber(stats?.bookings?.total).toLocaleString()}
                     </div>
-                    <div className="flex items-center justify-between mt-2">
-                        {formatGrowth(stats.bookings.growth)}
-                        <p className="text-xs text-muted-foreground">
-                            so với kỳ trước
-                        </p>
-                    </div>
-                    <div className="mt-2 pt-2 border-t">
-                        <p className="text-xs text-muted-foreground">
-                            Giá trị TB:{" "}
-                            {formatCurrency(stats.bookings.avgValue)}
-                        </p>
+                    <div className="flex items-center justify-between mb-2">
+                        {formatGrowth(safeNumber(stats?.bookings?.growth))}
+                        <p className="text-xs text-gray-500">so với kỳ trước</p>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Customers Card */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm bg-gradient-to-br from-purple-50 to-violet-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-gray-700">
                         Khách hàng
                     </CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">
-                        {stats.customers.total.toLocaleString()}
+                    <div className="p-2.5 bg-purple-100 rounded-xl">
+                        <Users className="h-5 w-5 text-purple-600" />
                     </div>
-                    <div className="space-y-1 mt-2">
-                        <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">
-                                Hoạt động:
+                </CardHeader>
+                <CardContent className="pt-0 -mt-8">
+                    <div className="text-2xl font-bold text-gray-900 mb-3">
+                        {safeNumber(stats?.customers?.total).toLocaleString()}
+                    </div>
+                    <div className="space-y-2">
+                        {/* <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Hoạt động</span>
+                            <span className="font-medium text-gray-700">
+                                {safeNumber(stats?.customers?.active)}
                             </span>
-                            <span className="font-medium">
-                                {stats.customers.active}
-                            </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">Mới:</span>
-                            <span className="font-medium text-green-600">
-                                +{stats.customers.new}
-                            </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">
-                                Giữ chân:
-                            </span>
-                            <span className="font-medium">
-                                {stats.customers.retention.toFixed(1)}%
+                        </div> */}
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Mới</span>
+                            <span className="font-semibold text-green-600">
+                                +{safeNumber(stats?.customers?.new)}
                             </span>
                         </div>
                     </div>
@@ -160,35 +173,27 @@ export default function StatsCards({ stats }: StatsCardsProps) {
             </Card>
 
             {/* Courts Card */}
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+            <Card className="hover:shadow-lg transition-shadow duration-300 border-0 shadow-sm bg-gradient-to-br from-orange-50 to-amber-50">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-gray-700">
                         Sân thể thao
                     </CardTitle>
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">
-                        {stats.courts.totalCourts}
+                    <div className="p-2.5 bg-orange-100 rounded-xl">
+                        <Building2 className="h-5 w-5 text-orange-600" />
                     </div>
-                    <div className="space-y-1 mt-2">
-                        <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">
-                                Sử dụng TB:
-                            </span>
-                            <span className="font-medium">
-                                {stats.courts.avgUtilization.toFixed(1)}%
-                            </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-muted-foreground">
-                                Hàng đầu:
-                            </span>
+                </CardHeader>
+                <CardContent className="pt-0 -mt-8">
+                    <div className="text-2xl font-bold text-gray-900 mb-3">
+                        {safeNumber(stats?.courts?.totalCourts)}
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Hàng đầu</span>
                             <span
-                                className="font-medium text-blue-600 truncate"
-                                title={stats.courts.topPerformer}
+                                className="font-medium text-blue-600 truncate max-w-200"
+                                title={stats?.courts?.topPerformer || "N/A"}
                             >
-                                {stats.courts.topPerformer}
+                                {stats?.courts?.topPerformer || "N/A"}
                             </span>
                         </div>
                     </div>

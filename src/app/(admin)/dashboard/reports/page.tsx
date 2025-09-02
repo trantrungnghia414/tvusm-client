@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
@@ -23,13 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    CalendarIcon,
-    RefreshCw,
-    Users,
-    Calendar,
-    DollarSign,
-} from "lucide-react";
+import { Users, Calendar, DollarSign } from "lucide-react";
 import StatsCards from "./components/StatsCards";
 import RevenueChart from "./components/RevenueChart";
 import BookingChart from "./components/BookingChart";
@@ -102,14 +95,13 @@ export default function ReportsPage() {
     const [courtUsageData, setCourtUsageData] = useState<CourtUsageData[]>([]);
 
     // State for filters
-    const [period, setPeriod] = useState("month");
+    const [period, setPeriod] = useState("all");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [isCustomDate, setIsCustomDate] = useState(false);
 
     // State for UI
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
 
     // Fetch dashboard stats
     const fetchDashboardStats = useCallback(async () => {
@@ -140,6 +132,8 @@ export default function ReportsPage() {
             }
 
             const data = await response.json();
+            console.log("Dashboard API response:", data);
+            console.log("Revenue data from API:", data.revenue);
             setDashboardStats(data);
         } catch (error) {
             console.error("Error fetching dashboard stats:", error);
@@ -223,48 +217,6 @@ export default function ReportsPage() {
         fetchAllData();
     }, [fetchDashboardStats, fetchCustomerData, fetchCourtUsageData]);
 
-    // Handle refresh
-    const handleRefresh = async () => {
-        setRefreshing(true);
-        await Promise.all([
-            fetchDashboardStats(),
-            fetchCustomerData(),
-            fetchCourtUsageData(),
-        ]);
-        setRefreshing(false);
-        toast.success("Đã làm mới dữ liệu");
-    };
-
-    // Get period display text
-    const getPeriodDisplayText = () => {
-        if (isCustomDate && startDate && endDate) {
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            const days =
-                Math.ceil(
-                    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-                ) + 1;
-            return `${start.toLocaleDateString(
-                "vi-VN"
-            )} - ${end.toLocaleDateString("vi-VN")} (${days} ngày)`;
-        }
-
-        switch (period) {
-            case "week":
-                return "Tuần này";
-            case "month":
-                return "Tháng này";
-            case "quarter":
-                return "Quý này";
-            case "year":
-                return "Năm này";
-            case "all":
-                return "Toàn thời gian";
-            default:
-                return "Tháng này";
-        }
-    };
-
     // Handle period change
     const handlePeriodChange = (value: string) => {
         setPeriod(value);
@@ -280,7 +232,7 @@ export default function ReportsPage() {
         }
     };
 
-    // Handle date change with auto fetch
+    // Handle date change (no auto fetch)
     const handleDateChange = (type: "start" | "end", value: string) => {
         if (type === "start") {
             setStartDate(value);
@@ -291,71 +243,11 @@ export default function ReportsPage() {
         } else {
             setEndDate(value);
         }
-
-        // Validate dates
-        const start = new Date(type === "start" ? value : startDate);
-        const end = new Date(type === "end" ? value : endDate);
-        const today = new Date();
-
-        // Reset time for comparison
-        today.setHours(0, 0, 0, 0);
-
-        // Validation checks
-        if (start > today) {
-            toast.error("Ngày bắt đầu không thể lớn hơn ngày hiện tại");
-            return;
-        }
-
-        if (end > today) {
-            toast.error("Ngày kết thúc không thể lớn hơn ngày hiện tại");
-            return;
-        }
-
-        if (start > end) {
-            toast.error("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc");
-            return;
-        }
-
-        // Check if both dates are selected
-        const finalStartDate = type === "start" ? value : startDate;
-        const finalEndDate = type === "end" ? value : endDate;
-
-        if (finalStartDate && finalEndDate) {
-            const daysDiff = Math.ceil(
-                (new Date(finalEndDate).getTime() -
-                    new Date(finalStartDate).getTime()) /
-                    (1000 * 60 * 60 * 24)
-            );
-
-            if (daysDiff > 365) {
-                toast.error("Khoảng thời gian tối đa là 1 năm (365 ngày)");
-                return;
-            }
-
-            if (daysDiff < 0) {
-                toast.error("Khoảng thời gian không hợp lệ");
-                return;
-            }
-
-            // Auto fetch data after a short delay
-            setTimeout(() => {
-                fetchDashboardStats();
-                fetchCustomerData();
-                fetchCourtUsageData();
-                toast.success(
-                    `Đã cập nhật bộ lọc: ${new Date(
-                        finalStartDate
-                    ).toLocaleDateString("vi-VN")} - ${new Date(
-                        finalEndDate
-                    ).toLocaleDateString("vi-VN")}`
-                );
-            }, 300);
-        }
     };
 
     // Handle reset filters
     const handleResetFilters = () => {
-        setPeriod("month");
+        setPeriod("all");
         setIsCustomDate(false);
         setStartDate("");
         setEndDate("");
@@ -383,62 +275,27 @@ export default function ReportsPage() {
                             Theo dõi và phân tích hiệu quả kinh doanh để tối ưu
                             hóa doanh thu
                         </p>
-                        <div className="mt-2 flex items-center gap-2">
-                            <span className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                                📊 Khoảng thời gian: {getPeriodDisplayText()}
-                            </span>
-                            {dashboardStats && (
-                                <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
-                                    📈 Doanh thu:{" "}
-                                    {formatCurrency(
-                                        dashboardStats.revenue.total
-                                    )}
-                                </span>
-                            )}
-                        </div>
                     </div>
-                    <Button
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="flex items-center gap-2"
-                    >
-                        <RefreshCw
-                            className={`h-4 w-4 ${
-                                refreshing ? "animate-spin" : ""
-                            }`}
-                        />
-                        Làm mới
-                    </Button>
                 </div>
 
                 {/* Filters */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <CalendarIcon className="h-5 w-5" />
-                                    Bộ lọc thời gian
-                                </CardTitle>
-                                <CardDescription>
-                                    Chọn khoảng thời gian để xem báo cáo thống
-                                    kê
-                                </CardDescription>
-                            </div>
+                            <CardTitle>Bộ lọc thời gian</CardTitle>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={handleResetFilters}
-                                className="text-xs"
                             >
                                 Reset
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="-mt-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <Label>Khoảng thời gian</Label>
+                            <div className="">
+                                <Label className="mb-2">Khoảng thời gian</Label>
                                 <Select
                                     value={period}
                                     onValueChange={handlePeriodChange}
@@ -470,7 +327,7 @@ export default function ReportsPage() {
                             </div>
 
                             <div>
-                                <Label>Từ ngày</Label>
+                                <Label className="mb-2">Từ ngày</Label>
                                 <Input
                                     type="date"
                                     value={startDate}
@@ -503,7 +360,7 @@ export default function ReportsPage() {
                             </div>
 
                             <div>
-                                <Label>Đến ngày</Label>
+                                <Label className="mb-2">Đến ngày</Label>
                                 <Input
                                     type="date"
                                     value={endDate}

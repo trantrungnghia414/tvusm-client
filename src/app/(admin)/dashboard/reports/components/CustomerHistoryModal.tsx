@@ -133,23 +133,25 @@ export default function CustomerHistoryModal({
 
     const getPaymentStatusBadge = (paymentStatus: string) => {
         switch (paymentStatus) {
-            case "paid":
+            case "completed":
                 return (
                     <Badge className="bg-green-100 text-green-800">
                         Đã thanh toán
                     </Badge>
                 );
-            case "unpaid":
-                return (
-                    <Badge className="bg-red-100 text-red-800">
-                        Chưa thanh toán
-                    </Badge>
-                );
-            case "partial":
+            case "pending":
                 return (
                     <Badge className="bg-yellow-100 text-yellow-800">
-                        Thanh toán 1 phần
+                        Chờ thanh toán
                     </Badge>
+                );
+            case "failed":
+                return (
+                    <Badge className="bg-red-100 text-red-800">Thất bại</Badge>
+                );
+            case "cancelled":
+                return (
+                    <Badge className="bg-gray-100 text-gray-800">Đã hủy</Badge>
                 );
             case "refunded":
                 return (
@@ -157,10 +159,11 @@ export default function CustomerHistoryModal({
                         Đã hoàn tiền
                     </Badge>
                 );
+            case "unpaid":
             default:
                 return (
-                    <Badge className="bg-gray-100 text-gray-800">
-                        {paymentStatus}
+                    <Badge className="bg-red-100 text-red-800">
+                        Chưa thanh toán
                     </Badge>
                 );
         }
@@ -218,30 +221,30 @@ export default function CustomerHistoryModal({
         <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                <div className="p-4 border rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                    <div className="flex items-center gap-2 text-sm text-blue-700 mb-1">
                         <Calendar className="h-4 w-4" />
                         Tổng lượt đặt
                     </div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold text-blue-800">
                         {historyData.totalBookings}
                     </div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                <div className="p-4 border rounded-lg bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                    <div className="flex items-center gap-2 text-sm text-green-700 mb-1">
                         <DollarSign className="h-4 w-4" />
                         Tổng chi tiêu
                     </div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold text-green-800">
                         {formatCurrency(historyData.totalSpent)}
                     </div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                <div className="p-4 border rounded-lg bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                    <div className="flex items-center gap-2 text-sm text-purple-700 mb-1">
                         <DollarSign className="h-4 w-4" />
                         Chi tiêu TB
                     </div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold text-purple-800">
                         {formatCurrency(
                             historyData.totalSpent / historyData.totalBookings
                         )}

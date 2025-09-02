@@ -71,10 +71,7 @@ export default function CourtUsageChart({ data }: CourtUsageChartProps) {
 
     const chartData: ChartData[] = sortedData.map((item) => ({
         ...item,
-        courtName:
-            item.court.name.length > 15
-                ? `${item.court.name.substring(0, 15)}...`
-                : item.court.name,
+        courtName: item.court.name, // Hiển thị tên đầy đủ
         color: getBarColor(item.utilizationRate),
     }));
 
@@ -82,6 +79,16 @@ export default function CourtUsageChart({ data }: CourtUsageChartProps) {
     const CustomTooltip = ({ active, payload }: TooltipProps) => {
         if (active && payload && payload.length) {
             const courtData = payload[0].payload as CourtUsageData;
+
+            // Debug log to check revenue data
+            console.log("Court tooltip data:", {
+                courtName: courtData.court.name,
+                revenue: courtData.revenue,
+                revenueType: typeof courtData.revenue,
+                formattedRevenue: formatCurrency(
+                    Number(courtData.revenue) || 0
+                ),
+            });
 
             return (
                 <div className="bg-white p-4 border rounded-lg shadow-md min-w-64">
@@ -117,7 +124,7 @@ export default function CourtUsageChart({ data }: CourtUsageChartProps) {
                         <div className="flex justify-between">
                             <span className="text-gray-600">Doanh thu:</span>
                             <span className="font-semibold text-green-600">
-                                {formatCurrency(courtData.revenue)}
+                                {formatCurrency(Number(courtData.revenue) || 0)}
                             </span>
                         </div>
                         <div className="flex justify-between">
@@ -168,11 +175,11 @@ export default function CourtUsageChart({ data }: CourtUsageChartProps) {
             </div>
 
             {/* Chart */}
-            <div className="h-80">
+            <div className="h-100">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={chartData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
                         <CartesianGrid
                             strokeDasharray="3 3"
@@ -182,7 +189,7 @@ export default function CourtUsageChart({ data }: CourtUsageChartProps) {
                             dataKey="courtName"
                             angle={-45}
                             textAnchor="end"
-                            height={80}
+                            height={100}
                             interval={0}
                             className="text-xs"
                         />
@@ -203,58 +210,8 @@ export default function CourtUsageChart({ data }: CourtUsageChartProps) {
                 </ResponsiveContainer>
             </div>
 
-            {/* Summary Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                        {data.reduce(
-                            (sum, court) => sum + court.bookingCount,
-                            0
-                        )}
-                    </div>
-                    <div className="text-sm text-gray-600">Tổng lượt đặt</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                        {formatCurrency(
-                            data.reduce((sum, court) => sum + court.revenue, 0)
-                        )}
-                    </div>
-                    <div className="text-sm text-gray-600">Tổng doanh thu</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">
-                        {(
-                            data.reduce(
-                                (sum, court) => sum + court.utilizationRate,
-                                0
-                            ) / data.length
-                        ).toFixed(1)}
-                        %
-                    </div>
-                    <div className="text-sm text-gray-600">
-                        Tỷ lệ sử dụng TB
-                    </div>
-                </div>
-                <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                        {(
-                            data.reduce(
-                                (sum, court) =>
-                                    sum + court.averageBookingDuration,
-                                0
-                            ) / data.length
-                        ).toFixed(1)}
-                        h
-                    </div>
-                    <div className="text-sm text-gray-600">
-                        Thời gian đặt TB
-                    </div>
-                </div>
-            </div>
-
             {/* Top and Bottom Performers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 -mt-10">
                 <div>
                     <h4 className="text-lg font-semibold mb-3 text-green-700">
                         Top 3 sân được sử dụng nhiều nhất

@@ -10,16 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Eye, Phone, Mail, User } from "lucide-react";
+import { ChevronDown, ChevronUp, Phone, Mail, User } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import CustomerHistoryModal from "./CustomerHistoryModal";
 
@@ -41,8 +32,9 @@ interface CustomerTableProps {
 }
 
 export default function CustomerTable({ customers }: CustomerTableProps) {
-    const [selectedCustomer, setSelectedCustomer] =
-        useState<CustomerData | null>(null);
+    const [expandedCustomer, setExpandedCustomer] = useState<number | null>(
+        null
+    );
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -51,16 +43,6 @@ export default function CustomerTable({ customers }: CustomerTableProps) {
             month: "2-digit",
             year: "numeric",
         });
-    };
-
-    const getCustomerLevel = (totalSpent: number) => {
-        if (totalSpent >= 10000000)
-            return { label: "VIP", color: "bg-purple-100 text-purple-800" };
-        if (totalSpent >= 5000000)
-            return { label: "Vàng", color: "bg-yellow-100 text-yellow-800" };
-        if (totalSpent >= 2000000)
-            return { label: "Bạc", color: "bg-gray-100 text-gray-800" };
-        return { label: "Đồng", color: "bg-orange-100 text-orange-800" };
     };
 
     if (!customers || customers.length === 0) {
@@ -82,15 +64,12 @@ export default function CustomerTable({ customers }: CustomerTableProps) {
                         <TableHead className="text-right">
                             Tổng chi tiêu
                         </TableHead>
-                        <TableHead className="text-center">Hạng</TableHead>
                         <TableHead className="text-center">Lần cuối</TableHead>
                         <TableHead className="text-center">Thao tác</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {customers.map((customer) => {
-                        const level = getCustomerLevel(customer.totalSpent);
-
                         return (
                             <TableRow key={customer.customer.user_id}>
                                 <TableCell>
@@ -102,9 +81,6 @@ export default function CustomerTable({ customers }: CustomerTableProps) {
                                             <div className="font-medium">
                                                 {customer.customer.fullname ||
                                                     customer.customer.username}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                @{customer.customer.username}
                                             </div>
                                         </div>
                                     </div>
@@ -151,57 +127,80 @@ export default function CustomerTable({ customers }: CustomerTableProps) {
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                    <Badge className={level.color}>
-                                        {level.label}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-center">
                                     <div className="text-sm">
                                         {formatDate(customer.lastBooking)}
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    setSelectedCustomer(
-                                                        customer
-                                                    )
-                                                }
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                            <DialogHeader>
-                                                <DialogTitle>
-                                                    Lịch sử đặt sân -{" "}
-                                                    {customer.customer
-                                                        .fullname ||
-                                                        customer.customer
-                                                            .username}
-                                                </DialogTitle>
-                                                <DialogDescription>
-                                                    Xem chi tiết lịch sử đặt sân
-                                                    và giao dịch của khách hàng
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            {selectedCustomer && (
-                                                <CustomerHistoryModal
-                                                    customer={selectedCustomer}
-                                                />
-                                            )}
-                                        </DialogContent>
-                                    </Dialog>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-2"
+                                        onClick={() =>
+                                            setExpandedCustomer(
+                                                expandedCustomer ===
+                                                    customer.customer.user_id
+                                                    ? null
+                                                    : customer.customer.user_id
+                                            )
+                                        }
+                                    >
+                                        {expandedCustomer ===
+                                        customer.customer.user_id ? (
+                                            <>
+                                                <span className="text-xs">
+                                                    Ẩn
+                                                </span>
+                                                <ChevronUp className="h-4 w-4" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-xs">
+                                                    Xem lịch sử
+                                                </span>
+                                                <ChevronDown className="h-4 w-4" />
+                                            </>
+                                        )}
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         );
                     })}
                 </TableBody>
             </Table>
+
+            {/* Expanded Customer History */}
+            {expandedCustomer && (
+                <div className="mt-6 p-6 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <User className="h-5 w-5 text-blue-600" />
+                            <h3 className="text-lg font-semibold">
+                                Lịch sử đặt sân -{" "}
+                                {customers.find(
+                                    (c) =>
+                                        c.customer.user_id === expandedCustomer
+                                )?.customer.fullname ||
+                                    customers.find(
+                                        (c) =>
+                                            c.customer.user_id ===
+                                            expandedCustomer
+                                    )?.customer.username}
+                            </h3>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            💡 Chi tiết được hiển thị bên dưới
+                        </div>
+                    </div>
+                    <CustomerHistoryModal
+                        customer={
+                            customers.find(
+                                (c) => c.customer.user_id === expandedCustomer
+                            )!
+                        }
+                    />
+                </div>
+            )}
 
             {customers.length >= 10 && (
                 <div className="text-center pt-4 border-t">

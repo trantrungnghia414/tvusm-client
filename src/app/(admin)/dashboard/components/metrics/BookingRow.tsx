@@ -10,7 +10,8 @@ interface BookingRowProps {
     user: string;
     field: string;
     time: string;
-    status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+    status: "pending" | "confirmed" | "completed" | "cancelled";
+    onDetailClick?: (id: string) => void;
 }
 
 export default function BookingRow({
@@ -19,6 +20,7 @@ export default function BookingRow({
     field,
     time,
     status,
+    onDetailClick,
 }: BookingRowProps) {
     const statusConfig = {
         pending: {
@@ -35,7 +37,9 @@ export default function BookingRow({
 
     return (
         <TableRow>
-            <TableCell className="font-medium">{id}</TableCell>
+            <TableCell className="font-medium">
+                {id.replace(/^B-/, "")}
+            </TableCell>
             <TableCell>{user}</TableCell>
             <TableCell className="hidden md:table-cell">{field}</TableCell>
             <TableCell className="hidden md:table-cell text-gray-500 text-sm">
@@ -50,7 +54,12 @@ export default function BookingRow({
                 </Badge>
             </TableCell>
             <TableCell className="text-right">
-                <Button variant="ghost" size="sm" className="h-8 px-2">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={() => onDetailClick?.(id)}
+                >
                     Chi tiết
                 </Button>
             </TableCell>

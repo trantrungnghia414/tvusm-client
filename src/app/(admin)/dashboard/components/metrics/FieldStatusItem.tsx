@@ -2,24 +2,23 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 
 interface FieldStatusItemProps {
     name: string;
-    status: "available" | "in-use" | "maintenance" | "closed";
-    utilizationRate: number;
+    status: "available" | "in-use" | "maintenance";
+    bookingCount: number;
 }
 
 export default function FieldStatusItem({
     name,
     status,
-    utilizationRate,
+    bookingCount,
 }: FieldStatusItemProps) {
     const statusColors = {
         available: {
             text: "text-green-600",
             bg: "bg-green-100",
-            label: "Sẵn sàng",
+            label: "Có sẵn",
         },
         "in-use": {
             text: "text-blue-600",
@@ -31,7 +30,6 @@ export default function FieldStatusItem({
             bg: "bg-orange-100",
             label: "Bảo trì",
         },
-        closed: { text: "text-red-600", bg: "bg-red-100", label: "Đóng cửa" },
     };
 
     const statusStyle = statusColors[status];
@@ -49,10 +47,9 @@ export default function FieldStatusItem({
             </div>
             <div className="space-y-1">
                 <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">Tỷ lệ sử dụng</span>
-                    <span className="font-medium">{utilizationRate}%</span>
+                    <span className="text-gray-500">Số lượt đặt sân</span>
+                    <span className="font-medium">{bookingCount} lượt</span>
                 </div>
-                <Progress value={utilizationRate} className="h-1.5" />
             </div>
         </div>
     );

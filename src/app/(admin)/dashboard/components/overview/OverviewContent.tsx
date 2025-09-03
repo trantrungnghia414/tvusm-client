@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import {
     Table,
     TableBody,
-    // TableCell,
     TableHead,
     TableHeader,
     TableRow,
@@ -33,9 +32,6 @@ import { fetchApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import MetricCard from "@/app/(admin)/dashboard/components/metrics/MetricCard";
 import BookingRow from "@/app/(admin)/dashboard/components/metrics/BookingRow";
-import FieldStatusItem from "@/app/(admin)/dashboard/components/metrics/FieldStatusItem";
-import TodayScheduleItem from "@/app/(admin)/dashboard/components/metrics/TodayScheduleItem";
-import UserItem from "@/app/(admin)/dashboard/components/metrics/UserItem";
 import ActivityItem from "@/app/(admin)/dashboard/components/metrics/ActivityItem";
 
 interface OverviewContentProps {
@@ -54,28 +50,6 @@ interface OverviewContentProps {
     }>;
 }
 
-interface Court {
-    court_id: number;
-    name: string;
-    status: "available" | "booked" | "maintenance";
-    type_name?: string;
-}
-
-interface TodayBooking {
-    booking_id: number;
-    start_time: string;
-    end_time: string;
-    user?: {
-        fullname?: string;
-        username: string;
-    };
-    renter_name?: string;
-    court?: {
-        name: string;
-    };
-    status: "pending" | "confirmed" | "completed" | "cancelled";
-}
-
 interface User {
     user_id: number;
     username: string;
@@ -85,13 +59,39 @@ interface User {
     created_at: string;
 }
 
+interface CourtUsageData {
+    court: {
+        court_id: number;
+        name: string;
+        code?: string;
+        type_name?: string;
+        venue_name?: string;
+    };
+    bookingCount: number;
+    revenue: number;
+    utilizationRate: number;
+    averageBookingDuration: number;
+    actualStatus?: "available" | "booked" | "maintenance";
+}
+
+interface TopUser {
+    user_id: number;
+    username: string;
+    email: string;
+    fullname?: string;
+    role: string;
+    bookingCount: number;
+    totalRevenue: number;
+    lastBookingDate?: string;
+}
+
 export default function OverviewContent({
     stats,
     recentBookings,
 }: OverviewContentProps) {
     const router = useRouter();
-    const [courts, setCourts] = useState<Court[]>([]);
-    const [todayBookings, setTodayBookings] = useState<TodayBooking[]>([]);
+    const [courtUsageData, setCourtUsageData] = useState<CourtUsageData[]>([]);
+    const [topUsers, setTopUsers] = useState<TopUser[]>([]);
     const [newUsers, setNewUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [calculatedStats, setCalculatedStats] = useState<{
@@ -190,8 +190,8 @@ export default function OverviewContent({
 
                 // Fetch all required data
                 const [
+                    courtUsageRes,
                     courtsRes,
-                    todayBookingsRes,
                     usersRes,
                     allBookingsRes,
                     currentMonthDashboardRes,
@@ -199,13 +199,13 @@ export default function OverviewContent({
                     equipmentIssuesRes,
                     venueMaintenanceRes,
                 ] = await Promise.all([
+                    fetchApi(`/reports/courts?period=all`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
                     fetchApi("/courts", {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
-                    fetchApi(`/bookings?date=${today}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                    fetchApi("/users", {
+                    fetchApi("/users?limit=1000", {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
                     fetchApi("/bookings", {
@@ -231,37 +231,67 @@ export default function OverviewContent({
                     }).catch(() => ({ ok: false })),
                 ]);
 
-                // Process courts data
-                if (courtsRes.ok) {
+                // Process court usage data for top 10 most used courts with actual status
+                if (courtUsageRes.ok && courtsRes.ok) {
+                    const usageData = await courtUsageRes.json();
                     const courtsData = await courtsRes.json();
-                    setCourts(courtsData.slice(0, 5));
-                }
 
-                // Process today's bookings
-                if (todayBookingsRes.ok) {
-                    const bookingsData = await todayBookingsRes.json();
-                    setTodayBookings(bookingsData.slice(0, 5));
+                    if (
+                        usageData &&
+                        usageData.courtUsage &&
+                        Array.isArray(usageData.courtUsage) &&
+                        courtsData &&
+                        Array.isArray(courtsData)
+                    ) {
+                        // Create a map of court_id to actual status
+                        const courtStatusMap = new Map(
+                            courtsData.map(
+                                (court: {
+                                    court_id: number;
+                                    status:
+                                        | "available"
+                                        | "booked"
+                                        | "maintenance";
+                                }) => [court.court_id, court.status]
+                            )
+                        );
+
+                        // Add actual status to usage data
+                        const courtsWithStatus = usageData.courtUsage.map(
+                            (court: CourtUsageData) => ({
+                                ...court,
+                                actualStatus:
+                                    courtStatusMap.get(court.court.court_id) ||
+                                    "available",
+                            })
+                        );
+
+                        setCourtUsageData(getTopCourts(courtsWithStatus));
+                    }
                 }
 
                 // Process all data and calculate stats
                 let users: User[] = [];
                 let allBookings: {
                     created_at: string;
+                    user_id?: number;
+                    total_cost?: number;
                     [key: string]: unknown;
                 }[] = [];
                 let currentMonthRevenue = 0;
                 let previousMonthRevenue = 0;
                 let pendingMaintenanceCount = 0;
 
+                // Get users data first
                 if (usersRes.ok) {
-                    users = await usersRes.json();
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    const usersData = await usersRes.json();
+                    users = Array.isArray(usersData)
+                        ? usersData
+                        : usersData.data || usersData.users || [];
 
-                    const recentUsers = users
-                        .filter(
-                            (user) => new Date(user.created_at) >= sevenDaysAgo
-                        )
+                    // Get 5 newest users from all time
+                    const newestUsers = users
+                        .filter((user) => user.created_at)
                         .sort(
                             (a, b) =>
                                 new Date(b.created_at).getTime() -
@@ -269,11 +299,71 @@ export default function OverviewContent({
                         )
                         .slice(0, 5);
 
-                    setNewUsers(recentUsers);
+                    setNewUsers(newestUsers);
                 }
 
+                // Get all bookings and calculate top users
                 if (allBookingsRes.ok) {
                     allBookings = await allBookingsRes.json();
+
+                    // Calculate booking statistics per user
+                    const userBookingStats = new Map<
+                        number,
+                        {
+                            bookingCount: number;
+                            totalRevenue: number;
+                            lastBookingDate?: string;
+                        }
+                    >();
+
+                    allBookings.forEach((booking) => {
+                        if (booking.user_id) {
+                            const userId = booking.user_id;
+                            const current = userBookingStats.get(userId) || {
+                                bookingCount: 0,
+                                totalRevenue: 0,
+                            };
+
+                            current.bookingCount += 1;
+                            current.totalRevenue +=
+                                (booking.total_cost as number) || 0;
+
+                            if (booking.created_at) {
+                                if (
+                                    !current.lastBookingDate ||
+                                    new Date(booking.created_at) >
+                                        new Date(current.lastBookingDate)
+                                ) {
+                                    current.lastBookingDate =
+                                        booking.created_at;
+                                }
+                            }
+
+                            userBookingStats.set(userId, current);
+                        }
+                    });
+
+                    // Create top users list
+                    const topUsersList: TopUser[] = users
+                        .map((user) => {
+                            const stats = userBookingStats.get(
+                                user.user_id
+                            ) || {
+                                bookingCount: 0,
+                                totalRevenue: 0,
+                            };
+                            return {
+                                ...user,
+                                bookingCount: stats.bookingCount,
+                                totalRevenue: stats.totalRevenue,
+                                lastBookingDate: stats.lastBookingDate,
+                            };
+                        })
+                        .filter((user) => user.bookingCount > 0)
+                        .sort((a, b) => b.bookingCount - a.bookingCount)
+                        .slice(0, 5);
+
+                    setTopUsers(topUsersList);
                 }
 
                 // Calculate current month revenue from dashboard API
@@ -421,56 +511,6 @@ export default function OverviewContent({
         fetchAdditionalData();
     }, []);
 
-    const formatTime = (timeString: string) => {
-        try {
-            const time = new Date(`2000-01-01T${timeString}`);
-            return time.toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-            });
-        } catch {
-            return timeString;
-        }
-    };
-
-    const getBookingStatus = (status: string, startTime: string) => {
-        const now = new Date();
-        const bookingTime = new Date(
-            `${new Date().toDateString()} ${startTime}`
-        );
-
-        if (status === "completed") return "completed";
-        if (status === "cancelled") return "completed";
-        if (bookingTime <= now) return "ongoing";
-        return "upcoming";
-    };
-
-    const getUserDisplayName = (
-        user?: { fullname?: string; username: string },
-        renterName?: string
-    ) => {
-        if (renterName) return renterName;
-        if (user?.fullname) return user.fullname;
-        if (user?.username) return user.username;
-        return "Khách hàng";
-    };
-
-    const mapCourtStatus = (
-        status: string
-    ): "available" | "maintenance" | "in-use" | "closed" => {
-        switch (status) {
-            case "available":
-                return "available";
-            case "booked":
-                return "in-use";
-            case "maintenance":
-                return "maintenance";
-            default:
-                return "closed";
-        }
-    };
-
     const getRoleDisplayName = (
         role: string
     ): "Sinh viên" | "Giảng viên" | "Khách" => {
@@ -487,6 +527,13 @@ export default function OverviewContent({
         return roleMap[role] || "Khách";
     };
 
+    // Helper function to get top 10 courts by usage
+    const getTopCourts = (courtData: CourtUsageData[]): CourtUsageData[] => {
+        return courtData
+            .sort((a, b) => b.bookingCount - a.bookingCount)
+            .slice(0, 10);
+    };
+
     const isNewUser = (createdAt: string) => {
         const threeDaysAgo = new Date();
         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -497,6 +544,18 @@ export default function OverviewContent({
     const handleMaintenanceClick = () => {
         // Navigate to maintenance/equipment issues page
         router.push("/dashboard/maintenances");
+    };
+
+    // Handle navigation to bookings page
+    const handleViewAllBookingsClick = () => {
+        router.push("/dashboard/bookings");
+    };
+
+    // Handle navigation to booking detail page
+    const handleBookingDetailClick = (bookingId: string) => {
+        // Extract booking ID from format "B-123" -> "123"
+        const id = bookingId.replace(/^B-/, "");
+        router.push(`/dashboard/bookings/${id}`);
     };
 
     return (
@@ -571,7 +630,11 @@ export default function OverviewContent({
                                 10 lượt đặt sân mới nhất
                             </CardDescription>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleViewAllBookingsClick}
+                        >
                             Xem tất cả
                         </Button>
                     </CardHeader>
@@ -602,6 +665,7 @@ export default function OverviewContent({
                                         field={booking.field}
                                         time={booking.time}
                                         status={booking.status}
+                                        onDetailClick={handleBookingDetailClick}
                                     />
                                 ))}
                             </TableBody>
@@ -615,42 +679,91 @@ export default function OverviewContent({
                             Tình trạng sân bãi
                         </CardTitle>
                         <CardDescription>
-                            Cập nhật thời gian thực
+                            10 sân có số lượt đặt sân cao nhất (tính theo toàn
+                            thời gian)
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="px-2">
-                        <div className="space-y-4">
-                            {courts.length > 0 ? (
-                                courts.map((court) => (
-                                    <FieldStatusItem
-                                        key={court.court_id}
-                                        name={court.name}
-                                        status={mapCourtStatus(court.status)}
-                                        utilizationRate={
-                                            court.status === "available"
-                                                ? Math.floor(
-                                                      Math.random() * 40
-                                                  ) + 30
-                                                : court.status === "booked"
-                                                ? Math.floor(
-                                                      Math.random() * 30
-                                                  ) + 70
-                                                : Math.floor(
-                                                      Math.random() * 30
-                                                  ) + 20
-                                        }
-                                    />
-                                ))
-                            ) : loading ? (
+                    <CardContent className="p-0">
+                        {courtUsageData.length > 0 ? (
+                            <div className="overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-gray-50">
+                                            <TableHead className="font-semibold text-gray-700">
+                                                Tên sân
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700 text-center">
+                                                Trạng thái
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700 text-right">
+                                                Số lượt đặt
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {courtUsageData.map((court, index) => (
+                                            <TableRow
+                                                key={court.court.court_id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-sm font-medium">
+                                                            {index + 1}
+                                                        </div>
+                                                        <span className="font-medium text-gray-900">
+                                                            {court.court.name}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                            court.actualStatus ===
+                                                            "booked"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : court.actualStatus ===
+                                                                  "maintenance"
+                                                                ? "bg-orange-100 text-orange-800"
+                                                                : "bg-green-100 text-green-800"
+                                                        }`}
+                                                    >
+                                                        {court.actualStatus ===
+                                                        "booked"
+                                                            ? "Đang sử dụng"
+                                                            : court.actualStatus ===
+                                                              "maintenance"
+                                                            ? "Bảo trì"
+                                                            : "Có sẵn"}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span className="font-semibold text-gray-900">
+                                                        {court.bookingCount}
+                                                    </span>
+                                                    <span className="text-gray-500 text-sm ml-1">
+                                                        lượt
+                                                    </span>
+                                                </td>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : loading ? (
+                            <div className="flex items-center justify-center py-8">
                                 <div className="text-center text-gray-500">
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
                                     Đang tải...
                                 </div>
-                            ) : (
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center py-8">
                                 <div className="text-center text-gray-500">
-                                    Không có dữ liệu sân
+                                    Không có dữ liệu thống kê sân
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -659,57 +772,96 @@ export default function OverviewContent({
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
-                            Lịch đặt sân hôm nay
+                            Top người dùng đặt sân
                         </CardTitle>
                         <CardDescription>
-                            {new Date().toLocaleDateString("vi-VN", {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                            })}
+                            5 người dùng đặt sân nhiều nhất
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {todayBookings.length > 0 ? (
-                                todayBookings.map((booking) => (
-                                    <TodayScheduleItem
-                                        key={booking.booking_id}
-                                        time={`${formatTime(
-                                            booking.start_time
-                                        )} - ${formatTime(booking.end_time)}`}
-                                        field={
-                                            booking.court?.name ||
-                                            `Sân ${booking.booking_id}`
-                                        }
-                                        user={getUserDisplayName(
-                                            booking.user,
-                                            booking.renter_name
-                                        )}
-                                        status={getBookingStatus(
-                                            booking.status,
-                                            booking.start_time
-                                        )}
-                                    />
-                                ))
-                            ) : loading ? (
-                                <div className="text-center text-gray-500">
-                                    Đang tải...
+                    <CardContent className="p-0">
+                        {topUsers.length > 0 ? (
+                            <div className="overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-gray-50">
+                                            <TableHead className="font-semibold text-gray-700 w-16">
+                                                Hạng
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700">
+                                                Người dùng
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700 text-center w-24">
+                                                Số lượt đặt
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {topUsers.map((user, index) => (
+                                            <TableRow
+                                                key={user.user_id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                            >
+                                                <td className="px-3 py-2">
+                                                    <div className="flex items-center justify-center w-7 h-7 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-full text-sm font-bold shadow-sm">
+                                                        {index + 1}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        <div className="flex items-center justify-center w-7 h-7 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-xs font-medium shadow-sm">
+                                                            {(
+                                                                user.fullname ||
+                                                                user.username
+                                                            )
+                                                                .charAt(0)
+                                                                .toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-medium text-gray-900 text-sm truncate">
+                                                                {user.fullname ||
+                                                                    user.username}
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 truncate">
+                                                                {user.email}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2 text-center">
+                                                    <div className="font-bold text-blue-600 text-lg">
+                                                        {user.bookingCount}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        lượt
+                                                    </div>
+                                                </td>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : loading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                                    <p className="text-sm text-gray-500">
+                                        Đang tải...
+                                    </p>
                                 </div>
-                            ) : (
-                                <div className="text-center text-gray-500">
-                                    Không có lịch đặt sân hôm nay
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Users className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                        Chưa có dữ liệu đặt sân
+                                    </p>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </CardContent>
-                    <CardFooter className="border-t pt-4">
-                        <Button variant="outline" size="sm" className="w-full">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Xem lịch đầy đủ
-                        </Button>
-                    </CardFooter>
                 </Card>
 
                 <Card>
@@ -717,30 +869,120 @@ export default function OverviewContent({
                         <CardTitle className="text-base">
                             Người dùng mới
                         </CardTitle>
-                        <CardDescription>7 ngày gần đây</CardDescription>
+                        <CardDescription>5 người dùng mới nhất</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {newUsers.length > 0 ? (
-                                newUsers.map((user) => (
-                                    <UserItem
-                                        key={user.user_id}
-                                        name={user.fullname || user.username}
-                                        email={user.email}
-                                        role={getRoleDisplayName(user.role)}
-                                        isNew={isNewUser(user.created_at)}
-                                    />
-                                ))
-                            ) : loading ? (
-                                <div className="text-center text-gray-500">
-                                    Đang tải...
+                    <CardContent className="p-0">
+                        {newUsers.length > 0 ? (
+                            <div className="overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-gray-50">
+                                            <TableHead className="font-semibold text-gray-700">
+                                                Thông tin
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700 text-center">
+                                                Vai trò
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700 text-right">
+                                                Ngày tạo
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {newUsers.map((user) => (
+                                            <TableRow
+                                                key={user.user_id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-sm font-medium shadow-sm">
+                                                            {(
+                                                                user.fullname ||
+                                                                user.username
+                                                            )
+                                                                .charAt(0)
+                                                                .toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="font-medium text-gray-900 truncate">
+                                                                {user.fullname ||
+                                                                    user.username}
+                                                            </div>
+                                                            <div className="text-sm text-gray-500 truncate">
+                                                                {user.email}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                            getRoleDisplayName(
+                                                                user.role
+                                                            ) === "Sinh viên"
+                                                                ? "bg-emerald-100 text-emerald-800"
+                                                                : getRoleDisplayName(
+                                                                      user.role
+                                                                  ) ===
+                                                                  "Giảng viên"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : "bg-gray-100 text-gray-800"
+                                                        }`}
+                                                    >
+                                                        {getRoleDisplayName(
+                                                            user.role
+                                                        )}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <div className="text-right">
+                                                        {isNewUser(
+                                                            user.created_at
+                                                        ) ? (
+                                                            <div className="flex items-center justify-end space-x-2">
+                                                                <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></div>
+                                                                    Mới
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-600 font-medium">
+                                                                {new Date(
+                                                                    user.created_at
+                                                                ).toLocaleDateString(
+                                                                    "vi-VN"
+                                                                )}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : loading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                                    <p className="text-sm text-gray-500">
+                                        Đang tải...
+                                    </p>
                                 </div>
-                            ) : (
-                                <div className="text-center text-gray-500">
-                                    Không có người dùng mới
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Users className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                        Không có người dùng mới
+                                    </p>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

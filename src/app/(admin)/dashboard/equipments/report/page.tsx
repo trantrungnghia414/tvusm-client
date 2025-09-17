@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { fetchApi } from "@/lib/api";
 import LocationPicker from "../components/LocationPicker";
-import { Loader2, Wrench } from "lucide-react";
+import { Loader2, Wrench, ArrowLeft } from "lucide-react";
 
 interface Equipment {
     equipment_id: number;
@@ -48,6 +49,7 @@ interface Court {
 }
 
 export default function EquipmentReportPage() {
+    const router = useRouter();
     const [categories, setCategories] = useState<EquipmentCategory[]>([]);
     const [venues, setVenues] = useState<Venue[]>([]);
     const [courts, setCourts] = useState<Court[]>([]);
@@ -297,9 +299,19 @@ export default function EquipmentReportPage() {
         <DashboardLayout activeTab="equipments">
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">
-                        Báo cáo thiết bị hư hỏng
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push("/dashboard/equipments")}
+                            className="gap-2"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <h1 className="text-2xl font-bold">
+                            Báo cáo thiết bị hư hỏng
+                        </h1>
+                    </div>
                 </div>
 
                 <Card>
@@ -527,21 +539,6 @@ export default function EquipmentReportPage() {
                             </div>
 
                             <div className="flex items-center justify-end gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setSelectedEquipmentId(null);
-                                        setSelectedLocationId("");
-                                        setSelectedLocationName("");
-                                        setLocationNote("");
-                                        setIssueTitle("");
-                                        setIssueDescription("");
-                                        setSeverity("medium");
-                                        setIssueType("broken");
-                                    }}
-                                >
-                                    Làm mới
-                                </Button>
                                 <Button
                                     onClick={handleSubmitReport}
                                     disabled={

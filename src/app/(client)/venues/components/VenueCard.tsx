@@ -6,7 +6,6 @@ import {
     MapPin,
     Users,
     Clock,
-    Star,
     CheckCircle,
     AlertTriangle,
     Settings,
@@ -35,7 +34,6 @@ export default function VenueCard({
     image,
     status,
     capacity,
-    rating = 4.5,
     amenities = [],
     openingHours = "06:00 - 22:00",
 }: VenueCardProps) {
@@ -81,17 +79,6 @@ export default function VenueCard({
                         {statusConfig[status].label}
                     </Badge>
                 </div>
-
-                {rating && (
-                    <div className="absolute bottom-3 right-3">
-                        <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1">
-                            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                            <span className="font-medium">
-                                {rating.toFixed(1)}
-                            </span>
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="p-5 flex-grow flex flex-col">

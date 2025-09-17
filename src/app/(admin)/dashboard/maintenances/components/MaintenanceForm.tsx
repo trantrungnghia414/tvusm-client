@@ -234,9 +234,24 @@ export default function MaintenanceForm({
         field: keyof CreateMaintenanceDto,
         value: FormFieldValue
     ) => {
+        let processedValue = value;
+
+        // Convert ID fields from string to number, handle "none" as undefined
+        if (
+            ["venue_id", "court_id", "equipment_id", "assigned_to"].includes(
+                field
+            )
+        ) {
+            if (value === "none" || value === "") {
+                processedValue = undefined;
+            } else if (typeof value === "string") {
+                processedValue = parseInt(value, 10);
+            }
+        }
+
         setFormData((prev) => ({
             ...prev,
-            [field]: value,
+            [field]: processedValue,
         }));
 
         // Clear error when user starts typing
@@ -450,19 +465,18 @@ export default function MaintenanceForm({
                             <div>
                                 <Label>Địa điểm</Label>
                                 <Select
-                                    value={formData.venue_id?.toString() || ""}
+                                    value={
+                                        formData.venue_id?.toString() || "none"
+                                    }
                                     onValueChange={(value) =>
-                                        handleInputChange(
-                                            "venue_id",
-                                            value ? parseInt(value) : undefined
-                                        )
+                                        handleInputChange("venue_id", value)
                                     }
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Chọn địa điểm" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">
+                                        <SelectItem value="none">
                                             Không chọn
                                         </SelectItem>
                                         {venues.map((venue) => (
@@ -483,15 +497,11 @@ export default function MaintenanceForm({
                                     <Label>Sân thể thao</Label>
                                     <Select
                                         value={
-                                            formData.court_id?.toString() || ""
+                                            formData.court_id?.toString() ||
+                                            "none"
                                         }
                                         onValueChange={(value) =>
-                                            handleInputChange(
-                                                "court_id",
-                                                value
-                                                    ? parseInt(value)
-                                                    : undefined
-                                            )
+                                            handleInputChange("court_id", value)
                                         }
                                         disabled={!formData.venue_id}
                                     >
@@ -499,7 +509,7 @@ export default function MaintenanceForm({
                                             <SelectValue placeholder="Chọn sân" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">
+                                            <SelectItem value="none">
                                                 Không chọn
                                             </SelectItem>
                                             {filteredCourts.map((court) => (
@@ -519,14 +529,12 @@ export default function MaintenanceForm({
                                     <Select
                                         value={
                                             formData.equipment_id?.toString() ||
-                                            ""
+                                            "none"
                                         }
                                         onValueChange={(value) =>
                                             handleInputChange(
                                                 "equipment_id",
                                                 value
-                                                    ? parseInt(value)
-                                                    : undefined
                                             )
                                         }
                                         disabled={!formData.venue_id}
@@ -535,7 +543,7 @@ export default function MaintenanceForm({
                                             <SelectValue placeholder="Chọn thiết bị" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">
+                                            <SelectItem value="none">
                                                 Không chọn
                                             </SelectItem>
                                             {filteredEquipment.map((eq) => (
@@ -648,20 +656,18 @@ export default function MaintenanceForm({
                                 <Label>Người phụ trách</Label>
                                 <Select
                                     value={
-                                        formData.assigned_to?.toString() || ""
+                                        formData.assigned_to?.toString() ||
+                                        "none"
                                     }
                                     onValueChange={(value) =>
-                                        handleInputChange(
-                                            "assigned_to",
-                                            value ? parseInt(value) : undefined
-                                        )
+                                        handleInputChange("assigned_to", value)
                                     }
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Chọn người phụ trách" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">
+                                        <SelectItem value="none">
                                             Chưa phân công
                                         </SelectItem>
                                         {users.map((user) => (

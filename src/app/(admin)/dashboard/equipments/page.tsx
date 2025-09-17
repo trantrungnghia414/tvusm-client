@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import EquipmentTable from "./components/EquipmentTable";
 import EquipmentStats from "./components/EquipmentStats";
 import EquipmentActions from "./components/EquipmentActions";
+import EquipmentPagination from "./components/EquipmentPagination";
 import {
     Equipment,
     EquipmentStats as EquipmentStatsType,
@@ -35,6 +36,11 @@ export default function EquipmentPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+
     const [stats, setStats] = useState<EquipmentStatsType>({
         total: 0,
         available: 0,
@@ -146,7 +152,20 @@ export default function EquipmentPage() {
         }
 
         setFilteredEquipment(result);
+        // Reset về trang đầu khi filter thay đổi
+        setCurrentPage(1);
     }, [equipment, searchTerm, categoryFilter, statusFilter]);
+
+    // Tính toán pagination
+    const totalPages = Math.ceil(filteredEquipment.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedEquipment = filteredEquipment.slice(startIndex, endIndex);
+
+    // Xử lý chuyển trang
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     // Xử lý xóa thiết bị
     const handleDeleteClick = (equipmentId: number) => {
@@ -399,13 +418,25 @@ export default function EquipmentPage() {
                 {loading ? (
                     <LoadingSpinner message="Đang tải danh sách thiết bị..." />
                 ) : (
-                    <EquipmentTable
-                        equipments={filteredEquipment}
-                        onDelete={handleDeleteClick}
-                        onEdit={handleEditEquipment}
-                        onView={handleViewEquipment}
-                        onUpdateStatus={handleUpdateStatus}
-                    />
+                    <>
+                        <EquipmentTable
+                            equipments={paginatedEquipment}
+                            onDelete={handleDeleteClick}
+                            onEdit={handleEditEquipment}
+                            onView={handleViewEquipment}
+                            onUpdateStatus={handleUpdateStatus}
+                        />
+
+                        {filteredEquipment.length > itemsPerPage && (
+                            <EquipmentPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                totalItems={filteredEquipment.length}
+                                itemsPerPage={itemsPerPage}
+                            />
+                        )}
+                    </>
                 )}
 
                 {/* Dialog xác nhận xóa */}

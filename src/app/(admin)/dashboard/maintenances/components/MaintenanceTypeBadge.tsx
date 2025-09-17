@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Wrench, Zap, Calendar } from "lucide-react";
+import { Shield, Wrench, Zap, Calendar, Search } from "lucide-react";
 import type { Maintenance } from "../types/maintenance";
 
 interface MaintenanceTypeBadgeProps {
@@ -43,6 +43,13 @@ export default function MaintenanceTypeBadge({
                     icon: <Calendar className="h-3 w-3" />,
                     className:
                         "bg-purple-100 text-purple-800 hover:bg-purple-200",
+                };
+            case "inspection":
+                return {
+                    label: "Kiểm tra",
+                    icon: <Search className="h-3 w-3" />,
+                    className:
+                        "bg-orange-100 text-orange-800 hover:bg-orange-200",
                 };
             default:
                 return {

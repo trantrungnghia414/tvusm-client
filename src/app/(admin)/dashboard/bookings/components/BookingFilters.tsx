@@ -65,7 +65,6 @@ export default function BookingFilters({
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 border-b border-gray-200/60">
                 <div className="flex items-center justify-between">
-                    
                     {hasActiveFilters && (
                         <Button
                             variant="outline"
@@ -125,22 +124,10 @@ export default function BookingFilters({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Tất cả</SelectItem>
-                                <SelectItem value="pending">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                        Chờ xác nhận
-                                    </div>
-                                </SelectItem>
                                 <SelectItem value="confirmed">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                         Đã xác nhận
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="completed">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        Hoàn thành
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="cancelled">
@@ -167,7 +154,7 @@ export default function BookingFilters({
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Tất cả</SelectItem>
-                                <SelectItem value="pending">
+                                <SelectItem value="unpaid">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                         Chưa thanh toán
@@ -177,12 +164,6 @@ export default function BookingFilters({
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                         Đã thanh toán
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="refunded">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                        Đã hoàn tiền
                                     </div>
                                 </SelectItem>
                             </SelectContent>

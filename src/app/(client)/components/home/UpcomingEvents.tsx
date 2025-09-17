@@ -40,6 +40,7 @@ export default function UpcomingEvents() {
                 if (response.ok) {
                     const data = await response.json();
 
+                    // Lọc events: ưu tiên upcoming/ongoing, nhưng cũng hiển thị completed với priority thấp
                     const filteredEvents = data.filter(
                         (event: Event) => event.status !== "cancelled"
                     );
@@ -53,6 +54,8 @@ export default function UpcomingEvents() {
                             const bIsUpcoming = b.status === "upcoming";
                             const aIsOngoing = a.status === "ongoing";
                             const bIsOngoing = b.status === "ongoing";
+                            const aIsCompleted = a.status === "completed";
+                            const bIsCompleted = b.status === "completed";
 
                             // 1. Nổi bật + sắp diễn ra (cao nhất)
                             if (
@@ -102,7 +105,31 @@ export default function UpcomingEvents() {
                                 return 1; // b lên đầu
                             }
 
-                            // 5. Nếu cùng mức độ ưu tiên, sắp xếp theo ngày gần nhất
+                            // 5. Nổi bật + đã kết thúc
+                            if (
+                                aIsFeatured &&
+                                aIsCompleted &&
+                                !(bIsFeatured && bIsCompleted)
+                            ) {
+                                return -1; // a lên đầu
+                            }
+                            if (
+                                bIsFeatured &&
+                                bIsCompleted &&
+                                !(aIsFeatured && aIsCompleted)
+                            ) {
+                                return 1; // b lên đầu
+                            }
+
+                            // 6. Đã kết thúc (ưu tiên thấp nhất)
+                            if (aIsCompleted && !bIsCompleted) {
+                                return 1; // a xuống dưới
+                            }
+                            if (bIsCompleted && !aIsCompleted) {
+                                return -1; // b xuống dưới
+                            }
+
+                            // 7. Nếu cùng mức độ ưu tiên, sắp xếp theo ngày gần nhất
                             const dateA = new Date(a.start_date);
                             const dateB = new Date(b.start_date);
                             return dateA.getTime() - dateB.getTime();
@@ -135,8 +162,7 @@ export default function UpcomingEvents() {
                         Sự kiện nổi bật
                     </h2>
                     <p className="text-gray-600">
-                        Khám phá và tham gia các sự kiện thể thao đang & sắp
-                        diễn ra
+                        Khám phá và tham gia các sự kiện thể thao nổi bật
                     </p>
                 </div>
                 <Link

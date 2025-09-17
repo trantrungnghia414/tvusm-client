@@ -55,6 +55,7 @@ export interface PaymentStats {
     refunded_amount: number;
     today_revenue: number;
     monthly_revenue: number;
+    previous_month_revenue: number;
     cash_payments: number;
     online_payments: number;
 }

@@ -26,7 +26,6 @@ import {
     Edit,
     Trash2,
     Play,
-    Pause,
     CheckCircle2,
     XCircle,
     Calendar,
@@ -495,17 +494,6 @@ export default function MaintenanceTable({
                                                                 >
                                                                     <CheckCircle2 className="h-4 w-4 mr-2" />
                                                                     Hoàn thành
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    onClick={() =>
-                                                                        handleQuickStatusUpdate(
-                                                                            maintenance,
-                                                                            "postponed"
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <Pause className="h-4 w-4 mr-2" />
-                                                                    Tạm hoãn
                                                                 </DropdownMenuItem>
                                                             </>
                                                         )}

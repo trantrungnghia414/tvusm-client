@@ -120,18 +120,18 @@ export default function PaymentFilters({
         { value: "21:00-22:00", label: "21:00 - 22:00" },
     ];
 
-    // Payment methods (chỉ tiền mặt và chuyển khoản)
+    // Payment methods (chỉ tiền mặt và vnpay)
     const paymentMethods = [
         { value: "all", label: "Tất cả phương thức" },
         { value: "cash", label: "Tiền mặt" },
-        { value: "bank_transfer", label: "Chuyển khoản" },
+        { value: "vnpay", label: "VNPay" },
     ];
 
     // Payment statuses (chỉ chờ, hoàn thành và thất bại)
     const paymentStatuses = [
         { value: "all", label: "Tất cả trạng thái" },
         { value: "pending", label: "Chờ xử lý" },
-        { value: "completed", label: "Hoàn thành" },
+        { value: "completed", label: "Thành công" },
         { value: "failed", label: "Thất bại" },
     ];
 

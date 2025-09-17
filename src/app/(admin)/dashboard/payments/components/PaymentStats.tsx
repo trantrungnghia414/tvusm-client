@@ -36,7 +36,7 @@ export default function PaymentStats({
 
     const statsData = [
         {
-            title: "Tổng thu",
+            title: "Tổng cần thu",
             value: safeFormatCurrency(stats.total_amount),
             amount: `${stats.total_payments || 0} giao dịch`,
             icon: <CreditCard className="h-4 w-4" />,
@@ -92,7 +92,22 @@ export default function PaymentStats({
             icon: <DollarSign className="h-4 w-4" />,
             color: "text-indigo-600",
             bgColor: "bg-indigo-50",
-            change: "+12% từ tháng trước",
+            change: (() => {
+                const currentRevenue = stats.monthly_revenue || 0;
+                const previousRevenue = stats.previous_month_revenue || 0;
+
+                if (previousRevenue === 0) {
+                    return currentRevenue > 0
+                        ? "Tháng đầu tiên"
+                        : "Chưa có dữ liệu";
+                }
+
+                const percentChange =
+                    ((currentRevenue - previousRevenue) / previousRevenue) *
+                    100;
+                const sign = percentChange >= 0 ? "+" : "";
+                return `${sign}${percentChange.toFixed(1)}% từ tháng trước`;
+            })(),
         },
         {
             title: "Tiền mặt",

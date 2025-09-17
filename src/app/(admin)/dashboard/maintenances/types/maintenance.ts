@@ -3,14 +3,9 @@ export interface Maintenance {
     maintenance_id: number;
     title: string;
     description?: string;
-    type: "preventive" | "corrective" | "emergency" | "routine";
+    type: "routine" | "preventive" | "corrective" | "emergency" | "inspection";
     priority: "low" | "medium" | "high" | "critical";
-    status:
-        | "scheduled"
-        | "in_progress"
-        | "completed"
-        | "cancelled"
-        | "postponed";
+    status: "scheduled" | "in_progress" | "completed" | "cancelled" | "overdue";
     venue_id?: number;
     court_id?: number;
     equipment_id?: number;
@@ -20,8 +15,8 @@ export interface Maintenance {
     estimated_duration?: number; // in hours
     actual_duration?: number; // in hours
     scheduled_date: string;
-    start_date?: string;
-    completion_date?: string;
+    started_date?: string;
+    completed_date?: string;
     notes?: string;
     created_by: number;
     created_at: string;

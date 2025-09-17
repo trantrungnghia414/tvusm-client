@@ -98,6 +98,7 @@ interface RawStatsData {
     refundedAmount?: number;
     todayRevenue?: number;
     monthlyRevenue?: number;
+    previousMonthRevenue?: number;
     cashPayments?: number;
     onlinePayments?: number;
 }
@@ -124,6 +125,7 @@ export default function PaymentsPage() {
         refunded_amount: 0,
         today_revenue: 0,
         monthly_revenue: 0,
+        previous_month_revenue: 0,
         cash_payments: 0,
         online_payments: 0,
     });
@@ -265,6 +267,7 @@ export default function PaymentsPage() {
                     refunded_amount: data.refundedAmount || 0,
                     today_revenue: data.todayRevenue || 0,
                     monthly_revenue: data.monthlyRevenue || 0,
+                    previous_month_revenue: data.previousMonthRevenue || 0,
                     cash_payments: data.cashPayments || 0,
                     online_payments: data.onlinePayments || 0,
                 });

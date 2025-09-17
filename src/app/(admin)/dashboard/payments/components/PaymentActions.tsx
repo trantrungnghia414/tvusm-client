@@ -211,7 +211,7 @@ export default function PaymentActions({
                             <DollarSign className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-gray-600">Tổng thu</p>
+                            <p className="text-sm text-gray-600">Tổng thu hiện tại</p>
                             <p className="text-lg font-bold text-green-600">
                                 {safeFormatCurrency(totalAmount)}
                             </p>

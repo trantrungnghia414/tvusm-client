@@ -65,15 +65,22 @@ export default function MaintenanceStats({
         },
         {
             title: "Chi phí ước tính",
-            value: formatCurrency(stats.total_estimated_cost),
+            value: formatCurrency(stats.total_estimated_cost || 0),
             subtitle: "Tổng dự toán",
             icon: <DollarSign className="h-4 w-4" />,
             color: "text-cyan-600",
             bgColor: "bg-cyan-50",
-            change: `${(
-                (stats.total_actual_cost / stats.total_estimated_cost) *
-                100
-            ).toFixed(1)}% thực tế`,
+            change: (() => {
+                const estimated = Number(stats.total_estimated_cost) || 0;
+                const actual = Number(stats.total_actual_cost) || 0;
+
+                if (estimated === 0) {
+                    return "Chưa có dữ liệu";
+                }
+
+                const percentage = ((actual / estimated) * 100).toFixed(1);
+                return `${percentage}% thực tế`;
+            })(),
         },
         {
             title: "Chi phí thực tế",

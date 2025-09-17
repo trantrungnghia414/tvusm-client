@@ -59,7 +59,7 @@ const statusOptions = [
     { value: "in_progress", label: "Đang thực hiện" },
     { value: "completed", label: "Hoàn thành" },
     { value: "cancelled", label: "Đã hủy" },
-    { value: "postponed", label: "Hoãn lại" },
+    { value: "overdue", label: "Quá hạn" },
 ];
 
 const priorityOptions = [
@@ -72,10 +72,11 @@ const priorityOptions = [
 
 const typeOptions = [
     { value: "all", label: "Tất cả loại" },
+    { value: "routine", label: "Định kỳ" },
     { value: "preventive", label: "Dự phòng" },
     { value: "corrective", label: "Sửa chữa" },
     { value: "emergency", label: "Khẩn cấp" },
-    { value: "routine", label: "Định kỳ" },
+    { value: "inspection", label: "Kiểm tra" },
 ];
 
 export default function MaintenanceFilters({

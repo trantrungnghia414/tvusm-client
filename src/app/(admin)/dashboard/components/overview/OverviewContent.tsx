@@ -9,14 +9,12 @@ import {
     Calendar,
     CreditCard,
     ListChecks,
-    Clock,
     // FileText,
 } from "lucide-react";
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -32,7 +30,7 @@ import { fetchApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import MetricCard from "@/app/(admin)/dashboard/components/metrics/MetricCard";
 import BookingRow from "@/app/(admin)/dashboard/components/metrics/BookingRow";
-import ActivityItem from "@/app/(admin)/dashboard/components/metrics/ActivityItem";
+// import ActivityItem from "@/app/(admin)/dashboard/components/metrics/ActivityItem";
 
 interface OverviewContentProps {
     stats: {
@@ -85,6 +83,47 @@ interface TopUser {
     lastBookingDate?: string;
 }
 
+// Define interface for activity item
+interface SimpleActivityItem {
+    id: string;
+    type: string;
+    description: string;
+    user: {
+        name: string;
+    };
+    timestamp: string;
+}
+
+// Basic interfaces for API responses
+interface ApiBooking {
+    booking_id: number;
+    court?: {
+        name?: string;
+    };
+    user?: {
+        fullname?: string;
+        username?: string;
+    };
+    created_at: string;
+}
+
+interface ApiUser {
+    user_id: number;
+    fullname?: string;
+    username: string;
+    created_at: string;
+}
+
+interface ApiPayment {
+    payment_id: number;
+    amount?: number;
+    user?: {
+        fullname?: string;
+        username?: string;
+    };
+    created_at: string;
+}
+
 export default function OverviewContent({
     stats,
     recentBookings,
@@ -94,6 +133,9 @@ export default function OverviewContent({
     const [topUsers, setTopUsers] = useState<TopUser[]>([]);
     const [newUsers, setNewUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    // const [recentActivities, setRecentActivities] = useState<
+    //     SimpleActivityItem[]
+    // >([]);
     const [calculatedStats, setCalculatedStats] = useState<{
         totalUsers: number;
         todayBookings: number;
@@ -138,6 +180,110 @@ export default function OverviewContent({
             change: `${sign}${percentChange.toFixed(1)}%`,
             trend,
         };
+    };
+
+    // Fetch recent activities similar to activity log page
+    const fetchRecentActivities = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            // Fetch real data from multiple endpoints
+            const [bookingsRes, usersRes, paymentsRes] = await Promise.all([
+                fetchApi("/bookings", {
+                    headers: { Authorization: `Bearer ${token}` },
+                }).catch(() => ({ ok: false })),
+                fetchApi("/users?limit=20", {
+                    headers: { Authorization: `Bearer ${token}` },
+                }).catch(() => ({ ok: false })),
+                fetchApi("/payments", {
+                    headers: { Authorization: `Bearer ${token}` },
+                }).catch(() => ({ ok: false })),
+            ]);
+
+            const activities: SimpleActivityItem[] = [];
+
+            // Process bookings to create activity logs
+            if (bookingsRes.ok && "json" in bookingsRes) {
+                const bookings = await (bookingsRes as Response).json();
+                const bookingArray = Array.isArray(bookings)
+                    ? bookings
+                    : bookings.data || [];
+
+                bookingArray.slice(0, 3).forEach((booking: ApiBooking) => {
+                    activities.push({
+                        id: `booking-${booking.booking_id}`,
+                        type: "booking",
+                        description: `Đặt sân ${booking.court?.name || "mới"}`,
+                        user: {
+                            name:
+                                booking.user?.fullname ||
+                                booking.user?.username ||
+                                "Người dùng",
+                        },
+                        timestamp:
+                            booking.created_at || new Date().toISOString(),
+                    });
+                });
+            }
+
+            // Process users to create activity logs
+            if (usersRes.ok && "json" in usersRes) {
+                const users = await (usersRes as Response).json();
+                const userArray = Array.isArray(users)
+                    ? users
+                    : users.data || [];
+
+                userArray.slice(0, 2).forEach((user: ApiUser) => {
+                    activities.push({
+                        id: `user-${user.user_id}`,
+                        type: "user",
+                        description: `Tài khoản mới: ${
+                            user.fullname || user.username
+                        }`,
+                        user: {
+                            name: "System",
+                        },
+                        timestamp: user.created_at || new Date().toISOString(),
+                    });
+                });
+            }
+
+            // Process payments to create activity logs
+            if (paymentsRes.ok && "json" in paymentsRes) {
+                const payments = await (paymentsRes as Response).json();
+                const paymentArray = Array.isArray(payments)
+                    ? payments
+                    : payments.data || [];
+
+                paymentArray.slice(0, 2).forEach((payment: ApiPayment) => {
+                    activities.push({
+                        id: `payment-${payment.payment_id}`,
+                        type: "payment",
+                        description: `Thanh toán thành công ${payment.amount?.toLocaleString()} VND`,
+                        user: {
+                            name:
+                                payment.user?.fullname ||
+                                payment.user?.username ||
+                                "Người dùng",
+                        },
+                        timestamp:
+                            payment.created_at || new Date().toISOString(),
+                    });
+                });
+            }
+
+            // Sort activities by timestamp (newest first) and take first 5
+            activities.sort(
+                (a, b) =>
+                    new Date(b.timestamp).getTime() -
+                    new Date(a.timestamp).getTime()
+            );
+
+            // setRecentActivities(activities.slice(0, 5));
+        } catch (error) {
+            console.error("Error fetching recent activities:", error);
+        }
     };
 
     useEffect(() => {
@@ -194,6 +340,7 @@ export default function OverviewContent({
                     courtsRes,
                     usersRes,
                     allBookingsRes,
+                    paymentsRes,
                     currentMonthDashboardRes,
                     previousMonthDashboardRes,
                     equipmentIssuesRes,
@@ -211,6 +358,9 @@ export default function OverviewContent({
                     fetchApi("/bookings", {
                         headers: { Authorization: `Bearer ${token}` },
                     }),
+                    fetchApi("/payments", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch(() => ({ ok: false })),
                     fetchApi(
                         `/reports/dashboard?startDate=${currentMonthStart}&endDate=${currentMonthEndStr}`,
                         {
@@ -273,9 +423,11 @@ export default function OverviewContent({
                 // Process all data and calculate stats
                 let users: User[] = [];
                 let allBookings: {
+                    booking_id?: number;
                     created_at: string;
                     user_id?: number;
                     total_cost?: number;
+                    status?: string;
                     [key: string]: unknown;
                 }[] = [];
                 let currentMonthRevenue = 0;
@@ -306,6 +458,62 @@ export default function OverviewContent({
                 if (allBookingsRes.ok) {
                     allBookings = await allBookingsRes.json();
 
+                    // Get completed payments to calculate actual revenue
+                    let completedPayments: {
+                        booking_id?: number;
+                        user_id?: number;
+                        amount?: number;
+                        status?: string;
+                        [key: string]: unknown;
+                    }[] = [];
+
+                    if (paymentsRes.ok && "json" in paymentsRes) {
+                        const paymentsData = await (
+                            paymentsRes as Response
+                        ).json();
+                        const paymentsArray = Array.isArray(paymentsData)
+                            ? paymentsData
+                            : paymentsData.data || [];
+
+                        completedPayments = paymentsArray.filter(
+                            (payment: {
+                                booking_id?: number;
+                                user_id?: number;
+                                amount?: number;
+                                status?: string;
+                                [key: string]: unknown;
+                            }) => payment.status === "completed"
+                        );
+                    }
+
+                    // Create a map of booking payments for quick lookup
+                    const bookingPaymentMap = new Map<number, number>();
+                    completedPayments.forEach((payment) => {
+                        if (payment.booking_id && payment.amount) {
+                            // Ensure amount is a number
+                            const amount =
+                                typeof payment.amount === "string"
+                                    ? parseFloat(payment.amount)
+                                    : payment.amount;
+
+                            if (!isNaN(amount)) {
+                                bookingPaymentMap.set(
+                                    payment.booking_id,
+                                    amount
+                                );
+                            }
+                        }
+                    });
+
+                    console.log(
+                        "Debug - Completed Payments:",
+                        completedPayments
+                    );
+                    console.log(
+                        "Debug - Booking Payment Map:",
+                        bookingPaymentMap
+                    );
+
                     // Calculate booking statistics per user
                     const userBookingStats = new Map<
                         number,
@@ -325,8 +533,21 @@ export default function OverviewContent({
                             };
 
                             current.bookingCount += 1;
-                            current.totalRevenue +=
-                                (booking.total_cost as number) || 0;
+
+                            // Add revenue from this specific booking's payment
+                            const bookingId = booking.booking_id;
+                            if (bookingId && bookingPaymentMap.has(bookingId)) {
+                                const paymentAmount =
+                                    bookingPaymentMap.get(bookingId) || 0;
+                                current.totalRevenue += paymentAmount;
+                                console.log(
+                                    `Debug - User ${userId}, Booking ${bookingId}, Adding ${paymentAmount}, New Total: ${current.totalRevenue}`
+                                );
+                            } else {
+                                console.log(
+                                    `Debug - User ${userId}, Booking ${bookingId}, No payment found`
+                                );
+                            }
 
                             if (booking.created_at) {
                                 if (
@@ -342,6 +563,11 @@ export default function OverviewContent({
                             userBookingStats.set(userId, current);
                         }
                     });
+
+                    console.log(
+                        "Debug - User Booking Stats:",
+                        userBookingStats
+                    );
 
                     // Create top users list
                     const topUsersList: TopUser[] = users
@@ -363,6 +589,7 @@ export default function OverviewContent({
                         .sort((a, b) => b.bookingCount - a.bookingCount)
                         .slice(0, 5);
 
+                    console.log("Debug - Final Top Users List:", topUsersList);
                     setTopUsers(topUsersList);
                 }
 
@@ -509,6 +736,7 @@ export default function OverviewContent({
         };
 
         fetchAdditionalData();
+        fetchRecentActivities();
     }, []);
 
     const getRoleDisplayName = (
@@ -768,7 +996,7 @@ export default function OverviewContent({
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
@@ -792,6 +1020,9 @@ export default function OverviewContent({
                                             </TableHead>
                                             <TableHead className="font-semibold text-gray-700 text-center w-24">
                                                 Số lượt đặt
+                                            </TableHead>
+                                            <TableHead className="font-semibold text-gray-700 text-right w-32">
+                                                Tổng doanh thu
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -833,6 +1064,22 @@ export default function OverviewContent({
                                                     </div>
                                                     <div className="text-xs text-gray-500">
                                                         lượt
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2 text-right">
+                                                    <div className="font-bold text-green-600 text-sm">
+                                                        {user.totalRevenue &&
+                                                        !isNaN(
+                                                            user.totalRevenue
+                                                        ) &&
+                                                        user.totalRevenue > 0
+                                                            ? formatCurrency(
+                                                                  user.totalRevenue
+                                                              )
+                                                            : "0 ₫"}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        VNĐ
                                                     </div>
                                                 </td>
                                             </TableRow>
@@ -986,74 +1233,99 @@ export default function OverviewContent({
                     </CardContent>
                 </Card>
 
-                <Card>
+                {/* <Card>
                     <CardHeader>
                         <CardTitle className="text-base">
-                            Hoạt động hệ thống
+                            Nhật ký hoạt động
                         </CardTitle>
                         <CardDescription>
-                            Cập nhật và thông báo mới
+                            Hoạt động gần đây của hệ thống
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {recentBookings
-                                .slice(0, 5)
-                                .map((booking, index) => {
-                                    const activityTypes: (
-                                        | "booking"
-                                        | "payment"
-                                        | "user"
-                                        | "maintenance"
-                                        | "update"
-                                    )[] = [
-                                        "booking",
-                                        "payment",
-                                        "user",
-                                        "maintenance",
-                                        "update",
-                                    ];
-                                    const messages = [
-                                        `${booking.user} đã đặt ${booking.field}`,
-                                        `Thanh toán thành công cho ${booking.id}`,
-                                        `Tài khoản mới: ${booking.user}`,
-                                        `Bảo trì ${booking.field} hoàn thành`,
-                                        `Cập nhật giá thuê ${booking.field}`,
-                                    ];
-                                    const times = [
-                                        "15 phút trước",
-                                        "2 giờ trước",
-                                        "5 giờ trước",
-                                        "Hôm qua",
-                                        "2 ngày trước",
-                                    ];
+                            {recentActivities.length > 0 ? (
+                                recentActivities.map((activity) => {
+                                    // Calculate relative time
+                                    const getRelativeTime = (
+                                        timestamp: string
+                                    ) => {
+                                        const now = new Date();
+                                        const activityTime = new Date(
+                                            timestamp
+                                        );
+                                        const diffInMs =
+                                            now.getTime() -
+                                            activityTime.getTime();
+                                        const diffInMinutes = Math.floor(
+                                            diffInMs / (1000 * 60)
+                                        );
+                                        const diffInHours = Math.floor(
+                                            diffInMinutes / 60
+                                        );
+                                        const diffInDays = Math.floor(
+                                            diffInHours / 24
+                                        );
+
+                                        if (diffInMinutes < 1) {
+                                            return "Vừa xong";
+                                        } else if (diffInMinutes < 60) {
+                                            return `${diffInMinutes} phút trước`;
+                                        } else if (diffInHours < 24) {
+                                            return `${diffInHours} giờ trước`;
+                                        } else if (diffInDays === 1) {
+                                            return "Hôm qua";
+                                        } else {
+                                            return `${diffInDays} ngày trước`;
+                                        }
+                                    };
+
+                                    // Map activity type to ActivityItem expected types
+                                    const mapActivityType = (type: string) => {
+                                        switch (type) {
+                                            case "booking":
+                                                return "booking";
+                                            case "user":
+                                                return "user";
+                                            case "payment":
+                                                return "payment";
+                                            default:
+                                                return "update";
+                                        }
+                                    };
 
                                     return (
                                         <ActivityItem
-                                            key={`activity-${booking.id}-${index}`}
-                                            type={
-                                                activityTypes[
-                                                    index % activityTypes.length
-                                                ]
-                                            }
-                                            message={
-                                                messages[
-                                                    index % messages.length
-                                                ]
-                                            }
-                                            time={times[index % times.length]}
+                                            key={activity.id}
+                                            type={mapActivityType(
+                                                activity.type
+                                            )}
+                                            message={activity.description}
+                                            time={getRelativeTime(
+                                                activity.timestamp
+                                            )}
                                         />
                                     );
-                                })}
+                                })
+                            ) : loading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="text-center">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                        <p className="text-sm text-gray-500">
+                                            Đang tải hoạt động...
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500 py-8">
+                                    <p className="text-sm">
+                                        Không có hoạt động nào
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
-                    <CardFooter className="border-t pt-4">
-                        <Button variant="outline" size="sm" className="w-full">
-                            <Clock className="mr-2 h-4 w-4" />
-                            Xem tất cả hoạt động
-                        </Button>
-                    </CardFooter>
-                </Card>
+                </Card> */}
             </div>
         </div>
     );

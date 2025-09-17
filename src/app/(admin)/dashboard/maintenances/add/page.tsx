@@ -4,15 +4,20 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import DashboardLayout from "../../components/layout/DashboardLayout";
+import DashboardLayout from "../../components/DashboardLayout";
 import MaintenanceForm from "../components/MaintenanceForm";
-import { CreateMaintenanceDto } from "../types/maintenance";
+import {
+    CreateMaintenanceDto,
+    UpdateMaintenanceDto,
+} from "../types/maintenance";
 import { fetchApi } from "@/lib/api";
 
 export default function AddMaintenancePage() {
     const router = useRouter();
 
-    const handleSave = async (data: CreateMaintenanceDto) => {
+    const handleSave = async (
+        data: CreateMaintenanceDto | UpdateMaintenanceDto
+    ) => {
         try {
             const token = localStorage.getItem("token");
             if (!token) {

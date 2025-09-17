@@ -53,6 +53,8 @@ export interface ActivityLogFilters {
     action?: string;
     userId?: string;
     dateRange?: DateRangeType; // Giữ nguyên để tương thích
+    specificDate?: Date; // Thêm bộ lọc ngày cụ thể
+    customDateRange?: DateRangeType; // Thêm bộ lọc khoảng thời gian tuỳ chỉnh
     severity?: string;
     search?: string;
 }

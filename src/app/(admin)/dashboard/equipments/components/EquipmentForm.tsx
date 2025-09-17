@@ -16,7 +16,7 @@ import {
 import { Equipment, EquipmentCategory } from "../types/equipmentTypes";
 import { toast } from "sonner";
 import { fetchApi, getImageUrl } from "@/lib/api";
-import { Plus, ImageIcon, Loader2 } from "lucide-react";
+import { ImageIcon, Loader2 } from "lucide-react";
 import LocationPicker from "./LocationPicker";
 import {
     Dialog,
@@ -750,23 +750,6 @@ export default function EquipmentForm({
                                                     {category.name}
                                                 </SelectItem>
                                             ))}
-                                            <div className="px-2 py-1.5">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="w-full text-left text-sm flex items-center gap-2 text-blue-600"
-                                                    onClick={() =>
-                                                        setNewCategoryDialogOpen(
-                                                            true
-                                                        )
-                                                    }
-                                                >
-                                                    <Plus className="h-3 w-3" />
-                                                    <span className="font-medium">
-                                                        Thêm danh mục mới
-                                                    </span>
-                                                </Button>
-                                            </div>
                                         </SelectContent>
                                     </Select>
                                     {categories.length === 0 && (

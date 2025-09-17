@@ -33,7 +33,6 @@ import { Badge } from "@/components/ui/badge";
 import {
     MoreHorizontal,
     Eye,
-    Edit,
     Trash2,
     Phone,
     Mail,
@@ -59,15 +58,10 @@ import { formatCurrency } from "@/lib/utils";
 interface BookingTableProps {
     bookings: Booking[];
     onView: (bookingId: number) => void;
-    onEdit: (bookingId: number) => void;
     onDelete: (bookingId: number) => void;
     onUpdateStatus: (
         bookingId: number,
         status: "pending" | "confirmed" | "completed" | "cancelled"
-    ) => void;
-    onUpdatePaymentStatus: (
-        bookingId: number,
-        status: "unpaid" | "partial" | "paid" | "refunded"
     ) => void;
     loading?: boolean;
 }
@@ -75,10 +69,8 @@ interface BookingTableProps {
 export default function BookingTable({
     bookings,
     onView,
-    onEdit,
     onDelete,
     onUpdateStatus,
-    onUpdatePaymentStatus,
     loading = false,
 }: BookingTableProps) {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -557,53 +549,6 @@ export default function BookingTable({
                                                     <Eye className="h-4 w-4 mr-2" />
                                                     Xem chi tiết
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() =>
-                                                        onEdit(
-                                                            booking.booking_id
-                                                        )
-                                                    }
-                                                >
-                                                    <Edit className="h-4 w-4 mr-2" />
-                                                    Chỉnh sửa
-                                                </DropdownMenuItem>
-
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuLabel>
-                                                    Cập nhật trạng thái
-                                                </DropdownMenuLabel>
-
-                                                {booking.status ===
-                                                    "pending" && (
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            onUpdateStatus(
-                                                                booking.booking_id,
-                                                                "confirmed"
-                                                            )
-                                                        }
-                                                        className="text-green-600"
-                                                    >
-                                                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                                                        Xác nhận đặt sân
-                                                    </DropdownMenuItem>
-                                                )}
-
-                                                {booking.status ===
-                                                    "confirmed" && (
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            onUpdateStatus(
-                                                                booking.booking_id,
-                                                                "completed"
-                                                            )
-                                                        }
-                                                        className="text-blue-600"
-                                                    >
-                                                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                                                        Hoàn thành
-                                                    </DropdownMenuItem>
-                                                )}
 
                                                 {[
                                                     "pending",
@@ -622,31 +567,6 @@ export default function BookingTable({
                                                         Hủy đặt sân
                                                     </DropdownMenuItem>
                                                 )}
-
-                                                {booking.payment_status ===
-                                                    "unpaid" &&
-                                                    booking.status !==
-                                                        "cancelled" && (
-                                                        <>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuLabel>
-                                                                Thanh toán
-                                                            </DropdownMenuLabel>
-                                                            <DropdownMenuItem
-                                                                onClick={() =>
-                                                                    onUpdatePaymentStatus(
-                                                                        booking.booking_id,
-                                                                        "paid"
-                                                                    )
-                                                                }
-                                                                className="text-green-600"
-                                                            >
-                                                                <DollarSign className="h-4 w-4 mr-2" />
-                                                                Đánh dấu đã
-                                                                thanh toán
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
 
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem

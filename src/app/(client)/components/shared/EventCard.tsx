@@ -64,14 +64,24 @@ export default function EventCard({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+        <div
+            className={`bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 group ${
+                status === "cancelled" || status === "completed"
+                    ? "opacity-75"
+                    : ""
+            }`}
+        >
             <div className="relative h-48 overflow-hidden">
                 <Image
                     src={image}
                     alt={title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+                        status === "cancelled" || status === "completed"
+                            ? "grayscale"
+                            : ""
+                    }`}
                     priority={false}
                 />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -127,7 +137,9 @@ export default function EventCard({
 
                     <div className="flex items-center text-gray-600">
                         <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm truncate">{venueName || "Thông tin đang được cập nhật"}</span>
+                        <span className="text-sm truncate">
+                            {venueName || "Thông tin đang được cập nhật"}
+                        </span>
                     </div>
 
                     {maxParticipants && (
@@ -141,18 +153,22 @@ export default function EventCard({
                     )}
                 </div>
 
-                <Link href={`/events/${id}`}>
-                    <Button
-                        className="w-full"
-                        disabled={
-                            status === "cancelled" || status === "completed"
-                        }
-                    >
-                        {status === "upcoming"
-                            ? "Đăng ký tham gia"
-                            : "Xem chi tiết"}
+                {/* Button conditional rendering dựa trên status */}
+                {status === "cancelled" || status === "completed" ? (
+                    <Button className="w-full" disabled variant="secondary">
+                        {status === "cancelled"
+                            ? "Sự kiện đã hủy"
+                            : "Sự kiện đã kết thúc"}
                     </Button>
-                </Link>
+                ) : (
+                    <Link href={`/events/${id}`}>
+                        <Button className="w-full">
+                            {status === "upcoming"
+                                ? "Đăng ký tham gia"
+                                : "Xem chi tiết"}
+                        </Button>
+                    </Link>
+                )}
             </div>
         </div>
     );

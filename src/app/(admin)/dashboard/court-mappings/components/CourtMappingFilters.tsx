@@ -41,7 +41,12 @@ export default function CourtMappingFilters({
 
                 if (response.ok) {
                     const data = await response.json();
-                    setCourts(data);
+                    // Chỉ hiển thị sân từ cấp 2 trở lên (sân cha)
+                    const parentCourts = data.filter(
+                        (court: Court) =>
+                            court.court_level && court.court_level >= 2
+                    );
+                    setCourts(parentCourts);
                 }
             } catch (error) {
                 console.error("Error fetching courts:", error);
@@ -66,17 +71,20 @@ export default function CourtMappingFilters({
             </div>
 
             <div className="flex items-center gap-2">
-                <Label htmlFor="status-filter">Trạng thái</Label>
+                <Label htmlFor="parent-court-filter">Sân cha</Label>
                 <Select
                     value={parentCourtFilter}
                     onValueChange={setParentCourtFilter}
                     disabled={loading}
                 >
-                    <SelectTrigger className="w-[200px]" id="status-filter">
+                    <SelectTrigger
+                        className="w-[200px]"
+                        id="parent-court-filter"
+                    >
                         <SelectValue placeholder="Tất cả sân cha" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Tất cả sân</SelectItem>
+                        <SelectItem value="all">Tất cả sân cha</SelectItem>
                         {courts.map((court) => (
                             <SelectItem
                                 key={court.court_id}

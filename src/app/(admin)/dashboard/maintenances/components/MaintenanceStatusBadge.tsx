@@ -41,12 +41,11 @@ export default function MaintenanceStatusBadge({
                     variant: "secondary" as const,
                     className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
                 };
-            case "postponed":
+            case "overdue":
                 return {
-                    label: "Hoãn lại",
-                    variant: "outline" as const,
-                    className:
-                        "bg-orange-100 text-orange-800 hover:bg-orange-200",
+                    label: "Quá hạn",
+                    variant: "destructive" as const,
+                    className: "bg-red-100 text-red-800 hover:bg-red-200",
                 };
             default:
                 return {

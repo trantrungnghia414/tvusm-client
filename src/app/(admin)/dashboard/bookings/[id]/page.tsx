@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     ArrowLeft,
-    Edit,
     Trash2,
     User,
     Calendar,
@@ -17,7 +16,6 @@ import {
     Mail,
     CheckCircle2,
     XCircle,
-    Download,
 } from "lucide-react";
 import {
     AlertDialog,
@@ -236,7 +234,6 @@ export default function BookingDetailPage() {
                             onClick={() => router.push("/dashboard/bookings")}
                         >
                             <ArrowLeft className="h-4 w-4 mr-2" />
-                            Quay lại
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
@@ -255,17 +252,7 @@ export default function BookingDetailPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={() =>
-                                router.push(
-                                    `/dashboard/bookings/${booking.booking_id}/edit`
-                                )
-                            }
-                        >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Chỉnh sửa
-                        </Button>
+                        
                         <Button
                             variant="outline"
                             onClick={() => setDeleteDialogOpen(true)}
@@ -479,18 +466,6 @@ export default function BookingDetailPage() {
                                     </Button>
                                 )}
 
-                                {booking.status === "confirmed" && (
-                                    <Button
-                                        className="w-full"
-                                        onClick={() =>
-                                            handleUpdateStatus("completed")
-                                        }
-                                    >
-                                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                                        Hoàn thành
-                                    </Button>
-                                )}
-
                                 {["pending", "confirmed"].includes(
                                     booking.status
                                 ) && (
@@ -505,15 +480,6 @@ export default function BookingDetailPage() {
                                         Hủy đặt sân
                                     </Button>
                                 )}
-
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    disabled
-                                >
-                                    <Download className="h-4 w-4 mr-2" />
-                                    Tải hóa đơn
-                                </Button>
                             </CardContent>
                         </Card>
                     </div>

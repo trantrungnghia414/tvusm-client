@@ -18,7 +18,6 @@ import {
     MapPin,
     FileText,
     Play,
-    Pause,
     CheckCircle2,
     XCircle,
     History,
@@ -28,8 +27,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
-import DashboardLayout from "../../components/layout/DashboardLayout";
-import LoadingSpinner from "@/components/ui/loading-spinner";
+import DashboardLayout from "../../components/DashboardLayout";
+import LoadingSpinner from "../../../../../components/ui/loading-spinner";
 import MaintenanceStatusBadge from "../components/MaintenanceStatusBadge";
 import MaintenancePriorityBadge from "../components/MaintenancePriorityBadge";
 import MaintenanceTypeBadge from "../components/MaintenanceTypeBadge";
@@ -93,14 +92,18 @@ export default function MaintenanceDetailPage() {
                 return;
             }
 
-            const updateData: any = { status };
+            const updateData: {
+                status: Maintenance["status"];
+                started_date?: string;
+                completed_date?: string;
+            } = { status };
 
             // Set timestamps based on status
-            if (status === "in_progress" && !maintenance.start_date) {
-                updateData.start_date = new Date().toISOString();
+            if (status === "in_progress" && !maintenance.started_date) {
+                updateData.started_date = new Date().toISOString();
             }
             if (status === "completed") {
-                updateData.completion_date = new Date().toISOString();
+                updateData.completed_date = new Date().toISOString();
             }
 
             const response = await fetchApi(
@@ -125,14 +128,14 @@ export default function MaintenanceDetailPage() {
             setMaintenance({
                 ...maintenance,
                 status,
-                start_date:
-                    status === "in_progress" && !maintenance.start_date
+                started_date:
+                    status === "in_progress" && !maintenance.started_date
                         ? new Date().toISOString()
-                        : maintenance.start_date,
-                completion_date:
+                        : maintenance.started_date,
+                completed_date:
                     status === "completed"
                         ? new Date().toISOString()
-                        : maintenance.completion_date,
+                        : maintenance.completed_date,
             });
             toast.success("Cập nhật trạng thái thành công");
         } catch (error) {
@@ -193,14 +196,90 @@ export default function MaintenanceDetailPage() {
 
         switch (maintenance.status) {
             case "scheduled":
-                return 25;
+                // Nếu chưa bắt đầu thì 0%
+                return 0;
+
             case "in_progress":
-                return 75;
+                // Tính % dựa trên thời gian đã trôi qua
+                if (
+                    !maintenance.started_date ||
+                    !maintenance.estimated_duration
+                ) {
+                    return 10; // Mặc định 10% nếu thiếu thông tin
+                }
+
+                const startTime = new Date(maintenance.started_date).getTime();
+                const currentTime = new Date().getTime();
+                const elapsedHours =
+                    (currentTime - startTime) / (1000 * 60 * 60);
+                const estimatedHours = maintenance.estimated_duration;
+
+                // Tính % hoàn thành, giới hạn trong khoảng 1-99%
+                const progressPercent = Math.min(
+                    Math.max(
+                        Math.round((elapsedHours / estimatedHours) * 100),
+                        1
+                    ),
+                    99
+                );
+
+                return progressPercent;
+
             case "completed":
                 return 100;
+
             case "cancelled":
-            case "postponed":
+                // Cancelled giữ % tại thời điểm hủy
+                if (
+                    maintenance.started_date &&
+                    maintenance.estimated_duration
+                ) {
+                    const startTime = new Date(
+                        maintenance.started_date
+                    ).getTime();
+                    const currentTime = new Date().getTime();
+                    const elapsedHours =
+                        (currentTime - startTime) / (1000 * 60 * 60);
+                    const estimatedHours = maintenance.estimated_duration;
+
+                    return Math.min(
+                        Math.max(
+                            Math.round((elapsedHours / estimatedHours) * 100),
+                            0
+                        ),
+                        100
+                    );
+                }
                 return 0;
+
+            case "overdue":
+                // Overdue có thể có % > 100% để thể hiện quá hạn
+                if (
+                    maintenance.started_date &&
+                    maintenance.estimated_duration
+                ) {
+                    const startTime = new Date(
+                        maintenance.started_date
+                    ).getTime();
+                    const currentTime = new Date().getTime();
+                    const elapsedHours =
+                        (currentTime - startTime) / (1000 * 60 * 60);
+                    const estimatedHours = maintenance.estimated_duration;
+
+                    return Math.round((elapsedHours / estimatedHours) * 100);
+                } else {
+                    // Nếu chưa bắt đầu nhưng đã quá ngày scheduled
+                    const scheduledTime = new Date(
+                        maintenance.scheduled_date
+                    ).getTime();
+                    const currentTime = new Date().getTime();
+
+                    if (currentTime > scheduledTime) {
+                        return 0; // Quá hạn nhưng chưa bắt đầu
+                    }
+                }
+                return 0;
+
             default:
                 return 0;
         }
@@ -349,22 +428,45 @@ export default function MaintenanceDetailPage() {
                                 <span className="font-medium">
                                     Tiến độ thực hiện
                                 </span>
-                                <span>{progress}%</span>
+                                <span
+                                    className={
+                                        progress > 100
+                                            ? "text-red-600 font-semibold"
+                                            : ""
+                                    }
+                                >
+                                    {progress}%
+                                    {progress > 100 &&
+                                        " (Quá thời gian dự kiến)"}
+                                </span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="relative w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                 <div
                                     className={`h-2 rounded-full transition-all duration-300 ${
                                         maintenance.status === "completed"
                                             ? "bg-green-500"
                                             : maintenance.status ===
                                               "in_progress"
-                                            ? "bg-blue-500"
+                                            ? progress > 100
+                                                ? "bg-red-500"
+                                                : "bg-blue-500"
                                             : maintenance.status === "cancelled"
+                                            ? "bg-gray-500"
+                                            : maintenance.status === "overdue"
                                             ? "bg-red-500"
                                             : "bg-yellow-500"
                                     }`}
-                                    style={{ width: `${progress}%` }}
+                                    style={{
+                                        width: `${Math.min(progress, 100)}%`,
+                                        ...(progress > 100 && {
+                                            animation: "pulse 2s infinite",
+                                        }),
+                                    }}
                                 />
+                                {/* Indicator cho overdue */}
+                                {progress > 100 && (
+                                    <div className="absolute top-0 right-0 h-2 w-1 bg-red-700 animate-pulse" />
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -426,7 +528,7 @@ export default function MaintenanceDetailPage() {
                                         </div>
                                     </div>
 
-                                    {maintenance.start_date && (
+                                    {maintenance.started_date && (
                                         <div>
                                             <p className="text-sm text-gray-500">
                                                 Ngày bắt đầu
@@ -436,7 +538,7 @@ export default function MaintenanceDetailPage() {
                                                 <span className="font-medium text-green-600">
                                                     {format(
                                                         new Date(
-                                                            maintenance.start_date
+                                                            maintenance.started_date
                                                         ),
                                                         "dd/MM/yyyy HH:mm",
                                                         { locale: vi }
@@ -446,7 +548,7 @@ export default function MaintenanceDetailPage() {
                                         </div>
                                     )}
 
-                                    {maintenance.completion_date && (
+                                    {maintenance.completed_date && (
                                         <div>
                                             <p className="text-sm text-gray-500">
                                                 Ngày hoàn thành
@@ -456,7 +558,7 @@ export default function MaintenanceDetailPage() {
                                                 <span className="font-medium text-blue-600">
                                                     {format(
                                                         new Date(
-                                                            maintenance.completion_date
+                                                            maintenance.completed_date
                                                         ),
                                                         "dd/MM/yyyy HH:mm",
                                                         { locale: vi }
@@ -586,12 +688,12 @@ export default function MaintenanceDetailPage() {
                                                 className="w-full"
                                                 onClick={() =>
                                                     handleUpdateStatus(
-                                                        "postponed"
+                                                        "cancelled"
                                                     )
                                                 }
                                             >
-                                                <Pause className="h-4 w-4 mr-2" />
-                                                Tạm hoãn
+                                                <XCircle className="h-4 w-4 mr-2" />
+                                                Hủy bỏ
                                             </Button>
                                         </>
                                     )}
@@ -746,7 +848,7 @@ export default function MaintenanceDetailPage() {
                                         </span>
                                     </div>
 
-                                    {maintenance.start_date && (
+                                    {maintenance.started_date && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">
                                                 Bắt đầu:
@@ -754,7 +856,7 @@ export default function MaintenanceDetailPage() {
                                             <span className="text-green-600 font-medium">
                                                 {format(
                                                     new Date(
-                                                        maintenance.start_date
+                                                        maintenance.started_date
                                                     ),
                                                     "dd/MM/yyyy HH:mm",
                                                     { locale: vi }
@@ -763,7 +865,7 @@ export default function MaintenanceDetailPage() {
                                         </div>
                                     )}
 
-                                    {maintenance.completion_date && (
+                                    {maintenance.completed_date && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">
                                                 Hoàn thành:
@@ -771,7 +873,7 @@ export default function MaintenanceDetailPage() {
                                             <span className="text-blue-600 font-medium">
                                                 {format(
                                                     new Date(
-                                                        maintenance.completion_date
+                                                        maintenance.completed_date
                                                     ),
                                                     "dd/MM/yyyy HH:mm",
                                                     { locale: vi }

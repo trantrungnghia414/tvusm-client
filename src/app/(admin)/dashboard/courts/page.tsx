@@ -10,6 +10,7 @@ import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout"
 import CourtTable from "./components/CourtTable";
 import CourtFilters from "./components/CourtFilters";
 import CourtActions from "./components/CourtActions";
+import CourtPagination from "./components/CourtPagination";
 import { Court } from "./types/courtTypes";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
@@ -21,6 +22,11 @@ export default function CourtsPage() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [venueFilter, setVenueFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(12);
+
     const router = useRouter();
 
     // Lấy danh sách sân
@@ -98,7 +104,20 @@ export default function CourtsPage() {
         }
 
         setFilteredCourts(result);
+        // Reset về trang đầu khi filter thay đổi
+        setCurrentPage(1);
     }, [courts, searchTerm, statusFilter, venueFilter, typeFilter]);
+
+    // Tính toán pagination
+    const totalPages = Math.ceil(filteredCourts.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedCourts = filteredCourts.slice(startIndex, endIndex);
+
+    // Xử lý chuyển trang
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     // Xử lý xóa sân
     const handleDeleteCourt = async (courtId: number) => {
@@ -218,12 +237,24 @@ export default function CourtsPage() {
                 {loading ? (
                     <LoadingSpinner message="Đang tải danh sách sân..." />
                 ) : (
-                    <CourtTable
-                        courts={filteredCourts}
-                        onDelete={handleDeleteCourt}
-                        onToggleStatus={handleToggleCourtStatus}
-                        onEdit={handleEditCourt}
-                    />
+                    <>
+                        <CourtTable
+                            courts={paginatedCourts}
+                            onDelete={handleDeleteCourt}
+                            onToggleStatus={handleToggleCourtStatus}
+                            onEdit={handleEditCourt}
+                        />
+
+                        {filteredCourts.length > itemsPerPage && (
+                            <CourtPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                totalItems={filteredCourts.length}
+                                itemsPerPage={itemsPerPage}
+                            />
+                        )}
+                    </>
                 )}
             </div>
         </DashboardLayout>

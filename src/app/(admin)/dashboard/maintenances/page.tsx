@@ -15,6 +15,7 @@ import {
     UserOption,
 } from "./types/maintenance";
 import { fetchApi } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
@@ -293,8 +294,8 @@ export default function MaintenancesPage() {
     // ✅ Fix Line 304: Tạo interface cho updateData
     interface MaintenanceUpdateData {
         status: Maintenance["status"];
-        start_date?: string;
-        completion_date?: string;
+        started_date?: string;
+        completed_date?: string;
     }
 
     const handleUpdateStatus = async (
@@ -316,12 +317,12 @@ export default function MaintenancesPage() {
             if (
                 status === "in_progress" &&
                 !maintenances.find((m) => m.maintenance_id === maintenanceId)
-                    ?.start_date
+                    ?.started_date
             ) {
-                updateData.start_date = new Date().toISOString();
+                updateData.started_date = new Date().toISOString();
             }
             if (status === "completed") {
-                updateData.completion_date = new Date().toISOString();
+                updateData.completed_date = new Date().toISOString();
             }
 
             const response = await fetchApi(`/maintenances/${maintenanceId}`, {
@@ -418,14 +419,13 @@ export default function MaintenancesPage() {
                     </span>
                     <span>
                         Chi phí ước tính:{" "}
-                        {filteredMaintenances
-                            .reduce(
+                        {formatCurrency(
+                            filteredMaintenances.reduce(
                                 (sum, maintenance) =>
                                     sum + (maintenance.estimated_cost || 0),
                                 0
                             )
-                            .toLocaleString("vi-VN")}
-                        đ
+                        )}
                     </span>
                 </div>
 

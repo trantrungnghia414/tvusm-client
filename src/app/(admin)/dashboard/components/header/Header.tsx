@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
-import { Menu, Search, User, Settings, LogOut } from "lucide-react";
+import { Menu, User, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -89,14 +89,14 @@ export default function Header({
                 <span className="sr-only">Toggle Menu</span>
             </Button>
 
-            <div className="relative w-full max-w-md">
+            {/* <div className="relative w-full max-w-md">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
                     type="search"
                     placeholder="Tìm kiếm..."
                     className="w-full bg-gray-50 pl-8 focus-visible:ring-blue-500"
                 />
-            </div>
+            </div> */}
 
             <div className="flex items-center gap-2 ml-auto">
                 {/* ✅ Thay thế notification cũ bằng NotificationDropdown mới */}

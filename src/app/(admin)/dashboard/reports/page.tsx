@@ -28,6 +28,7 @@ import RevenueChart from "./components/RevenueChart";
 import BookingChart from "./components/BookingChart";
 import CustomerTable from "./components/CustomerTable";
 import CourtUsageChart from "./components/CourtUsageChart";
+import ReportActions from "./components/ReportActions";
 
 interface DashboardStats {
     period: string;
@@ -310,6 +311,15 @@ export default function ReportsPage() {
                             hóa doanh thu
                         </p>
                     </div>
+                    <ReportActions
+                        dashboardStats={dashboardStats}
+                        customerData={customerData}
+                        courtUsageData={courtUsageData}
+                        period={period}
+                        startDate={startDate}
+                        endDate={endDate}
+                        isCustomDate={isCustomDate}
+                    />
                 </div>
 
                 {/* Filters */}
@@ -338,20 +348,32 @@ export default function ReportsPage() {
                                         <SelectValue placeholder="Chọn khoảng thời gian" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="week">
+                                        <SelectItem value="today">
+                                            Hôm nay
+                                        </SelectItem>
+                                        <SelectItem value="yesterday">
+                                            Hôm qua
+                                        </SelectItem>
+                                        <SelectItem value="this_week">
                                             Tuần này
                                         </SelectItem>
-                                        <SelectItem value="month">
+                                        <SelectItem value="last_week">
+                                            Tuần trước
+                                        </SelectItem>
+                                        <SelectItem value="this_month">
                                             Tháng này
                                         </SelectItem>
-                                        <SelectItem value="quarter">
-                                            Quý này
+                                        <SelectItem value="last_month">
+                                            Tháng trước
                                         </SelectItem>
-                                        <SelectItem value="year">
+                                        <SelectItem value="this_year">
                                             Năm này
                                         </SelectItem>
+                                        <SelectItem value="last_year">
+                                            Năm trước
+                                        </SelectItem>
                                         <SelectItem value="all">
-                                            Toàn thời gian
+                                            Tất cả thời gian
                                         </SelectItem>
                                         <SelectItem value="custom">
                                             Tùy chỉnh

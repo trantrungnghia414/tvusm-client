@@ -27,6 +27,7 @@ import {
 import DashboardLayout from "@/app/(admin)/dashboard/components/DashboardLayout";
 import CourtMappingActions from "@/app/(admin)/dashboard/court-mappings/components/CourtMappingActions";
 import CourtMappingFilters from "@/app/(admin)/dashboard/court-mappings/components/CourtMappingFilters";
+import CourtMappingPagination from "@/app/(admin)/dashboard/court-mappings/components/CourtMappingPagination";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import CourtMappingForm from "@/app/(admin)/dashboard/court-mappings/components/CourtMappingForm";
 
@@ -45,6 +46,10 @@ export default function CourtMappingsPage() {
     const [mappingToDelete, setMappingToDelete] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [parentCourtFilter, setParentCourtFilter] = useState<string>("all");
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
     const router = useRouter();
 
@@ -114,7 +119,20 @@ export default function CourtMappingsPage() {
         }
 
         setFilteredMappings(result);
+        // Reset về trang đầu khi filter thay đổi
+        setCurrentPage(1);
     }, [mappings, searchTerm, parentCourtFilter]); // thêm đầy đủ dependencies
+
+    // Tính toán pagination
+    const totalPages = Math.ceil(filteredMappings.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedMappings = filteredMappings.slice(startIndex, endIndex);
+
+    // Xử lý chuyển trang
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     // Lấy danh sách ghép sân
     useEffect(() => {
@@ -265,11 +283,23 @@ export default function CourtMappingsPage() {
                 {loading ? (
                     <LoadingSpinner message="Đang tải danh sách ghép sân..." />
                 ) : (
-                    <CourtMappingTable
-                        mappings={filteredMappings}
-                        onEdit={handleEditMapping}
-                        onDelete={handleDeleteMapping}
-                    />
+                    <>
+                        <CourtMappingTable
+                            mappings={paginatedMappings}
+                            onEdit={handleEditMapping}
+                            onDelete={handleDeleteMapping}
+                        />
+
+                        {filteredMappings.length > itemsPerPage && (
+                            <CourtMappingPagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                                totalItems={filteredMappings.length}
+                                itemsPerPage={itemsPerPage}
+                            />
+                        )}
+                    </>
                 )}
             </div>
 

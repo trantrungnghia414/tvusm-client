@@ -3,12 +3,7 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-    Activity,
-    AlertTriangle,
-    Calendar,
-    Clock,
-} from "lucide-react";
+import { Activity, Calendar, Clock } from "lucide-react";
 import { ActivityLogStats } from "../types/activityTypes";
 
 interface ActivityStatsProps {
@@ -28,7 +23,6 @@ export default function ActivityStats({
             icon: <Activity className="h-4 w-4" />,
             color: "text-blue-600",
             bgColor: "bg-blue-50",
-            change: `+${stats.today} hôm nay`,
         },
         {
             title: "Hoạt động hôm nay",
@@ -37,7 +31,6 @@ export default function ActivityStats({
             icon: <Clock className="h-4 w-4" />,
             color: "text-green-600",
             bgColor: "bg-green-50",
-            change: `${stats.thisWeek} tuần này`,
         },
         {
             title: "Hoạt động tuần",
@@ -46,20 +39,14 @@ export default function ActivityStats({
             icon: <Calendar className="h-4 w-4" />,
             color: "text-purple-600",
             bgColor: "bg-purple-50",
-            change: `${stats.thisMonth} tháng này`,
         },
         {
-            title: "Cảnh báo cao",
-            value:
-                (stats.bySeverity.high || 0) + (stats.bySeverity.critical || 0),
-            subtitle: "Cần chú ý",
-            icon: <AlertTriangle className="h-4 w-4" />,
+            title: "Hoạt động tháng",
+            value: stats.thisMonth.toLocaleString(),
+            subtitle: "30 ngày qua",
+            icon: <Calendar className="h-4 w-4" />,
             color: "text-red-600",
             bgColor: "bg-red-50",
-            change:
-                stats.bySeverity.critical > 0
-                    ? `${stats.bySeverity.critical} nghiêm trọng`
-                    : "Bình thường",
         },
     ];
 
@@ -88,7 +75,7 @@ export default function ActivityStats({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {statsCards.map((stat, index) => (
                 <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
+                    <CardContent className="px-6">
                         <div className="flex items-center justify-between mb-2">
                             <p className="text-sm font-medium text-gray-600">
                                 {stat.title}
@@ -104,17 +91,6 @@ export default function ActivityStats({
                             <p className="text-xs text-gray-500">
                                 {stat.subtitle}
                             </p>
-                            {stat.change && (
-                                <p
-                                    className={`text-xs ${
-                                        stat.change.includes("nghiêm trọng")
-                                            ? "text-red-500"
-                                            : "text-gray-500"
-                                    }`}
-                                >
-                                    {stat.change}
-                                </p>
-                            )}
                         </div>
                     </CardContent>
                 </Card>

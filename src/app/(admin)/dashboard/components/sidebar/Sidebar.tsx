@@ -48,7 +48,7 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                     height={4000}
                     className="h-10 w-10 rounded-full"
                 />
-                <h2 className="text-lg font-semibold">TVU Sports Center</h2>
+                <h2 className="text-lg font-semibold">TVUSM</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
                 <nav className="grid items-start px-2 text-sm">
@@ -165,12 +165,6 @@ export default function Sidebar({ activeTab, mobileMenuOpen }: SidebarProps) {
                         active={activeTab === "activity-log"}
                         onClick={() => router.push("/dashboard/activity-log")}
                     />
-                    {/* <SidebarItem
-                        icon={<Settings className="h-4 w-4" />}
-                        title="Cài đặt hệ thống"
-                        active={activeTab === "settings"}
-                        onClick={() => router.push("/dashboard/settings")}
-                    /> */}
                 </nav>
             </div>
         </aside>

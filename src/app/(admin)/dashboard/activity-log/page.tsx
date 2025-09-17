@@ -9,20 +9,91 @@ import DashboardLayout from "../components/DashboardLayout";
 import ActivityStats from "./components/ActivityStats";
 import ActivityFilters from "./components/ActivityFilters";
 import ActivityList from "./components/ActivityList";
-import { 
-    ActivityLogItem, 
-    ActivityLogFilters, 
-    ActivityLogStats 
+import ActivityActions from "./components/ActivityActions";
+import {
+    ActivityLogItem,
+    ActivityLogFilters,
+    ActivityLogStats,
 } from "./types/activityTypes";
-// import { fetchApi } from "@/lib/api";
-import * as XLSX from "xlsx";
+import { fetchApi } from "@/lib/api";
+
+// Interfaces for API data
+interface BookingData {
+    booking_id: number;
+    user?: {
+        user_id: number;
+        username: string;
+        fullname?: string;
+        email: string;
+        role: string;
+    };
+    court?: {
+        name: string;
+        code?: string;
+    };
+    start_time: string;
+    end_time: string;
+    total_cost: number;
+    status: string;
+    created_at: string;
+}
+
+interface UserData {
+    user_id: number;
+    username: string;
+    fullname?: string;
+    email: string;
+    role: string;
+    created_at: string;
+}
+
+interface PaymentData {
+    payment_id: number;
+    user?: {
+        user_id: number;
+        username: string;
+        fullname?: string;
+        email: string;
+        role: string;
+    };
+    amount: number;
+    payment_method: string;
+    status: string;
+    booking_id: number;
+    created_at: string;
+}
+
+interface EventData {
+    event_id: number;
+    title: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+    max_participants: number;
+    created_by: number;
+    created_at: string;
+}
+
+interface NewsData {
+    news_id: number;
+    title: string;
+    category?: {
+        name: string;
+    };
+    status: string;
+    views: number;
+    created_by: number;
+    created_at: string;
+}
 
 export default function ActivityLogPage() {
     const router = useRouter();
 
     // State management
     const [activities, setActivities] = useState<ActivityLogItem[]>([]);
-    const [filteredActivities, setFilteredActivities] = useState<ActivityLogItem[]>([]);
+    const [filteredActivities, setFilteredActivities] = useState<
+        ActivityLogItem[]
+    >([]);
     const [stats, setStats] = useState<ActivityLogStats>({
         total: 0,
         today: 0,
@@ -31,7 +102,7 @@ export default function ActivityLogPage() {
         byType: {},
         bySeverity: {},
     });
-    
+
     const [filters, setFilters] = useState<ActivityLogFilters>({
         dateRange: {
             from: subDays(new Date(), 7),
@@ -41,7 +112,7 @@ export default function ActivityLogPage() {
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    
+
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
@@ -57,122 +128,256 @@ export default function ActivityLogPage() {
                 return;
             }
 
-            // Mock data - replace with actual API call
-            const mockActivities: ActivityLogItem[] = [
-                {
-                    id: "1",
-                    type: "booking",
-                    action: "create",
-                    description: "Tạo đặt sân mới cho sân bóng đá 1",
-                    user: {
-                        id: "u1",
-                        name: "Nguyễn Văn An",
-                        email: "an@example.com",
-                        role: "customer",
-                    },
-                    target: {
-                        id: "b1",
-                        name: "Đặt sân #B001",
-                        type: "booking",
-                    },
-                    metadata: {
-                        venue: "Sân bóng đá 1",
-                        time: "15:30 - 17:00",
-                        amount: "200,000 VND",
-                    },
-                    ip_address: "192.168.1.1",
-                    timestamp: new Date().toISOString(),
-                    severity: "low",
-                },
-                {
-                    id: "2",
-                    type: "user",
-                    action: "login",
-                    description: "Đăng nhập vào hệ thống",
-                    user: {
-                        id: "u2",
-                        name: "Admin User",
-                        email: "admin@tvu.edu.vn",
-                        role: "admin",
-                    },
-                    ip_address: "192.168.1.10",
-                    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-                    severity: "low",
-                },
-                {
-                    id: "3",
-                    type: "payment",
-                    action: "create",
-                    description: "Thanh toán đặt sân thành công",
-                    user: {
-                        id: "u1",
-                        name: "Nguyễn Văn An",
-                        email: "an@example.com",
-                        role: "customer",
-                    },
-                    target: {
-                        id: "p1",
-                        name: "Thanh toán #P001",
-                        type: "payment",
-                    },
-                    metadata: {
-                        amount: "200,000 VND",
-                        method: "VNPay",
-                        booking_id: "B001",
-                    },
-                    ip_address: "192.168.1.1",
-                    timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-                    severity: "medium",
-                },
-                {
-                    id: "4",
-                    type: "system",
-                    action: "update",
-                    description: "Cập nhật cấu hình hệ thống",
-                    user: {
-                        id: "u2",
-                        name: "Admin User",
-                        email: "admin@tvu.edu.vn",
-                        role: "admin",
-                    },
-                    metadata: {
-                        setting: "booking_limit",
-                        old_value: "5",
-                        new_value: "10",
-                    },
-                    ip_address: "192.168.1.10",
-                    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                    severity: "high",
-                },
-                // Add more mock data...
-            ];
+            // Fetch real data from multiple endpoints to construct activity logs
+            const [bookingsRes, usersRes, paymentsRes, eventsRes, newsRes] =
+                await Promise.all([
+                    fetchApi("/bookings", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch(() => ({ ok: false })),
+                    fetchApi("/users?limit=100", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch(() => ({ ok: false })),
+                    fetchApi("/payments", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch(() => ({ ok: false })),
+                    fetchApi("/events", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch(() => ({ ok: false })),
+                    fetchApi("/news", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).catch(() => ({ ok: false })),
+                ]);
 
-            setActivities(mockActivities);
-            
+            const realActivities: ActivityLogItem[] = [];
+            let activityId = 1;
+
+            // Process bookings to create activity logs
+            if (bookingsRes.ok && "json" in bookingsRes) {
+                const bookings = await (bookingsRes as Response).json();
+                const bookingArray: BookingData[] = Array.isArray(bookings)
+                    ? bookings
+                    : bookings.data || [];
+
+                bookingArray.slice(0, 20).forEach((booking: BookingData) => {
+                    realActivities.push({
+                        id: `booking-${activityId++}`,
+                        type: "booking",
+                        action: "create",
+                        description: `Tạo đặt sân mới - ${
+                            booking.court?.name || "Sân"
+                        } ${booking.court?.code || ""}`,
+                        user: {
+                            id: booking.user?.user_id?.toString() || "unknown",
+                            name:
+                                booking.user?.fullname ||
+                                booking.user?.username ||
+                                "Người dùng",
+                            email: booking.user?.email || "",
+                            role: booking.user?.role || "customer",
+                        },
+                        target: {
+                            id: booking.booking_id?.toString(),
+                            name: `Đặt sân #${booking.booking_id}`,
+                            type: "booking",
+                        },
+                        metadata: {
+                            court_name: booking.court?.name || "",
+                            start_time: booking.start_time || "",
+                            end_time: booking.end_time || "",
+                            total_cost: booking.total_cost || 0,
+                            status: booking.status || "",
+                        },
+                        timestamp:
+                            booking.created_at || new Date().toISOString(),
+                        severity: "low",
+                    });
+                });
+            }
+
+            // Process users to create activity logs
+            if (usersRes.ok && "json" in usersRes) {
+                const users = await (usersRes as Response).json();
+                const userArray: UserData[] = Array.isArray(users)
+                    ? users
+                    : users.data || [];
+
+                userArray.slice(0, 10).forEach((user: UserData) => {
+                    realActivities.push({
+                        id: `user-${activityId++}`,
+                        type: "user",
+                        action: "create",
+                        description: `Tài khoản mới được tạo - ${
+                            user.fullname || user.username
+                        }`,
+                        user: {
+                            id: user.user_id?.toString() || "system",
+                            name: "System",
+                            email: "system@tvu.edu.vn",
+                            role: "system",
+                        },
+                        target: {
+                            id: user.user_id?.toString(),
+                            name: user.fullname || user.username,
+                            type: "user",
+                        },
+                        metadata: {
+                            role: user.role || "",
+                            email: user.email || "",
+                        },
+                        timestamp: user.created_at || new Date().toISOString(),
+                        severity: "low",
+                    });
+                });
+            }
+
+            // Process payments to create activity logs
+            if (paymentsRes.ok && "json" in paymentsRes) {
+                const payments = await (paymentsRes as Response).json();
+                const paymentArray: PaymentData[] = Array.isArray(payments)
+                    ? payments
+                    : payments.data || [];
+
+                paymentArray.slice(0, 15).forEach((payment: PaymentData) => {
+                    realActivities.push({
+                        id: `payment-${activityId++}`,
+                        type: "payment",
+                        action: "create",
+                        description: `Thanh toán thành công - ${payment.amount?.toLocaleString(
+                            "vi-VN"
+                        )}₫`,
+                        user: {
+                            id: payment.user?.user_id?.toString() || "unknown",
+                            name:
+                                payment.user?.fullname ||
+                                payment.user?.username ||
+                                "Người dùng",
+                            email: payment.user?.email || "",
+                            role: payment.user?.role || "customer",
+                        },
+                        target: {
+                            id: payment.payment_id?.toString(),
+                            name: `Thanh toán #${payment.payment_id}`,
+                            type: "payment",
+                        },
+                        metadata: {
+                            amount: payment.amount || 0,
+                            method: payment.payment_method || "",
+                            status: payment.status || "",
+                            booking_id: payment.booking_id || "",
+                        },
+                        timestamp:
+                            payment.created_at || new Date().toISOString(),
+                        severity: "medium",
+                    });
+                });
+            }
+
+            // Process events to create activity logs
+            if (eventsRes.ok && "json" in eventsRes) {
+                const events = await (eventsRes as Response).json();
+                const eventArray: EventData[] = Array.isArray(events)
+                    ? events
+                    : events.data || [];
+
+                eventArray.slice(0, 8).forEach((event: EventData) => {
+                    realActivities.push({
+                        id: `event-${activityId++}`,
+                        type: "event",
+                        action: "create",
+                        description: `Tạo sự kiện mới - ${event.title}`,
+                        user: {
+                            id: event.created_by?.toString() || "admin",
+                            name: "Admin",
+                            email: "admin@tvu.edu.vn",
+                            role: "admin",
+                        },
+                        target: {
+                            id: event.event_id?.toString(),
+                            name: event.title,
+                            type: "event",
+                        },
+                        metadata: {
+                            start_date: event.start_date || "",
+                            end_date: event.end_date || "",
+                            status: event.status || "",
+                            max_participants: event.max_participants || 0,
+                        },
+                        timestamp: event.created_at || new Date().toISOString(),
+                        severity: "medium",
+                    });
+                });
+            }
+
+            // Process news to create activity logs
+            if (newsRes.ok && "json" in newsRes) {
+                const news = await (newsRes as Response).json();
+                const newsArray: NewsData[] = Array.isArray(news)
+                    ? news
+                    : news.data || [];
+
+                newsArray.slice(0, 8).forEach((newsItem: NewsData) => {
+                    realActivities.push({
+                        id: `news-${activityId++}`,
+                        type: "news",
+                        action: "create",
+                        description: `Đăng tin tức mới - ${newsItem.title}`,
+                        user: {
+                            id: newsItem.created_by?.toString() || "admin",
+                            name: "Admin",
+                            email: "admin@tvu.edu.vn",
+                            role: "admin",
+                        },
+                        target: {
+                            id: newsItem.news_id?.toString(),
+                            name: newsItem.title,
+                            type: "news",
+                        },
+                        metadata: {
+                            category: newsItem.category?.name || "",
+                            status: newsItem.status || "",
+                            views: newsItem.views || 0,
+                        },
+                        timestamp:
+                            newsItem.created_at || new Date().toISOString(),
+                        severity: "low",
+                    });
+                });
+            }
+
+            // Sort activities by timestamp (newest first)
+            realActivities.sort(
+                (a, b) =>
+                    new Date(b.timestamp).getTime() -
+                    new Date(a.timestamp).getTime()
+            );
+
+            setActivities(realActivities);
+
             // Calculate stats
-            const mockStats: ActivityLogStats = {
-                total: mockActivities.length,
-                today: mockActivities.filter(a => 
-                    new Date(a.timestamp).toDateString() === new Date().toDateString()
+            const realStats: ActivityLogStats = {
+                total: realActivities.length,
+                today: realActivities.filter(
+                    (a) =>
+                        new Date(a.timestamp).toDateString() ===
+                        new Date().toDateString()
                 ).length,
-                thisWeek: mockActivities.filter(a => 
-                    new Date(a.timestamp) >= subDays(new Date(), 7)
+                thisWeek: realActivities.filter(
+                    (a) => new Date(a.timestamp) >= subDays(new Date(), 7)
                 ).length,
-                thisMonth: mockActivities.filter(a => 
-                    new Date(a.timestamp) >= subDays(new Date(), 30)
+                thisMonth: realActivities.filter(
+                    (a) => new Date(a.timestamp) >= subDays(new Date(), 30)
                 ).length,
-                byType: mockActivities.reduce((acc, activity) => {
+                byType: realActivities.reduce((acc, activity) => {
                     acc[activity.type] = (acc[activity.type] || 0) + 1;
                     return acc;
                 }, {} as Record<string, number>),
-                bySeverity: mockActivities.reduce((acc, activity) => {
+                bySeverity: realActivities.reduce((acc, activity) => {
                     acc[activity.severity] = (acc[activity.severity] || 0) + 1;
                     return acc;
                 }, {} as Record<string, number>),
             };
-            
-            setStats(mockStats);
 
+            setStats(realStats);
         } catch (error) {
             console.error("Error fetching activities:", error);
             toast.error("Không thể tải dữ liệu nhật ký hoạt động");
@@ -185,25 +390,59 @@ export default function ActivityLogPage() {
 
         // Filter by type
         if (filters.type) {
-            filtered = filtered.filter(activity => activity.type === filters.type);
+            filtered = filtered.filter(
+                (activity) => activity.type === filters.type
+            );
         }
 
         // Filter by action
         if (filters.action) {
-            filtered = filtered.filter(activity => activity.action === filters.action);
+            filtered = filtered.filter(
+                (activity) => activity.action === filters.action
+            );
         }
 
         // Filter by severity
         if (filters.severity) {
-            filtered = filtered.filter(activity => activity.severity === filters.severity);
+            filtered = filtered.filter(
+                (activity) => activity.severity === filters.severity
+            );
         }
 
-        // Filter by date range
-        if (filters.dateRange) {
-            filtered = filtered.filter(activity => {
+        // Filter by date range, specific date, or custom date range
+        if (filters.specificDate) {
+            // Filter by specific date
+            filtered = filtered.filter((activity) => {
                 const activityDate = new Date(activity.timestamp);
-                const fromDate = filters.dateRange!.from;
-                const toDate = filters.dateRange!.to;
+                const targetDate = new Date(filters.specificDate!);
+
+                // Compare dates (ignoring time)
+                return (
+                    activityDate.getFullYear() === targetDate.getFullYear() &&
+                    activityDate.getMonth() === targetDate.getMonth() &&
+                    activityDate.getDate() === targetDate.getDate()
+                );
+            });
+        } else if (filters.customDateRange) {
+            // Filter by custom date range
+            filtered = filtered.filter((activity) => {
+                const activityDate = new Date(activity.timestamp);
+                const fromDate = new Date(filters.customDateRange!.from);
+                const toDate = new Date(filters.customDateRange!.to);
+
+                // Set time to start/end of day for proper comparison
+                fromDate.setHours(0, 0, 0, 0);
+                toDate.setHours(23, 59, 59, 999);
+
+                return activityDate >= fromDate && activityDate <= toDate;
+            });
+        } else if (filters.dateRange) {
+            // Filter by predefined date range
+            filtered = filtered.filter((activity) => {
+                const activityDate = new Date(activity.timestamp);
+                const fromDate = new Date(filters.dateRange!.from);
+                const toDate = new Date(filters.dateRange!.to);
+
                 return activityDate >= fromDate && activityDate <= toDate;
             });
         }
@@ -211,10 +450,11 @@ export default function ActivityLogPage() {
         // Filter by search
         if (filters.search) {
             const searchLower = filters.search.toLowerCase();
-            filtered = filtered.filter(activity =>
-                activity.description.toLowerCase().includes(searchLower) ||
-                activity.user.name.toLowerCase().includes(searchLower) ||
-                (activity.target?.name.toLowerCase().includes(searchLower))
+            filtered = filtered.filter(
+                (activity) =>
+                    activity.description.toLowerCase().includes(searchLower) ||
+                    activity.user.name.toLowerCase().includes(searchLower) ||
+                    activity.target?.name.toLowerCase().includes(searchLower)
             );
         }
 
@@ -255,36 +495,7 @@ export default function ActivityLogPage() {
     };
 
     // Handle export
-    const handleExport = async () => {
-        try {
-            toast.info("Đang xuất báo cáo...");
-
-            const exportData = filteredActivities.map(activity => ({
-                "Thời gian": new Date(activity.timestamp).toLocaleString("vi-VN"),
-                "Loại": activity.type,
-                "Hành động": activity.action,
-                "Mô tả": activity.description,
-                "Người dùng": activity.user.name,
-                "Email": activity.user.email,
-                "Vai trò": activity.user.role,
-                "Đối tượng": activity.target?.name || "",
-                "Mức độ": activity.severity,
-                "IP Address": activity.ip_address || "",
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Nhật ký hoạt động");
-            
-            const filename = `nhat-ky-hoat-dong_${new Date().toISOString().split('T')[0]}.xlsx`;
-            XLSX.writeFile(wb, filename);
-
-            toast.success("Xuất báo cáo thành công");
-        } catch (error) {
-            console.error("Error exporting:", error);
-            toast.error("Không thể xuất báo cáo");
-        }
-    };
+    // Export function moved to ActivityActions component
 
     return (
         <DashboardLayout activeTab="activity-log">
@@ -299,6 +510,11 @@ export default function ActivityLogPage() {
                             Theo dõi và giám sát mọi hoạt động trong hệ thống
                         </p>
                     </div>
+                    <ActivityActions
+                        activities={filteredActivities}
+                        onRefresh={handleRefresh}
+                        loading={refreshing}
+                    />
                 </div>
 
                 {/* Stats */}
@@ -309,7 +525,6 @@ export default function ActivityLogPage() {
                     filters={filters}
                     onFiltersChange={setFilters}
                     onRefresh={handleRefresh}
-                    onExport={handleExport}
                     loading={refreshing}
                 />
 

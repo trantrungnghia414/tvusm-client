@@ -79,7 +79,7 @@ export default function VenueHeroSection({
                         <div className="flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-2.5 py-1 rounded-full">
                             <Star className="w-4 h-4 fill-current" />
                             <span className="font-medium">4.8</span>
-                            <span className="text-sm">(24 đánh giá)</span>
+                            <span className="text-sm">)</span>
                         </div>
                         <TooltipProvider>
                             <Tooltip>

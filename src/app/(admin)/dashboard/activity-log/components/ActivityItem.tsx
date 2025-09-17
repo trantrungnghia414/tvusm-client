@@ -2,9 +2,7 @@
 "use client";
 
 import React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
     Calendar,
     CreditCard,
@@ -51,16 +49,6 @@ export default function ActivityItem({ activity }: ActivityItemProps) {
         return colorMap[activity.type] || "text-gray-600 bg-gray-50";
     };
 
-    const getSeverityColor = () => {
-        const severityMap = {
-            low: "bg-green-100 text-green-800",
-            medium: "bg-yellow-100 text-yellow-800",
-            high: "bg-orange-100 text-orange-800",
-            critical: "bg-red-100 text-red-800",
-        };
-        return severityMap[activity.severity];
-    };
-
     const getActionText = () => {
         const actionMap = {
             create: "tạo mới",
@@ -76,97 +64,37 @@ export default function ActivityItem({ activity }: ActivityItemProps) {
     };
 
     return (
-        <Card className="hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                    {/* Activity Icon */}
-                    <div
-                        className={`p-2 rounded-lg shrink-0 ${getActivityColor()}`}
-                    >
-                        {getActivityIcon()}
-                    </div>
+        <div className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+            {/* Activity Icon */}
+            <div className={`p-2 rounded-lg shrink-0 ${getActivityColor()}`}>
+                {getActivityIcon()}
+            </div>
 
-                    {/* Content */}
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">
-                                    {activity.description}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                    >
-                                        {getActionText()}
-                                    </Badge>
-                                    <Badge
-                                        className={`text-xs ${getSeverityColor()}`}
-                                    >
-                                        {activity.severity}
-                                    </Badge>
-                                </div>
-                            </div>
-                            <p className="text-xs text-gray-500 shrink-0 ml-2">
-                                {formatDate(activity.timestamp)}
-                            </p>
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                            {activity.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-600">
+                                {activity.user.name}
+                            </span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <Badge
+                                variant="outline"
+                                className="text-xs py-0 h-5"
+                            >
+                                {getActionText()}
+                            </Badge>
                         </div>
-
-                        {/* User Info */}
-                        <div className="flex items-center gap-2 mb-2">
-                            <Avatar className="h-6 w-6">
-                                <AvatarImage src={activity.user.avatar} />
-                                <AvatarFallback className="text-xs">
-                                    {activity.user.name.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="text-xs text-gray-600">
-                                <span className="font-medium">
-                                    {activity.user.name}
-                                </span>
-                                <span className="mx-1">•</span>
-                                <span>{activity.user.role}</span>
-                            </div>
-                        </div>
-
-                        {/* Target Info */}
-                        {activity.target && (
-                            <div className="text-xs text-gray-500 mb-2">
-                                Đối tượng:{" "}
-                                <span className="font-medium">
-                                    {activity.target.name}
-                                </span>
-                                <span className="mx-1">•</span>
-                                <span>{activity.target.type}</span>
-                            </div>
-                        )}
-
-                        {/* Metadata */}
-                        {activity.metadata &&
-                            Object.keys(activity.metadata).length > 0 && (
-                                <div className="text-xs text-gray-500">
-                                    {Object.entries(activity.metadata).map(
-                                        ([key, value]) => (
-                                            <span key={key} className="mr-3">
-                                                {key}:{" "}
-                                                <span className="font-medium">
-                                                    {String(value)}
-                                                </span>
-                                            </span>
-                                        )
-                                    )}
-                                </div>
-                            )}
-
-                        {/* IP Address */}
-                        {activity.ip_address && (
-                            <div className="text-xs text-gray-400 mt-1">
-                                IP: {activity.ip_address}
-                            </div>
-                        )}
+                    </div>
+                    <div className="text-xs text-gray-500 ml-2 shrink-0">
+                        {formatDate(activity.timestamp)}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }
